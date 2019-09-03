@@ -1,4 +1,5 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { GameAppService } from '../services/gameappservice';
 
 @Component({
   selector: 'app-root',
@@ -8,6 +9,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 export class AppComponent implements OnInit {
   @ViewChild('gameCanvas') canvasElement: ElementRef<HTMLCanvasElement>|undefined;
   private gl_: WebGL2RenderingContext|undefined;
+  private gameService_: GameAppService|undefined;
 
   async ngOnInit() {
     if (!this.canvasElement || !this.canvasElement.nativeElement) {
@@ -21,22 +23,17 @@ export class AppComponent implements OnInit {
     }
 
     this.gl_ = context;
-    this.drawFrame();
-  }
-
-  private color = [0, 0, 1];
-  private drawFrame() {
-    if (!this.gl_) return;
-    const gl = this.gl_;
-
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(this.color[0], this.color[1], this.color[2], 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    this.gameService_ = await GameAppService.create(context);
+    this.gameService_.start();
   }
 
   clickButton() {
-    this.color[0] = 1 - this.color[0];
-    this.color[2] = 1 - this.color[2];
-    this.drawFrame();
+    if (!this.gameService_) return;
+    this.gameService_.changeClearColor();
+  }
+
+  moveTriangle() {
+    if (!this.gameService_) return;
+    this.gameService_.moveTriangles();
   }
 }
