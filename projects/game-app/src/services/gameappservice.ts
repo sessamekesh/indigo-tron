@@ -1,12 +1,24 @@
+import { mat4, glMatrix, vec3 } from 'gl-matrix';
+
+// Order of teaching this one:
+// - Introduce gl-matrix
+// - Introduce ortho projection (show: it is the same, except now you can put Z-values anywhere)
+// - Introduce camera (show: moving it in front of and behind triangles)
+// - Change ortho to perspective (show: triangles show in wrong order, but you can see perspective)
+// - Introduce clearing the depth layer and depth test
+// - Show a couple different UP, POS, LOOK_AT values to demonstrate what each does
+// - Introduce world transform
 const VS_TEXT = `#version 300 es
 precision mediump float;
-uniform vec2 offset;
-in vec2 pos;
+uniform mat4 matPerspectiveProjection;
+uniform mat4 matCamera;
+uniform mat4 matWorld;
+in vec3 pos;
 in vec3 color;
 out vec3 fColor;
 void main() {
   fColor = color;
-  gl_Position = vec4(pos + offset, 0.0, 1.0);
+  gl_Position = matPerspectiveProjection * matCamera * matWorld * vec4(pos, 1.0);
 }`;
 
 const FS_TEXT = `#version 300 es
@@ -45,16 +57,29 @@ export class GameAppService {
     gl.canvas.height = gl.canvas.clientHeight * window.devicePixelRatio;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(this.clearColor_[0], this.clearColor_[1], this.clearColor_[2], 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // REMEMBER: Demonstrate this _after_ switching to perspective projection
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
 
     const shader = this.getTriangleShader();
     const triangleVBO = this.getTriangleVBO();
 
     gl.useProgram(shader);
     gl.bindVertexArray(triangleVBO);
-    const offsetUniform = this.getTriangleOffsetUniform();
-    const offsetValue = this.getTriangleOffsetValue(millisecondsElapsed);
-    gl.uniform2f(offsetUniform, offsetValue[0], offsetValue[1]);
+
+    const perspectiveUniform = this.getPerspectiveProjectionMatrixUniform();
+    const perspectiveProjectionValue = this.getPerspectiveProjectionMatrixValue();
+    gl.uniformMatrix4fv(perspectiveUniform, false, perspectiveProjectionValue);
+
+    const cameraUniform = this.getCameraMatrixUniform();
+    const cameraValue = this.getCameraMatrixValue();
+    gl.uniformMatrix4fv(cameraUniform, false, cameraValue);
+
+    const worldUniform = this.getWorldMatrixUniform();
+    this.getTriangleOffsetValue(millisecondsElapsed);
+    const worldValue = this.getWorldMatrixValue(millisecondsElapsed);
+    gl.uniformMatrix4fv(worldUniform, false, worldValue);
+
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
@@ -137,13 +162,13 @@ export class GameAppService {
       }
 
       const posData = new Float32Array([
-        0, 0.5,
-        -0.5, -0.5,
-        0.5, -0.5,
+        0, 0.5, 0,
+        -0.5, -0.5, 0,
+        0.5, -0.5, 0,
 
-        0, 0.75,
-        -0.25, 0.51,
-        0.25, 0.51,
+        0, 0.75, 1,
+        -0.25, 0.51, 1,
+        0.25, 0.51, 1,
       ]);
       gl.bindBuffer(gl.ARRAY_BUFFER, posVB);
       gl.bufferData(gl.ARRAY_BUFFER, posData, gl.STATIC_DRAW);
@@ -163,7 +188,7 @@ export class GameAppService {
       gl.bindVertexArray(vbo);
       gl.enableVertexAttribArray(posAttrib);
       gl.bindBuffer(gl.ARRAY_BUFFER, posVB);
-      gl.vertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribPointer(posAttrib, 3, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(colorAttrib);
       gl.bindBuffer(gl.ARRAY_BUFFER, colorVB);
       gl.vertexAttribPointer(colorAttrib, 3, gl.FLOAT, false, 0, 0);
@@ -223,7 +248,87 @@ export class GameAppService {
     return this.triangleOffset_;
   }
 
+  private perspectiveProjectionMatrixUniform_: WebGLUniformLocation|null = null;
+  private perspectiveProjectionMatrixValue_ = mat4.create();
+  private getPerspectiveProjectionMatrixUniform(): WebGLUniformLocation {
+    if (!this.perspectiveProjectionMatrixUniform_) {
+      const shader = this.getTriangleShader();
+      const gl = this.gl;
+      const uniform = gl.getUniformLocation(shader, 'matPerspectiveProjection');
+      if (!uniform) {
+        throw new Error('Cannot get uniform for perspective projection');
+      }
+      this.perspectiveProjectionMatrixUniform_ = uniform;
+    }
+
+    return this.perspectiveProjectionMatrixUniform_;
+  }
+
+  private getPerspectiveProjectionMatrixValue(): mat4 {
+    // Teaching note: Use this first (to demonstrate an ortho projection identical to using no projection at all)
+    // Then, teach cameras, and THEN implement perspective
+    // mat4.ortho(
+    //   this.perspectiveProjectionMatrixValue_,
+    //   -1, 1,
+    //   -1, 1,
+    //   -1, 1);
+    mat4.perspective(
+      this.perspectiveProjectionMatrixValue_,
+      glMatrix.toRadian(45),
+      this.gl.canvas.width / this.gl.canvas.height,
+      0.01, 100.0);
+    return this.perspectiveProjectionMatrixValue_;
+  }
+
+  private cameraMatrixUniform_: WebGLUniformLocation|null = null;
+  private cameraMatrixValue_ = mat4.create();
+  private getCameraMatrixUniform(): WebGLUniformLocation {
+    if (!this.cameraMatrixUniform_) {
+      const shader = this.getTriangleShader();
+      const gl = this.gl;
+      const uniform = gl.getUniformLocation(shader, 'matCamera');
+      if (!uniform) {
+        throw new Error('Cannot get uniform for camera transformation');
+      }
+      this.cameraMatrixUniform_ = uniform;
+    }
+
+    return this.cameraMatrixUniform_;
+  }
+
+  private getCameraMatrixValue(): mat4 {
+    mat4.lookAt(
+      this.cameraMatrixValue_,
+      vec3.fromValues(2, 0, -2.5),
+      vec3.fromValues(0, 0, 0),
+      vec3.fromValues(0, 1, 0));
+    return this.cameraMatrixValue_;
+  }
+
   moveTriangles() {
     this.goalTriangleOffset_[0] *= -1;
+  }
+
+  private worldMatrixUniform_: WebGLUniformLocation|null = null;
+  private worldMatrixValue_ = mat4.create();
+  private getWorldMatrixUniform(): WebGLUniformLocation {
+    if (!this.worldMatrixUniform_) {
+      const shader = this.getTriangleShader();
+      const gl = this.gl;
+      const uniform = gl.getUniformLocation(shader, 'matWorld');
+      if (!uniform) {
+        throw new Error('Cannot get uniform for world transformation');
+      }
+      this.worldMatrixUniform_ = uniform;
+    }
+
+    return this.worldMatrixUniform_;
+  }
+
+  private zOffsetTicks = 0;
+  private getWorldMatrixValue(millisecondsElapsed): mat4 {
+    this.zOffsetTicks += millisecondsElapsed * 0.001;
+    mat4.fromTranslation(this.worldMatrixValue_, vec3.fromValues(this.triangleOffset_[0], this.triangleOffset_[1], Math.sin(this.zOffsetTicks)));
+    return this.worldMatrixValue_;
   }
 }

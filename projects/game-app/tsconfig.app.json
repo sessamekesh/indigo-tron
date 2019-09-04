@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "../../out-tsc/app",
     "types": [
-      "webgl2"
+      "webgl2",
+      "gl-matrix"
     ]
   },
   "exclude": [
