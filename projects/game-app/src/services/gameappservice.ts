@@ -1,40 +1,67 @@
 import { mat4, glMatrix, vec3 } from 'gl-matrix';
+import { TriangleShader } from '@librender/shader/triangleshader';
+import { TriangleGeo } from '@librender/geo/trianglegeo';
+import { LambertShader } from '@librender/shader/lambertshader';
+import { LambertGeo } from '@librender/geo/lambertgeo';
+import { DracoDecoderCreationOptions } from '@librender/geo/draco/decoderconfig';
+import { DracoDecoder } from '@librender/geo/draco/decoder';
+import { loadRawBuffer } from '@libutil/loadutils';
+import { LambertConverter } from '@librender/geo/draco/lambertconverter';
+import { Texture } from '@librender/geo/texture';
+
+const DRACO_CONFIG: DracoDecoderCreationOptions = {
+  jsFallbackURL: '/assets/draco3d/draco_decoder.js',
+  wasmBinaryURL: '/assets/draco3d/draco_decoder.wasm',
+  wasmLoaderURL: '/assets/draco3d/draco_wasm_wrapper.js',
+};
 
 // Order of teaching this one:
-// - Introduce gl-matrix
-// - Introduce ortho projection (show: it is the same, except now you can put Z-values anywhere)
-// - Introduce camera (show: moving it in front of and behind triangles)
-// - Change ortho to perspective (show: triangles show in wrong order, but you can see perspective)
-// - Introduce clearing the depth layer and depth test
-// - Show a couple different UP, POS, LOOK_AT values to demonstrate what each does
-// - Introduce world transform
-const VS_TEXT = `#version 300 es
-precision mediump float;
-uniform mat4 matPerspectiveProjection;
-uniform mat4 matCamera;
-uniform mat4 matWorld;
-in vec3 pos;
-in vec3 color;
-out vec3 fColor;
-void main() {
-  fColor = color;
-  gl_Position = matPerspectiveProjection * matCamera * matWorld * vec4(pos, 1.0);
-}`;
-
-const FS_TEXT = `#version 300 es
-precision mediump float;
-in vec3 fColor;
-out vec4 color;
-void main() {
-  color = vec4(fColor, 1.0);
-}`;
+// - Move "create shader" code to ShaderUtils.ts
+// - Create TypeScript paths (point out that it will help proper isolation later)
+// - Create triangleshader.ts, use for draw code instead of main
+// - Create trianglegeo.ts, use for geometry data instead of main
+// - Create lambertshader.ts and lambertgeo.ts, but do not use yet (next step)
+// - Create dracodecoder.ts, use to import geometry data from an external file
+// - Draw that geometry.
+// - Add in texture information
 
 export class GameAppService {
   private clearColor_ = [0, 0, 1];
-  private constructor(private gl: WebGL2RenderingContext) {}
+  private constructor(
+    private gl: WebGL2RenderingContext,
+    private triangleShader: TriangleShader,
+    private triangleGeo: TriangleGeo,
+    private lambertShader: LambertShader,
+    private bikeGeo: LambertGeo,
+    private bikeTexture: Texture) {}
 
   static async create(gl: WebGL2RenderingContext) {
-    return new GameAppService(gl);
+    const triangleShader = TriangleShader.create(gl);
+    if (!triangleShader) {
+      throw new Error('Failed to initialize triangle shader!');
+    }
+    const {Pos, Color} = triangleShader.getAttribLocations();
+    const triangleGeo = TriangleGeo.create(gl, Pos, Color);
+    if (!triangleGeo) {
+      throw new Error('Failed to initialize triangle geometry!');
+    }
+
+    const lambertShader = LambertShader.create(gl);
+    if (!lambertShader) {
+      throw new Error('Failed to create lambert shader!');
+    }
+
+    const dracoDecoder = await DracoDecoder.create(DRACO_CONFIG);
+    const bikeRawData = await loadRawBuffer('/assets/models/lightcycle_base.drc');
+    const bikeBuffers = dracoDecoder.decodeMesh(bikeRawData, LambertConverter.BUFFER_DESC);
+    const bikeLambertGeo = LambertConverter.generateLambertGeo(
+      gl, lambertShader, bikeBuffers.VertexData, bikeBuffers.IndexData);
+    if (!bikeLambertGeo) {
+      throw new Error('Could not generate bike lambert geometry');
+    }
+    const bikeTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_base_diffuse.png');
+
+    return new GameAppService(gl, triangleShader, triangleGeo, lambertShader, bikeLambertGeo, bikeTexture);
   }
 
   start() {
@@ -61,155 +88,36 @@ export class GameAppService {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
 
-    const shader = this.getTriangleShader();
-    const triangleVBO = this.getTriangleVBO();
-
-    gl.useProgram(shader);
-    gl.bindVertexArray(triangleVBO);
-
-    const perspectiveUniform = this.getPerspectiveProjectionMatrixUniform();
+    this.triangleShader.activate(gl);
     const perspectiveProjectionValue = this.getPerspectiveProjectionMatrixValue();
-    gl.uniformMatrix4fv(perspectiveUniform, false, perspectiveProjectionValue);
-
-    const cameraUniform = this.getCameraMatrixUniform();
     const cameraValue = this.getCameraMatrixValue();
-    gl.uniformMatrix4fv(cameraUniform, false, cameraValue);
-
-    const worldUniform = this.getWorldMatrixUniform();
     this.getTriangleOffsetValue(millisecondsElapsed);
     const worldValue = this.getWorldMatrixValue(millisecondsElapsed);
-    gl.uniformMatrix4fv(worldUniform, false, worldValue);
+    this.triangleShader.render(gl, {
+      Geo: this.triangleGeo,
+      NumVertices: 6,
+      MatCamera: cameraValue,
+      MatProj: perspectiveProjectionValue,
+      MatWorld: worldValue,
+    });
 
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    this.lambertShader.activate(gl);
+    this.lambertShader.render(gl, {
+      AmbientCoefficient: 0.3,
+      Geo: this.bikeGeo,
+      LightColor: vec3.fromValues(1, 1, 1),
+      LightDirection: vec3.fromValues(0, -1, 0),
+      MatProj: perspectiveProjectionValue,
+      MatView: cameraValue,
+      MatWorld: worldValue,
+      DiffuseTexture: this.bikeTexture,
+      // SurfaceColor: vec3.fromValues(0.8, 0.4, 0.5),
+    });
   }
 
   changeClearColor() {
     this.clearColor_[0] = 1 - this.clearColor_[0];
     this.clearColor_[2] = 1 - this.clearColor_[2];
-  }
-
-  private triangleShader_: WebGLProgram|null = null;
-  private getTriangleShader(): WebGLProgram {
-    if (!this.triangleShader_) {
-      const gl = this.gl;
-      const vs = gl.createShader(gl.VERTEX_SHADER);
-      const fs = gl.createShader(gl.FRAGMENT_SHADER);
-      const program = gl.createProgram();
-
-      if (!vs || !fs || !program) {
-        throw new Error('Cannot create shader program - could not create shader objects');
-      }
-
-      gl.shaderSource(vs, VS_TEXT);
-      gl.shaderSource(fs, FS_TEXT);
-
-      gl.compileShader(vs);
-      if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-        throw new Error(`Failed to compile vertex shader: ${gl.getShaderInfoLog(vs)}`);
-      }
-
-      gl.compileShader(fs);
-      if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-        throw new Error(`Failed to compile fragment shader: ${gl.getShaderInfoLog(fs)}`);
-      }
-
-      gl.attachShader(program, vs);
-      gl.attachShader(program, fs);
-      gl.linkProgram(program);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        throw new Error(`Failed to link shader program: ${gl.getProgramInfoLog(program)}`);
-      }
-
-      gl.deleteShader(vs);
-      gl.deleteShader(fs);
-      this.triangleShader_ = program;
-    }
-
-    return this.triangleShader_;
-  }
-
-  private posAttrib_: number = -1;
-  private getPosAttrib() {
-    if (this.posAttrib_ < 0) {
-      const shader = this.getTriangleShader();
-      this.posAttrib_ = this.gl.getAttribLocation(shader, 'pos');
-    }
-    return this.posAttrib_;
-  }
-
-  private colorAttrib_: number = -1;
-  private getColorAttrib() {
-    if (this.colorAttrib_ < 0) {
-      const shader = this.getTriangleShader();
-      this.colorAttrib_ = this.gl.getAttribLocation(shader, 'color');
-    }
-    return this.colorAttrib_;
-  }
-
-  private triangleVbo_: WebGLVertexArrayObject|null = null;
-  private getTriangleVBO(): WebGLVertexArrayObject {
-    if (!this.triangleVbo_) {
-      const gl = this.gl;
-      const posVB = gl.createBuffer();
-      const colorVB = gl.createBuffer();
-      const vbo = gl.createVertexArray();
-
-      const posAttrib = this.getPosAttrib();
-      const colorAttrib = this.getColorAttrib();
-
-      if (!posVB || !vbo || !colorVB) {
-        throw new Error('Failed to create WebGL objects for triangle');
-      }
-
-      const posData = new Float32Array([
-        0, 0.5, 0,
-        -0.5, -0.5, 0,
-        0.5, -0.5, 0,
-
-        0, 0.75, 1,
-        -0.25, 0.51, 1,
-        0.25, 0.51, 1,
-      ]);
-      gl.bindBuffer(gl.ARRAY_BUFFER, posVB);
-      gl.bufferData(gl.ARRAY_BUFFER, posData, gl.STATIC_DRAW);
-
-      const colorData = new Float32Array([
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0,
-
-        1.0, 0.2, 0.2,
-        0.2, 1.0, 0.2,
-        0.2, 0.2, 1.0,
-      ]);
-      gl.bindBuffer(gl.ARRAY_BUFFER, colorVB);
-      gl.bufferData(gl.ARRAY_BUFFER, colorData, gl.STATIC_DRAW);
-
-      gl.bindVertexArray(vbo);
-      gl.enableVertexAttribArray(posAttrib);
-      gl.bindBuffer(gl.ARRAY_BUFFER, posVB);
-      gl.vertexAttribPointer(posAttrib, 3, gl.FLOAT, false, 0, 0);
-      gl.enableVertexAttribArray(colorAttrib);
-      gl.bindBuffer(gl.ARRAY_BUFFER, colorVB);
-      gl.vertexAttribPointer(colorAttrib, 3, gl.FLOAT, false, 0, 0);
-      gl.bindVertexArray(null);
-      this.triangleVbo_ = vbo;
-    }
-    return this.triangleVbo_;
-  }
-
-  private triangleOffsetUniform_: WebGLUniformLocation|null = null;
-  private getTriangleOffsetUniform(): WebGLUniformLocation {
-    if (!this.triangleOffsetUniform_) {
-      const gl = this.gl;
-      const shader = this.getTriangleShader();
-      const uniform = gl.getUniformLocation(shader, 'offset');
-      if (!uniform) {
-        throw new Error('Could not find offset uniform for triangle shader');
-      }
-      this.triangleOffsetUniform_ = uniform;
-    }
-    return this.triangleOffsetUniform_;
   }
 
   private triangleOffset_ = [0.3, 0];
@@ -248,22 +156,7 @@ export class GameAppService {
     return this.triangleOffset_;
   }
 
-  private perspectiveProjectionMatrixUniform_: WebGLUniformLocation|null = null;
   private perspectiveProjectionMatrixValue_ = mat4.create();
-  private getPerspectiveProjectionMatrixUniform(): WebGLUniformLocation {
-    if (!this.perspectiveProjectionMatrixUniform_) {
-      const shader = this.getTriangleShader();
-      const gl = this.gl;
-      const uniform = gl.getUniformLocation(shader, 'matPerspectiveProjection');
-      if (!uniform) {
-        throw new Error('Cannot get uniform for perspective projection');
-      }
-      this.perspectiveProjectionMatrixUniform_ = uniform;
-    }
-
-    return this.perspectiveProjectionMatrixUniform_;
-  }
-
   private getPerspectiveProjectionMatrixValue(): mat4 {
     // Teaching note: Use this first (to demonstrate an ortho projection identical to using no projection at all)
     // Then, teach cameras, and THEN implement perspective
@@ -280,26 +173,11 @@ export class GameAppService {
     return this.perspectiveProjectionMatrixValue_;
   }
 
-  private cameraMatrixUniform_: WebGLUniformLocation|null = null;
   private cameraMatrixValue_ = mat4.create();
-  private getCameraMatrixUniform(): WebGLUniformLocation {
-    if (!this.cameraMatrixUniform_) {
-      const shader = this.getTriangleShader();
-      const gl = this.gl;
-      const uniform = gl.getUniformLocation(shader, 'matCamera');
-      if (!uniform) {
-        throw new Error('Cannot get uniform for camera transformation');
-      }
-      this.cameraMatrixUniform_ = uniform;
-    }
-
-    return this.cameraMatrixUniform_;
-  }
-
   private getCameraMatrixValue(): mat4 {
     mat4.lookAt(
       this.cameraMatrixValue_,
-      vec3.fromValues(2, 0, -2.5),
+      vec3.fromValues(6, 0, 7.5),
       vec3.fromValues(0, 0, 0),
       vec3.fromValues(0, 1, 0));
     return this.cameraMatrixValue_;
@@ -309,22 +187,7 @@ export class GameAppService {
     this.goalTriangleOffset_[0] *= -1;
   }
 
-  private worldMatrixUniform_: WebGLUniformLocation|null = null;
   private worldMatrixValue_ = mat4.create();
-  private getWorldMatrixUniform(): WebGLUniformLocation {
-    if (!this.worldMatrixUniform_) {
-      const shader = this.getTriangleShader();
-      const gl = this.gl;
-      const uniform = gl.getUniformLocation(shader, 'matWorld');
-      if (!uniform) {
-        throw new Error('Cannot get uniform for world transformation');
-      }
-      this.worldMatrixUniform_ = uniform;
-    }
-
-    return this.worldMatrixUniform_;
-  }
-
   private zOffsetTicks = 0;
   private getWorldMatrixValue(millisecondsElapsed): mat4 {
     this.zOffsetTicks += millisecondsElapsed * 0.001;
