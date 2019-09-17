@@ -24,6 +24,9 @@
     "paths": {
       "@librender/*": ["projects/librender/*"],
       "@libutil/*": ["projects/libutil/*"],
+      "@libecs/*": ["projects/libecs/*"],
+      "@libgamemodel/*": ["projects/libgamemodel/*"],
+      "@libgamerender/*": ["projects/libgamerender/*"]
     }
   }
 }

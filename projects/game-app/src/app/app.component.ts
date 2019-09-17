@@ -31,9 +31,4 @@ export class AppComponent implements OnInit {
     if (!this.gameService_) return;
     this.gameService_.changeClearColor();
   }
-
-  moveTriangle() {
-    if (!this.gameService_) return;
-    this.gameService_.moveTriangles();
-  }
 }
