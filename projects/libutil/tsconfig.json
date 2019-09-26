@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "",
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "removeComments": false,
+    "noImplicitAny": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "allowJs": true,
+    "lib": [
+      "es2018",
+      "dom"
+    ],
+    "paths": {
+      "@libutil/*": ["../libutil/*"],
+      "@libecs/*": ["../libecs/*"],
+      "@testutils/*": ["../testutils/*"]
+    }
+  }
+}

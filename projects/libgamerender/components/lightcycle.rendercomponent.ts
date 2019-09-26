@@ -1,5 +1,9 @@
-import { mat4 } from 'gl-matrix';
+import { SceneNode } from '@libutil/scene/scenenode';
 
 export class LightcycleRenderComponent {
-  constructor(public WorldTransform: mat4) {}
+  constructor(
+    public BodySceneNode: SceneNode,
+    public FrontWheelSceneNode: SceneNode,
+    public BackWheelSceneNode: SceneNode,
+    public SpawnStickSceneNode: SceneNode) {}
 }
