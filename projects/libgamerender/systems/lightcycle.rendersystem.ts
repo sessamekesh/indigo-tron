@@ -4,9 +4,9 @@ import { LambertGeo } from '@librender/geo/lambertgeo';
 import { ECSManager } from '@libecs/ecsmanager';
 import { Entity } from '@libecs/entity';
 import { LightcycleRenderComponent } from '@libgamerender/components/lightcycle.rendercomponent';
-import { mat4, glMatrix, vec3 } from 'gl-matrix';
-import { LightcycleComponent, LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
-import { Texture } from '@librender/geo/texture';
+import { mat4, glMatrix } from 'gl-matrix';
+import { LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
+import { Texture } from '@librender/texture/texture';
 import { FrameSettings } from '@libgamerender/framesettings';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { TempGroupAllocator } from '@libutil/allocator';
@@ -28,15 +28,7 @@ export class LightcycleRenderSystem extends ECSSystem {
 
   start(ecs: ECSManager) { return true; }
 
-  update(ecs: ECSManager, msDt: number) {
-    // // Refresh all render components to match
-    // ecs.iterateComponents(
-    //     [LightcycleComponent2],
-    //     (entity, lightcycleComponent) => {
-    //       const renderNode = this.getRenderComponent(entity, lightcycleComponent);
-    //       // TODO (sessamekesh): Update the wheels turning!
-    //     });
-  }
+  update(ecs: ECSManager, msDt: number) {}
 
   render(gl: WebGL2RenderingContext, ecs: ECSManager, frameSettings: FrameSettings) {
     // Draw Lambert objects...

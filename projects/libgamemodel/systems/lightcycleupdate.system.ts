@@ -9,8 +9,8 @@ import { MathUtils } from '@libutil/mathutils';
 import { SceneNode } from '@libutil/scene/scenenode';
 import { BACK_WHEEL_OFFSET } from './lightcyclespawner.system';
 
-const LIGHTCYCLE_SPEED = 18.5;
-const LIGHTCYCLE_ANGULAR_VELOCITY = -3.5;
+const LIGHTCYCLE_SPEED = 38.5;
+const LIGHTCYCLE_ANGULAR_VELOCITY = -1.85;
 
 export class LightcycleUpdateSystem extends ECSSystem {
   private playerCycle_: Entity|null = null;

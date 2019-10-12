@@ -2,7 +2,7 @@ import { LambertGeo } from '@librender/geo/lambertgeo';
 import { mat4, vec3 } from 'gl-matrix';
 import { ShaderUtils } from './shaderutils';
 import { IBDescBitWidthToType } from '@librender/geo/ibdesc';
-import { Texture } from '@librender/geo/texture';
+import { Texture } from '@librender/texture/texture';
 
 const VS_TEXT = `#version 300 es
 precision mediump float;

@@ -1,10 +1,10 @@
-import { mat4, glMatrix, vec3, quat } from 'gl-matrix';
+import { mat4, glMatrix, vec3, quat, vec4 } from 'gl-matrix';
 import { LambertShader } from '@librender/shader/lambertshader';
 import { DracoDecoderCreationOptions } from '@librender/geo/draco/decoderconfig';
 import { DracoDecoder } from '@librender/geo/draco/decoder';
 import { loadRawBuffer } from '@libutil/loadutils';
 import { LambertConverter } from '@librender/geo/draco/lambertconverter';
-import { Texture } from '@librender/geo/texture';
+import { Texture } from '@librender/texture/texture';
 import { LightcycleRenderSystem } from '@libgamerender/systems/lightcycle.rendersystem';
 import { ECSManager } from '@libecs/ecsmanager';
 import { LightcycleSpawnerSystem } from '@libgamemodel/systems/lightcyclespawner.system';
@@ -19,6 +19,10 @@ import { TouchEventBikeInputController } from '@io/bikeinput/toucheventbikeinput
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { Camera } from '@libgamemodel/camera/camera';
 import { CameraRigSystem } from '@libgamemodel/camera/camerarig.system';
+import { FloorTileTexture } from '@librender/texture/floortiletexture';
+import { EnvironmentRenderSystem } from '@libgamerender/systems/environment.rendersystem';
+import { FrameSettings } from '@libgamerender/framesettings';
+import { EnvironmentSystem } from '@libgamemodel/systems/environment.system';
 
 const DRACO_CONFIG: DracoDecoderCreationOptions = {
   jsFallbackURL: '/assets/draco3d/draco_decoder.js',
@@ -42,7 +46,8 @@ export class GameAppService {
     private gl: WebGL2RenderingContext,
     private ecs: ECSManager,
     private bikeRenderSystem: LightcycleRenderSystem,
-    private camera: Camera) {}
+    private camera: Camera,
+    private environmentRenderSystem: EnvironmentRenderSystem) {}
 
   static async create(gl: WebGL2RenderingContext) {
     const lambertShader = LambertShader.create(gl);
@@ -69,6 +74,8 @@ export class GameAppService {
     }
     const bikeTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_base_diffuse.png');
     const bikeWheelTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_wheel_diffuse.png');
+    const floorTexture = FloorTileTexture.create(
+      gl, vec4.fromValues(0, 0, 0, 1), vec4.fromValues(1, 1, 0.85, 0), 128, 128, 1, 2, 1, 2);
 
     // Utility objects
     const vec3Allocator = new TempGroupAllocator(vec3.create);
@@ -97,12 +104,15 @@ export class GameAppService {
       sceneNodeFactory, mat4Allocator));
     const lightcycleUpdateSystem = ecs.addSystem(new LightcycleUpdateSystem(inputManager, vec3Allocator));
     const cameraRiggingSystem = ecs.addSystem(new CameraRigSystem(
-      vec3Allocator, sceneNodeFactory, 35, 12, 2.5));
+      vec3Allocator, sceneNodeFactory, 55, 12, 2.5));
+    const environmentSystem = ecs.addSystem(new EnvironmentSystem());
+    const environmentRenderSystem = ecs.addSystem(new EnvironmentRenderSystem(lambertShader, 0.25, floorTexture));
     if (!ecs.start()) {
       throw new Error('Failed to start all ECS systems, check output');
     }
 
     // Initial game state
+    environmentSystem.spawnFloor(ecs, 400, 400);
     const playerCycle = lightcycleSpawnerSystem.spawnLightcycle(ecs, {
       Position: vec3.fromValues(5, 0, 0),
       Orientation: glMatrix.toRadian(180),
@@ -110,7 +120,7 @@ export class GameAppService {
     lightcycleUpdateSystem.setPlayerCycle(playerCycle);
     cameraRiggingSystem.attachToLightcycle(playerCycle, vec3.fromValues(0, 5, -9), camera);
 
-    return new GameAppService(gl, ecs, bikeRenderSystem, camera);
+    return new GameAppService(gl, ecs, bikeRenderSystem, camera, environmentRenderSystem);
   }
 
   start() {
@@ -141,13 +151,15 @@ export class GameAppService {
 
     const perspectiveProjectionValue = this.getPerspectiveProjectionMatrixValue();
     const cameraValue = this.getCameraMatrixValue();
-    this.bikeRenderSystem.render(gl, this.ecs, {
+    const frameSettings: FrameSettings = {
       AmbientCoefficient: this.ambientCoefficient_,
       LightColor: this.lightColor_,
       LightDirection: this.lightDirection_,
       MatProj: perspectiveProjectionValue,
       MatView: cameraValue,
-    });
+    };
+    this.bikeRenderSystem.render(gl, this.ecs, frameSettings);
+    this.environmentRenderSystem.render(gl, this.ecs, frameSettings);
   }
 
   changeClearColor() {
@@ -161,7 +173,7 @@ export class GameAppService {
       this.perspectiveProjectionMatrixValue_,
       glMatrix.toRadian(45),
       this.gl.canvas.width / this.gl.canvas.height,
-      0.01, 100.0);
+      0.01, 1000.0);
     return this.perspectiveProjectionMatrixValue_;
   }
 
