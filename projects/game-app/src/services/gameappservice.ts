@@ -16,6 +16,9 @@ import { KeyboardManager } from '@io/keyboardmanager';
 import { LightcycleUpdateSystem } from '@libgamemodel/systems/lightcycleupdate.system';
 import { GamepadBikeInputController } from '@io/bikeinput/gamepadbikeinputcontroller';
 import { TouchEventBikeInputController } from '@io/bikeinput/toucheventbikeinputcontroller';
+import { BasicCamera } from '@libgamemodel/camera/basiccamera';
+import { Camera } from '@libgamemodel/camera/camera';
+import { CameraRigSystem } from '@libgamemodel/camera/camerarig.system';
 
 const DRACO_CONFIG: DracoDecoderCreationOptions = {
   jsFallbackURL: '/assets/draco3d/draco_decoder.js',
@@ -38,7 +41,8 @@ export class GameAppService {
   private constructor(
     private gl: WebGL2RenderingContext,
     private ecs: ECSManager,
-    private bikeRenderSystem: LightcycleRenderSystem) {}
+    private bikeRenderSystem: LightcycleRenderSystem,
+    private camera: Camera) {}
 
   static async create(gl: WebGL2RenderingContext) {
     const lambertShader = LambertShader.create(gl);
@@ -82,6 +86,7 @@ export class GameAppService {
     }
     inputManager.addController(keyboardInputController);
     inputManager.addController(touchInputController);
+    const camera = new BasicCamera(vec3.fromValues(13, 6, 8), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
 
     // ECS + systems
     const ecs = new ECSManager();
@@ -91,6 +96,8 @@ export class GameAppService {
       bikeTexture, bikeWheelTexture, bikeWheelTexture,
       sceneNodeFactory, mat4Allocator));
     const lightcycleUpdateSystem = ecs.addSystem(new LightcycleUpdateSystem(inputManager, vec3Allocator));
+    const cameraRiggingSystem = ecs.addSystem(new CameraRigSystem(
+      vec3Allocator, sceneNodeFactory, 35, 12, 2.5));
     if (!ecs.start()) {
       throw new Error('Failed to start all ECS systems, check output');
     }
@@ -101,8 +108,9 @@ export class GameAppService {
       Orientation: glMatrix.toRadian(180),
     });
     lightcycleUpdateSystem.setPlayerCycle(playerCycle);
+    cameraRiggingSystem.attachToLightcycle(playerCycle, vec3.fromValues(0, 5, -9), camera);
 
-    return new GameAppService(gl, ecs, bikeRenderSystem);
+    return new GameAppService(gl, ecs, bikeRenderSystem, camera);
   }
 
   start() {
@@ -159,11 +167,7 @@ export class GameAppService {
 
   private cameraMatrixValue_ = mat4.create();
   private getCameraMatrixValue(): mat4 {
-    mat4.lookAt(
-      this.cameraMatrixValue_,
-      vec3.fromValues(13, 8, 8),
-      vec3.fromValues(0, 0, 0),
-      vec3.fromValues(0, 1, 0));
+    this.camera.matView(this.cameraMatrixValue_);
     return this.cameraMatrixValue_;
   }
 }
