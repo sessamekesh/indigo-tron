@@ -5,3 +5,10 @@ export class LightcycleComponent {
     public Orientation: number,
     public SceneNode: SceneNode) {}
 }
+
+export class LightcycleComponent2 {
+  constructor(
+    public FrontWheelSceneNode: SceneNode,
+    public RearWheelSceneNode: SceneNode,
+    public BodySceneNode: SceneNode) {}
+}

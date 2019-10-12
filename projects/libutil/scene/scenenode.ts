@@ -92,6 +92,10 @@ export class SceneNode {
     });
   }
 
+  getRotAngle() {
+    return this.rotAngle_;
+  }
+
   getMatWorld(o: mat4) {
     if (this.isSelfDirty_ || this.isWorldDirty_) {
       this.generateWorldTransform();

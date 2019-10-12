@@ -1,8 +1,7 @@
 import { ECSSystem } from '@libecs/ecssystem';
 import { vec3 } from 'gl-matrix';
 import { ECSManager } from '@libecs/ecsmanager';
-import { LightcycleComponent } from '@libgamemodel/components/lightcycle.component';
-import { PositionComponent } from '@libgamemodel/components/position.component';
+import { LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 
 type LightcycleInitialSpawnConfig = {
@@ -10,35 +9,46 @@ type LightcycleInitialSpawnConfig = {
   Orientation: number,
 };
 
-export type LightcycleSpawnerInitialState = {
-  Lightcycles: LightcycleInitialSpawnConfig[],
-};
+export const BACK_WHEEL_OFFSET = 3.385;
 
 export class LightcycleSpawnerSystem extends ECSSystem {
-  constructor(
-      private readonly initialState: LightcycleSpawnerInitialState,
-      private readonly sceneNodeFactory: SceneNodeFactory) {
+  constructor(private readonly sceneNodeFactory: SceneNodeFactory) {
     super();
   }
 
-  start(ecs: ECSManager): boolean {
-    for (let i = 0; i < this.initialState.Lightcycles.length; i++) {
-      const config = this.initialState.Lightcycles[i];
-      const entity = ecs.createEntity();
+  start(ecs: ECSManager): boolean { return true; }
 
-      const pos = vec3.create();
-      vec3.copy(pos, config.Position);
-      entity.addComponent(PositionComponent, pos);
+  spawnLightcycle(ecs: ECSManager, config: LightcycleInitialSpawnConfig) {
+    const entity = ecs.createEntity();
 
-      entity.addComponent(LightcycleComponent, config.Orientation, this.sceneNodeFactory.createSceneNode({
-        rot: {
-          axis: vec3.fromValues(0, 1, 0),
-          angle: config.Orientation,
-        },
-        pos,
-      }));
-    }
-    return true;
+    const pos = vec3.create();
+    vec3.copy(pos, config.Position);
+
+    const bodySceneNode = this.sceneNodeFactory.createSceneNode({
+      rot: {
+        axis: vec3.fromValues(0, 1, 0),
+        angle: config.Orientation,
+      },
+      pos,
+    });
+
+    const frontWheelSceneNode = this.sceneNodeFactory.createSceneNode({
+      rot: {
+        axis: vec3.fromValues(0, 1, 0),
+        angle: config.Orientation,
+      },
+      pos,
+    });
+
+    const backWheelSceneNode = this.sceneNodeFactory.createSceneNode({
+      pos: vec3.fromValues(0, 0, -BACK_WHEEL_OFFSET),
+    });
+    backWheelSceneNode.attachToParent(bodySceneNode);
+
+    entity.addComponent(
+      LightcycleComponent2, frontWheelSceneNode, backWheelSceneNode, bodySceneNode);
+
+    return entity;
   }
 
   update(ecs: ECSManager, msDt: number) {}

@@ -10,6 +10,12 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { LightcycleSpawnerSystem } from '@libgamemodel/systems/lightcyclespawner.system';
 import { TempGroupAllocator } from '@libutil/allocator';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
+import { BikeInputManager } from '@io/bikeinput/bikeinputmanager';
+import { KeyboardBikeInputController } from '@io/bikeinput/keyboardbikeinputcontroller';
+import { KeyboardManager } from '@io/keyboardmanager';
+import { LightcycleUpdateSystem } from '@libgamemodel/systems/lightcycleupdate.system';
+import { GamepadBikeInputController } from '@io/bikeinput/gamepadbikeinputcontroller';
+import { TouchEventBikeInputController } from '@io/bikeinput/toucheventbikeinputcontroller';
 
 const DRACO_CONFIG: DracoDecoderCreationOptions = {
   jsFallbackURL: '/assets/draco3d/draco_decoder.js',
@@ -40,6 +46,7 @@ export class GameAppService {
       throw new Error('Failed to create lambert shader!');
     }
 
+    // Get GL resources
     const dracoDecoder = await DracoDecoder.create(DRACO_CONFIG);
     const bikeRawData = await loadRawBuffer('/assets/models/lightcycle_base.drc');
     const bikeWheelData = await loadRawBuffer('/assets/models/lightcycle_wheel.drc');
@@ -59,35 +66,41 @@ export class GameAppService {
     const bikeTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_base_diffuse.png');
     const bikeWheelTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_wheel_diffuse.png');
 
-    const lightcycleInitialConfig = {
-      Lightcycles: [{
-        Position: vec3.fromValues(5, 0, 0),
-        Orientation: 270,
-      }, {
-        Position: vec3.fromValues(-5, 0, 0),
-        Orientation: 90,
-      }, {
-        Position: vec3.fromValues(0, 0, 5),
-        Orientation: 180,
-      }, {
-        Position: vec3.fromValues(0, 0, -5),
-        Orientation: 0,
-      }],
-    };
-
+    // Utility objects
+    const vec3Allocator = new TempGroupAllocator(vec3.create);
     const mat4Allocator = new TempGroupAllocator(mat4.create);
     const quatAllocator = new TempGroupAllocator(quat.create);
     const sceneNodeFactory = new SceneNodeFactory(mat4Allocator, quatAllocator);
 
+    // I/O
+    const inputManager = new BikeInputManager();
+    const keyboardManager = new KeyboardManager(document.body); // TODO (sessamekesh): Destroy
+    const keyboardInputController = new KeyboardBikeInputController(keyboardManager); // TODO (sessamekesh): Destroy
+    const touchInputController = new TouchEventBikeInputController(gl.canvas as HTMLCanvasElement);
+    if (GamepadBikeInputController.canUse(navigator)) {
+      inputManager.addController(new GamepadBikeInputController(window, navigator)); // TODO (sessamekesh): Destroy
+    }
+    inputManager.addController(keyboardInputController);
+    inputManager.addController(touchInputController);
+
+    // ECS + systems
     const ecs = new ECSManager();
-    ecs.addSystem(new LightcycleSpawnerSystem(lightcycleInitialConfig, sceneNodeFactory));
+    const lightcycleSpawnerSystem = ecs.addSystem(new LightcycleSpawnerSystem(sceneNodeFactory));
     const bikeRenderSystem = ecs.addSystem(new LightcycleRenderSystem(
       lambertShader, bikeLambertGeo, bikeWheelGeo, bikeStickGeo,
       bikeTexture, bikeWheelTexture, bikeWheelTexture,
       sceneNodeFactory, mat4Allocator));
+    const lightcycleUpdateSystem = ecs.addSystem(new LightcycleUpdateSystem(inputManager, vec3Allocator));
     if (!ecs.start()) {
       throw new Error('Failed to start all ECS systems, check output');
     }
+
+    // Initial game state
+    const playerCycle = lightcycleSpawnerSystem.spawnLightcycle(ecs, {
+      Position: vec3.fromValues(5, 0, 0),
+      Orientation: glMatrix.toRadian(180),
+    });
+    lightcycleUpdateSystem.setPlayerCycle(playerCycle);
 
     return new GameAppService(gl, ecs, bikeRenderSystem);
   }

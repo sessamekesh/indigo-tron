@@ -5,13 +5,12 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { Entity } from '@libecs/entity';
 import { LightcycleRenderComponent } from '@libgamerender/components/lightcycle.rendercomponent';
 import { mat4, glMatrix, vec3 } from 'gl-matrix';
-import { LightcycleComponent } from '@libgamemodel/components/lightcycle.component';
-import { PositionComponent } from '@libgamemodel/components/position.component';
+import { LightcycleComponent, LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
 import { Texture } from '@librender/geo/texture';
 import { FrameSettings } from '@libgamerender/framesettings';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { TempGroupAllocator } from '@libutil/allocator';
-import { Y_UNIT_DIR, Z_UNIT_DIR } from '@libutil/helpfulconstants';
+import { Z_UNIT_DIR } from '@libutil/helpfulconstants';
 
 export class LightcycleRenderSystem extends ECSSystem {
   constructor(
@@ -30,26 +29,19 @@ export class LightcycleRenderSystem extends ECSSystem {
   start(ecs: ECSManager) { return true; }
 
   update(ecs: ECSManager, msDt: number) {
-    // Refresh all render components to match
-    ecs.iterateComponents(
-        [LightcycleComponent, PositionComponent],
-        (entity, lightcycleComponent, positionComponent) => {
-          lightcycleComponent.SceneNode.update({
-            rot: {
-              angle: glMatrix.toRadian(lightcycleComponent.Orientation),
-              axis: Y_UNIT_DIR,
-            },
-            pos: positionComponent.Position,
-          });
-          const renderNode = this.getRenderComponent(entity, lightcycleComponent);
-          // TODO (sessamekesh): Update the wheels turning!
-        });
+    // // Refresh all render components to match
+    // ecs.iterateComponents(
+    //     [LightcycleComponent2],
+    //     (entity, lightcycleComponent) => {
+    //       const renderNode = this.getRenderComponent(entity, lightcycleComponent);
+    //       // TODO (sessamekesh): Update the wheels turning!
+    //     });
   }
 
   render(gl: WebGL2RenderingContext, ecs: ECSManager, frameSettings: FrameSettings) {
     // Draw Lambert objects...
     this.lambertShader.activate(gl);
-    ecs.iterateComponents([LightcycleComponent], (entity, lightcycleComponent) => {
+    ecs.iterateComponents([LightcycleComponent2], (entity, lightcycleComponent) => {
       this.mat4Allocator.get(1, (matWorld) => {
         const lightcycleRenderComponent = this.getRenderComponent(entity, lightcycleComponent);
         lightcycleRenderComponent.BodySceneNode.getMatWorld(matWorld);
@@ -103,47 +95,38 @@ export class LightcycleRenderSystem extends ECSSystem {
     });
   }
 
-  private getRenderComponent(entity: Entity, lightcycleComponent: LightcycleComponent): LightcycleRenderComponent {
+  private getRenderComponent(entity: Entity, lightcycleComponent: LightcycleComponent2): LightcycleRenderComponent {
     let component = entity.getComponent(LightcycleRenderComponent);
     if (!component) {
-      const bodySceneNode = this.sceneNodeFactory.createSceneNode();
-      const frontWheelSceneNode = this.sceneNodeFactory.createSceneNode({
+      const frontWheelZRot = this.sceneNodeFactory.createSceneNode({
         rot: {
           axis: Z_UNIT_DIR,
           angle: glMatrix.toRadian(90),
         },
       });
-      const backWheelSceneNode = this.sceneNodeFactory.createSceneNode({
+      const backWheelZRot = this.sceneNodeFactory.createSceneNode({
         rot: {
           axis: Z_UNIT_DIR,
           angle: glMatrix.toRadian(90),
         },
       });
-      const spawnStickSceneNode = this.sceneNodeFactory.createSceneNode();
-      bodySceneNode.attachToParent(lightcycleComponent.SceneNode);
-      frontWheelSceneNode.attachToParent(lightcycleComponent.SceneNode);
-      backWheelSceneNode.attachToParent(lightcycleComponent.SceneNode);
-      spawnStickSceneNode.attachToParent(lightcycleComponent.SceneNode);
-
-      const backWheelOffsetSceneNode = this.sceneNodeFactory.createSceneNode({
-        pos: vec3.fromValues(0, 0, -3.385),
-      });
-      backWheelOffsetSceneNode.attachToParent(backWheelSceneNode);
+      frontWheelZRot.attachToParent(lightcycleComponent.FrontWheelSceneNode);
+      backWheelZRot.attachToParent(lightcycleComponent.RearWheelSceneNode);
 
       const bodyRenderSceneNode = this.sceneNodeFactory.createLoadedModelRotationSceneNode();
       const frontWheelRenderSceneNode = this.sceneNodeFactory.createLoadedModelRotationSceneNode();
-      const backWheelRenderSceneNode = this.sceneNodeFactory.createLoadedModelRotationSceneNode();
+      const rearWheelRenderSceneNode = this.sceneNodeFactory.createLoadedModelRotationSceneNode();
       const spawnStickRenderSceneNode = this.sceneNodeFactory.createLoadedModelRotationSceneNode();
-      bodyRenderSceneNode.attachToParent(bodySceneNode);
-      frontWheelRenderSceneNode.attachToParent(frontWheelSceneNode);
-      backWheelRenderSceneNode.attachToParent(backWheelOffsetSceneNode);
-      spawnStickRenderSceneNode.attachToParent(spawnStickSceneNode);
+      bodyRenderSceneNode.attachToParent(lightcycleComponent.BodySceneNode);
+      frontWheelRenderSceneNode.attachToParent(frontWheelZRot);
+      rearWheelRenderSceneNode.attachToParent(backWheelZRot);
+      spawnStickRenderSceneNode.attachToParent(lightcycleComponent.BodySceneNode);
 
       component = entity.addComponent(
         LightcycleRenderComponent,
         bodyRenderSceneNode,
         frontWheelRenderSceneNode,
-        backWheelRenderSceneNode,
+        rearWheelRenderSceneNode,
         spawnStickRenderSceneNode);
     }
 
