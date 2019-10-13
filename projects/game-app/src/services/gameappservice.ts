@@ -75,7 +75,7 @@ export class GameAppService {
     const bikeTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_base_diffuse.png');
     const bikeWheelTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_wheel_diffuse.png');
     const floorTexture = FloorTileTexture.create(
-      gl, vec4.fromValues(0, 0, 0, 1), vec4.fromValues(1, 1, 0.85, 0), 128, 128, 1, 2, 1, 2);
+      gl, vec4.fromValues(0.005, 0.005, 0.005, 1), vec4.fromValues(0.5, 0.5, 0.45, 0), 256, 256, 2, 3, 2, 3);
 
     // Utility objects
     const vec3Allocator = new TempGroupAllocator(vec3.create);
@@ -104,9 +104,9 @@ export class GameAppService {
       sceneNodeFactory, mat4Allocator));
     const lightcycleUpdateSystem = ecs.addSystem(new LightcycleUpdateSystem(inputManager, vec3Allocator));
     const cameraRiggingSystem = ecs.addSystem(new CameraRigSystem(
-      vec3Allocator, sceneNodeFactory, 55, 12, 2.5));
+      vec3Allocator, sceneNodeFactory, 55, 12, 4.5));
     const environmentSystem = ecs.addSystem(new EnvironmentSystem());
-    const environmentRenderSystem = ecs.addSystem(new EnvironmentRenderSystem(lambertShader, 0.25, floorTexture));
+    const environmentRenderSystem = ecs.addSystem(new EnvironmentRenderSystem(lambertShader, 0.15, floorTexture));
     if (!ecs.start()) {
       throw new Error('Failed to start all ECS systems, check output');
     }
@@ -118,7 +118,7 @@ export class GameAppService {
       Orientation: glMatrix.toRadian(180),
     });
     lightcycleUpdateSystem.setPlayerCycle(playerCycle);
-    cameraRiggingSystem.attachToLightcycle(playerCycle, vec3.fromValues(0, 5, -9), camera);
+    cameraRiggingSystem.attachToLightcycle(playerCycle, vec3.fromValues(0, 7, -18), camera);
 
     return new GameAppService(gl, ecs, bikeRenderSystem, camera, environmentRenderSystem);
   }
