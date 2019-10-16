@@ -26,7 +26,6 @@ export class ECSManager {
           index.delete(id);
         }
       });
-      entity.destroy();
     }
     this.entities_.delete(id);
   }

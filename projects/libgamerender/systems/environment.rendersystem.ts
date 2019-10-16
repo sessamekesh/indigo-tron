@@ -61,7 +61,7 @@ export class EnvironmentRenderSystem extends ECSSystem {
       };
       const matWorld = mat4.create();
       mat4.identity(matWorld);
-      mat4.translate(matWorld, matWorld, vec3.fromValues(0, -1, 0));
+      mat4.translate(matWorld, matWorld, vec3.fromValues(0, -0.5, 0));
       const geo = LambertGeo.create(gl, vertexData, {BitWidth: 8, Data: new Uint8Array([0, 1, 2, 2, 1, 3])});
       component = entity.addComponent(FloorRenderComponent, matWorld, geo, this.floorTexture);
     }

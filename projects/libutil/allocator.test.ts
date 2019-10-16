@@ -1,4 +1,4 @@
-import { TempGroupAllocator } from "allocator";
+import { TempGroupAllocator } from "./allocator";
 
 describe('TempGroupAllocator', () => {
   function getNewSpyCtor(): {ctor: ()=>number, invocationCount: ()=>number} {

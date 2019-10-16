@@ -23,6 +23,8 @@ import { FloorTileTexture } from '@librender/texture/floortiletexture';
 import { EnvironmentRenderSystem } from '@libgamerender/systems/environment.rendersystem';
 import { FrameSettings } from '@libgamerender/framesettings';
 import { EnvironmentSystem } from '@libgamemodel/systems/environment.system';
+import { WallspawnerSystem } from '@libgamemodel/wall/wallspawner.system';
+import { WallRenderSystem } from '@libgamerender/systems/wall.rendersystem';
 
 const DRACO_CONFIG: DracoDecoderCreationOptions = {
   jsFallbackURL: '/assets/draco3d/draco_decoder.js',
@@ -47,7 +49,8 @@ export class GameAppService {
     private ecs: ECSManager,
     private bikeRenderSystem: LightcycleRenderSystem,
     private camera: Camera,
-    private environmentRenderSystem: EnvironmentRenderSystem) {}
+    private environmentRenderSystem: EnvironmentRenderSystem,
+    private wallRenderSystem: WallRenderSystem) {}
 
   static async create(gl: WebGL2RenderingContext) {
     const lambertShader = LambertShader.create(gl);
@@ -76,6 +79,9 @@ export class GameAppService {
     const bikeWheelTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_wheel_diffuse.png');
     const floorTexture = FloorTileTexture.create(
       gl, vec4.fromValues(0.005, 0.005, 0.005, 1), vec4.fromValues(0.5, 0.5, 0.45, 0), 256, 256, 2, 3, 2, 3);
+    const wallTexture = FloorTileTexture.create(
+      gl, vec4.fromValues(0.1, 0.1, 0.98, 1), vec4.fromValues(0, 0, 1, 1), 32, 32, 8, 8, 8, 8);
+    const wallGeo = WallRenderSystem.generateWallGeo(gl, lambertShader, 1, 1);
 
     // Utility objects
     const vec3Allocator = new TempGroupAllocator(vec3.create);
@@ -107,6 +113,9 @@ export class GameAppService {
       vec3Allocator, sceneNodeFactory, 55, 12, 4.5));
     const environmentSystem = ecs.addSystem(new EnvironmentSystem());
     const environmentRenderSystem = ecs.addSystem(new EnvironmentRenderSystem(lambertShader, 0.15, floorTexture));
+    ecs.addSystem(new WallspawnerSystem(vec3Allocator));
+    const wallRenderSystem = ecs.addSystem(new WallRenderSystem(
+      lambertShader, wallGeo, sceneNodeFactory, vec3Allocator, mat4Allocator, wallTexture));
     if (!ecs.start()) {
       throw new Error('Failed to start all ECS systems, check output');
     }
@@ -120,7 +129,7 @@ export class GameAppService {
     lightcycleUpdateSystem.setPlayerCycle(playerCycle);
     cameraRiggingSystem.attachToLightcycle(playerCycle, vec3.fromValues(0, 7, -18), camera);
 
-    return new GameAppService(gl, ecs, bikeRenderSystem, camera, environmentRenderSystem);
+    return new GameAppService(gl, ecs, bikeRenderSystem, camera, environmentRenderSystem, wallRenderSystem);
   }
 
   start() {
@@ -160,6 +169,7 @@ export class GameAppService {
     };
     this.bikeRenderSystem.render(gl, this.ecs, frameSettings);
     this.environmentRenderSystem.render(gl, this.ecs, frameSettings);
+    this.wallRenderSystem.render(gl, this.ecs, frameSettings);
   }
 
   changeClearColor() {

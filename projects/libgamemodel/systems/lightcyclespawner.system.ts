@@ -3,6 +3,7 @@ import { vec3 } from 'gl-matrix';
 import { ECSManager } from '@libecs/ecsmanager';
 import { LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
+import { VelocityComponent } from '@libgamemodel/components/velocitycomponent';
 
 type LightcycleInitialSpawnConfig = {
   Position: vec3,
@@ -46,7 +47,8 @@ export class LightcycleSpawnerSystem extends ECSSystem {
     backWheelSceneNode.attachToParent(bodySceneNode);
 
     entity.addComponent(
-      LightcycleComponent2, frontWheelSceneNode, backWheelSceneNode, bodySceneNode);
+      LightcycleComponent2, frontWheelSceneNode, backWheelSceneNode, bodySceneNode, 100);
+    entity.addComponent(VelocityComponent, 38.5);
 
     return entity;
   }
