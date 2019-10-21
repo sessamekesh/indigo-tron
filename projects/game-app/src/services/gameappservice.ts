@@ -108,7 +108,8 @@ export class GameAppService {
       lambertShader, bikeLambertGeo, bikeWheelGeo, bikeStickGeo,
       bikeTexture, bikeWheelTexture, bikeWheelTexture,
       sceneNodeFactory, mat4Allocator));
-    const lightcycleUpdateSystem = ecs.addSystem(new LightcycleUpdateSystem(inputManager, vec3Allocator));
+    const lightcycleUpdateSystem = ecs.addSystem(
+      new LightcycleUpdateSystem(inputManager, vec3Allocator, sceneNodeFactory));
     const cameraRiggingSystem = ecs.addSystem(new CameraRigSystem(
       vec3Allocator, sceneNodeFactory, 55, 12, 4.5));
     const environmentSystem = ecs.addSystem(new EnvironmentSystem());

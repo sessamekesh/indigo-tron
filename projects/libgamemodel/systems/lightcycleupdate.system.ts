@@ -10,6 +10,9 @@ import { SceneNode } from '@libutil/scene/scenenode';
 import { BACK_WHEEL_OFFSET } from './lightcyclespawner.system';
 import { VelocityComponent } from '@libgamemodel/components/velocitycomponent';
 import { WallComponent } from '@libgamemodel/wall/wallcomponent';
+import { LineSegment2D, LineSegmentUtils } from '@libutil/math/linesegment';
+import { LightcycleCollisionBoundsComponent } from '@libgamemodel/components/lightcyclecollisionbounds.component';
+import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 
 const LIGHTCYCLE_ANGULAR_VELOCITY = -1.85;
 
@@ -18,7 +21,8 @@ export class LightcycleUpdateSystem extends ECSSystem {
 
   constructor(
       private bikeInputController: BikeInputController,
-      private vec3Allocator: TempGroupAllocator<vec3>) {
+      private vec3Allocator: TempGroupAllocator<vec3>,
+      private sceneNodeFactory: SceneNodeFactory) {
     super();
   }
 
@@ -67,12 +71,33 @@ export class LightcycleUpdateSystem extends ECSSystem {
     });
 
     // Collision checking
-    ecs.iterateComponents([LightcycleComponent2], (_, lightcycleComponent) => {
-      ecs.iterateComponents([WallComponent], (_2, wallComponent) => {
+    ecs.iterateComponents([LightcycleComponent2], (lightcycleEntity, lightcycleComponent) => {
+      ecs.iterateComponents([WallComponent], (wallEntity, wallComponent) => {
+        const wallLine = {
+          x0: wallComponent.Corner1[0], y0: wallComponent.Corner1[1],
+          x1: wallComponent.Corner2[0], y1: wallComponent.Corner2[1],
+        };
+        const [bikeLeftLine, bikeRightLine, bikeFrontLine] =
+            this.getLightcycleLines(lightcycleEntity, lightcycleComponent);
+        const leftCollision = LineSegmentUtils.getCollision(bikeLeftLine, wallLine);
+        const rightCollision = LineSegmentUtils.getCollision(bikeRightLine, wallLine);
+        const frontCollision = LineSegmentUtils.getCollision(bikeFrontLine, wallLine);
+
         // TODO (sessamekesh): Check if lightcycle bounding box is colliding with the wall
         // If so, remove vitality both from cycle and wall, breaking whichever reaches 0 first
         // If wall, destroy the wall.
         // If lightcycle, destroy the lightcycle (possibly ending the game)
+        // If less than 30deg collision, lightcycle just glances off of the wall
+        // If less than 60deg collision, lightcycle slams into and goes parallel with wall
+        // Otherwise, lightcycle collides head on with wall - it dies or wall dies
+
+        // TODO (sessamekesh): Write unit tests for this system
+        // TODO (sessamekesh): Collisions aren't working
+
+        // For now, just kill the wall entirely.
+        if (leftCollision || rightCollision || frontCollision) {
+          wallEntity.destroy();
+        }
       });
     });
   }
@@ -100,11 +125,48 @@ export class LightcycleUpdateSystem extends ECSSystem {
     return Math.atan2(x, z);
   }
 
-  private getLightcycleLines() {
-
-  }
-
-  private getCollision() {
-
+  private getLightcycleLines(
+      entity: Entity, lightcycleComponent: LightcycleComponent2): LineSegment2D[] {
+    let collisionBoundsComponent = entity.getComponent(LightcycleCollisionBoundsComponent);
+    if (!collisionBoundsComponent) {
+      const flNode = this.sceneNodeFactory.createSceneNode();
+      const frNode = this.sceneNodeFactory.createSceneNode();
+      const blNode = this.sceneNodeFactory.createSceneNode();
+      const brNode = this.sceneNodeFactory.createSceneNode();
+      this.vec3Allocator.get(1, (tmp) => {
+        flNode.update({ pos: vec3.set(tmp, 0.5, 0, 0.5) });
+        frNode.update({ pos: vec3.set(tmp, -0.5, 0, 0.5) });
+        blNode.update({ pos: vec3.set(tmp, 0.5, 0, -0.5) });
+        brNode.update({ pos: vec3.set(tmp, -0.5, 0, -0.5) });
+      });
+      flNode.attachToParent(lightcycleComponent.FrontWheelSceneNode);
+      frNode.attachToParent(lightcycleComponent.FrontWheelSceneNode);
+      blNode.attachToParent(lightcycleComponent.RearWheelSceneNode);
+      blNode.attachToParent(lightcycleComponent.RearWheelSceneNode);
+      entity.addListener('destroy', () => {
+        flNode.detach(); frNode.detach(); blNode.detach(); brNode.detach();
+      });
+      collisionBoundsComponent =
+        entity.addComponent(LightcycleCollisionBoundsComponent, flNode, frNode, blNode, brNode);
+    }
+    return this.vec3Allocator.get(4, (fl, fr, bl, br) => {
+      collisionBoundsComponent!.FrontLeftPoint.getPos(fl);
+      collisionBoundsComponent!.FrontRightPoint.getPos(fr);
+      collisionBoundsComponent!.BackLeftPoint.getPos(bl);
+      collisionBoundsComponent!.BackRightPoint.getPos(br);
+      const leftLine = {
+        x0: bl[0], y0: bl[2],
+        x1: fl[0], y1: fl[2],
+      };
+      const rightLine = {
+        x0: br[0], y0: br[2],
+        x1: fr[0], y1: fr[2],
+      };
+      const frontLine = {
+        x0: fl[0], y0: fl[1],
+        x1: fr[0], y1: fr[1],
+      };
+      return [leftLine, rightLine, frontLine];
+    });
   }
 }

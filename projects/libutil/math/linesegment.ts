@@ -1,14 +1,15 @@
-import {glMatrix, mat2, vec2} from 'gl-matrix';
+import {vec2} from 'gl-matrix';
 
-/////////////
-// WARNING //
-/////////////
-
-// There is a bunch of math in this file that I did late one night. All of this can probably
-//  be solved way easier, and in fact should probably be done differently.
-// I was obsessed with the idea of only using arithmetic for the common cases, having early outs
-//  as quickly as possible, and deferring any sqrt/acos operations until as late as possible.
-// Everything is very carefully explained in the comments, but is still... very gross.
+/**
+ * Line segment interfaces and utility class for dealing with them.
+ *
+ * There's a ton of pretty math-y comments here, so a couple of notes on the notation I use:
+ * : Equations or steps in solving a problem are noted by a number in parenthesis and referenced
+ *   later. For example: (1) 1+1=2
+ * : The word "iff" means "if and only if" - either both conditions are true, or both are false
+ * : When simplifying an equation in form A=B, I use "=>" to separate steps in-line.
+ * : The dot product of two vectors is expressed by the multiplication symbol (*)
+ */
 
 /**
  * Represents a line segment between two points in 2D space.
@@ -44,211 +45,178 @@ export class LineSegmentUtils {
     return A.x0 === A.x1 && A.y0 === A.y1;
   }
 
+  // vec2 allocations - avoid memory allocations over high-performance code
+  private static Da = vec2.create();
+  private static Db = vec2.create();
+  private static aToB = vec2.create();
+  private static aToB1 = vec2.create();
+  private static A0 = vec2.create();
+  private static B0 = vec2.create();
+  private static B1 = vec2.create();
+  private static CtoA1 = vec2.create();
+  private static CollisionPoint = vec2.create();
   static getCollision(A: LineSegment2D, B: LineSegment2D): LineSegment2DCollision|null {
     // Special case: A or B are points. This is not allowed by this method.
     if (LineSegmentUtils.isPoint(A) || LineSegmentUtils.isPoint(B)) {
       throw new Error('Invalid line segment - must not be a point');
     }
 
-    // There is a collision point between line segments A and B at C if there is a value pair
-    //  (t, u) such that:
-    // (1): 0<=t<=1, 0<=u<=1, AND
-    // (2): A_0 + t(A_1 - A_0) = B_0 + u(B_1 - B_0)
-    // I will use substitution for this case, though there are several ways to solve this problem.
-    // Using linear algebra would be a good solution as well, but would require taking the
-    //  magnitude of these lines at some point, which is an expensive operation. Plus, this solution
-    //  has a greater chance of being understood by a wider audience, which is nice.
-    // This can be rewritten component-wise for 2D as:
-    // (3): A_0x+t(A_1x-A_0x)-B_0x-u(B_1x-B_0x) = 0 AND
-    // (4): A_0y+t(A_1y-A_0y)-B_0y-u(B_1y-B_0y) = 0
-    // Isolating u in (3), we get:
-    // (5): u=(A_0x+t(A_1x-A_0x)-B_0x)/(B_1x-B_0x)
-    // Substituting this in for the value of u in (4), we get an equation with one unknown:
-    // (6): A_0y+t(A_1y-A_0y)-B_0y-((A_0x+t(A_1x-A_0x)-B_0x)/(B_1x-B_0x))(B_1y-B_0y) = 0
-    // Multiplying the fourth term out into its individual components, we get
-    // (7): A_0y+t(A_1y-A_0y)-B_0y
-    //      -(A_0x/(B_1x-B_0x)+t(A_1x-A_0x)/(B_1x-B_0x)-B_0x/(B_1x-B_0x))(B_1y-B_0y) = 0
-    // Separating the term with the t in it further:
-    // (8): A_0y-B_0y
-    //      +t(A_1y-A_0y)
-    //      +t(A_1x-A_0x)(B_1y-B_0y)/(B_1x-B_0x)
-    //      -A_0x(B_1y-B_0y)/(B_1x-B_0x)
-    //      -B_0x(B_1y-B_0y)/(B_1x-B_0x) = 0
-    // Isolating t completely, we get:
-    // (9): t=-A_0y+B_0y+(A_0x(B_1y-B_0y)/(B_1x-B_0x)+B_0x(B_1y-B_0y)/(B_1x-B_0x)-A_0y)
-    //        /((A_1y-A_0y)+(A_1x-A_0x)(B_1y-B_0y)/(B_1x-B_0x))
-    // Using the value of t found in (9) in equation (5) gives the value of u as well.
-    // Unfortunately, there's a problem here - there are two cases where a division is happening
-    //  for a case that we know to be valid: (B_1x-B_0x), and (A_1y-A_0y). By the equations above
-    //  in their current form, we would not be able to solve if B was completely horizontal, or A
-    //  completely vertical - both of which are totally valid cases.
-    // Weird as it sounds, in either of those cases, we can rotate the entire system by 10 degrees
-    //  and compute with those values instead (rotations are cheap). That may not work in some
-    //  cases, in which case we can rotate by 20 degrees instead.
-    const {A: A_, B: B_} = LineSegmentUtils.findSolvableLines(A, B);
-    const {
-      A_: {x0: A_0x, y0: A_0y, x1: A_1x, y1: A_1y},
-      B_: {x0: B_0x, y0: B_0y, x1: B_1x, y1: B_1y},
-    } = {A_, B_};
+    // See https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
 
-    // There is one more division by zero that actually does matter: the case where the divisor
-    //  of (9) is zero. This is an actual problem, when A and B are parallel.
-    // A colinear check is easy enough: is A0 somewhere along the line B?
-    // (10): B0=A0+s(A1-A0) for a value of 0<=s<=1, AND
-    // (11): B1=A0+v(A1-A0) for a value of 0<=v<=1
-    // This can also be split out component-wise to give us assistance:
-    // (12): B_0x=A_0x+sx(A_1x-A_0x)
-    // (13): B_0y=A_0y+sy(A_1y-A_0y)
-    // (14): B_1x=A_0x+vx(A_1x-A_0x)
-    // (15): B_1y=A_0y+vy(A_1y-A_0y)
-    // If s=sx iff sx===sy, likewise v=vy iff vx===vy
-    // Those equations can be solved to give us useful ones:
-    // (16): sx=(B_0x-A_0x)/(A_1x-A_0x)
-    // (17): sy=(B_0y-A_0y)/(A_1y-A_0y)
-    // (18): vx=(B_1x-A_0x)/(A_1x-A_0x)
-    // (19): vy=(B_1y-A_0y)/(A_1y-A_0y)
-    // You'll notice this adds another condition to check in our solveable lines check: (A_1x-A_0x)
-    if (LineSegmentUtils.isParallel(A_, B_)) {
-      const sx = (B_0x-A_0x)/(A_1x-A_0x);
-      const sy = (B_0y-A_0y)/(A_1y-A_0y);
-      const vx = (B_1x-A_0x)/(A_1x-A_0x);
-      const vy = (B_1y-A_0y)/(A_1y-A_0y);
-      // Not colinear
-      if (Math.abs(sx-sy)>1e-8 || Math.abs(vx-vy)>1e-8) {
+    // Consider the following equation, which asserts that there is one point along both A and B at
+    //  some distances t and u along them (respectively). The values may be outside of the line
+    //  segment, though we will address that later:
+
+    // (1) A0+t(A1-A0)=B0+u(B1-B0)
+
+    // This equation has three possible states:
+    // - There are zero valid solutions (A and B are parallel and non-colinear)
+    // - There is exactly one valid solution (A and B collide, though perhaps not within the defined
+    //   segments; i.e., they either collide or _would_ collide if they were longer)
+    // - There are infinite solutions (A and B are colinear)
+
+    // Take the following definitions of the directions of the vectors (for simplicity):
+    // (2) Da=A1-A0
+    // (3) Db=A1-A0
+
+    // Define the 2D "cross product" of vectors V and W: (the determinant of a matrix formed by
+    //  placing the vectors as rows).
+    // (4) V x W = VxWy-VyWx
+    // A couple fun properties of this definition that I'd like to point out here:
+    // (5) V x V = VxVy-VyVx = 0 (also important: aVxV=0 as well for some constant a)
+    // (6) (A+B)xC = (Ax+Bx)Cy-(Ay+By)Cx = AxCy+BxCy-AyCx-ByCx = AxCy-AyCx+BxCy-ByCx = AxC+BxC
+    // (7) V x W = VxWy-VyWx = -(WxVy-WyVx) = -(V x W)
+    // (8) aV x W = aVxWy-aVyWx = a(V x W)
+
+    // Equation (1) can be rewritten as:
+    // (9) A0+tDa=B0+uDb
+
+    // Cross both sides with Db, giving:
+    // (10) (A0+tDa)xDb=(B0+uDb)xDb
+    // This simplifies down to
+    // (11) A0xDb+tDaxDb=B0xDb
+    // which can be solved for t
+    // (12) t=(B0xDb-A0xDb)/(DaxDb)
+    // This can similarly be done to find u:
+    // (13) (A0+tDa)xDa=(B0+uDb)xDa => A0xDa=B0xDa+uDbxDa => u=(A0xDa-B0xDa)/(DbxDa)
+
+    // As mentioned above, there are three possible states for this solution, all of which
+    //  will have interesting characteristics in the solutions given in (12) and (13):
+    // (14) Iff DbxDa = 0, then A and B are parallel and possibly colinear by (5)
+    // This case has three cases itself: if A and B are parallel and not colinear, there is no
+    //  collision. If A and B are parallel and colinear, there will be a collision iff A and B
+    //  are not also disjoint.
+    // (15) Iff (B0-A0)xDa = 0 as well as (14) being true, then the lines are colinear.
+    // If both (14) and (15) are true, the endpoints B0 and B1 can be expressed in terms of
+    //  A at two points defined in (1) as t, which I will denote t0 and t1, using a bit of dot
+    //  product magic (intuitively speaking: how long along A0 to B0 in the direction of A is B0?)
+    // (16) t0 = ((B0-A0)*Da)/(Da*Da)
+    // (17) t1 = ((B1-A0)*Da)/(Da*Da)
+    // There are three states of both t0 and t1 that are important - if they lie _before_ A, _on_ A,
+    //  or _after_ A. I will denote these states with the symbols (-, 0, +) respectively.
+    // First, since the direction of B does not matter for this method, make sure that t0<t1 by
+    //  swapping the values if necessary.
+    // After that is done, there will be 6 possible states for (t0, t1):
+    // (-, -), (-, 0), (-, +), (0, 0), (0, +), (+, +)
+    // Two of them represent no-collision cases (colinear but disjoint): (-,-) and (+, +)
+    // All other cases represent a collision, and the collision values c0 and c1 (start, end) are:
+    // (18) c0 = max(0, t0), c1 = min(1, t1)
+
+    // The above logic solves two of the possible collision states of the two lines (zero solutions,
+    //  infinite solutions). The final collision state is that there is exactly one solution for
+    //  equation (1).
+    // If (14) is false, then DaxDb does not equal zero (nor does DbxDa), which means there will
+    //  be a solution for equations (12) and (13), which can be found trivially.
+
+    // At this point, we only need to determine if the solution occurs on the line segments A and B,
+    //  or if it is outside the bounds of those segments. This is easy - if t and u are both between
+    //  0 and 1 (inclusive), there is a collision.
+
+    // In this case, one final piece of information is useful to this method which has not been
+    //  determined at this stage: how far is the far endpoint of A "into" B? To do that, define
+    //  the vector from the collision point to the end of A as C:
+    // (19) C=A1-(A0+tDa)
+    // We can then find the distance C travels along B (denoted bdist)
+    // (20) bdist=dot(C,Db)/length(Db)
+    // The distance of penetration into B is then the length of C less how far it travels along B.
+    // (21) penetration_distance = bdist - length(C)
+    // Another nice property of the dot product is that:
+    // (22) dot(A, B) = len(A) * len(B) * cos(angle between A and B)
+    // so we can find the angle easily enough if we get to this point by
+    // (23) angle between A and B = acos(dot(A, B) / (len(A) * len(B)))
+
+    /////
+    // Implementation
+    /////
+
+    // Find DbxDa, used in (12), (13), and (14)
+    const Da = vec2.set(LineSegmentUtils.Da, A.x1 - A.x0, A.y1 - A.y0);
+    const Db = vec2.set(LineSegmentUtils.Db, B.x1 - B.x0, B.y1 - B.y0);
+    const DbxDa = LineSegmentUtils.cross(Da, Db);
+    const A0 = vec2.set(LineSegmentUtils.A0, A.x0, A.y0);
+    const B0 = vec2.set(LineSegmentUtils.B0, B.x0, B.y0);
+    if (Math.abs(DbxDa) < 1e-8) {
+      // The lines are parallel per (14). Check (15) as well
+      const aToB = vec2.sub(LineSegmentUtils.aToB, B0, A0);
+      if (Math.abs(LineSegmentUtils.cross(aToB, Da)) > 1e-8) {
+        // A and B are not colinear, and there is no collision
         return null;
       }
 
-      // The direction of B relative to A is irrelevant for the following, so flip B around such
-      //  that B0 comes first along A.
-      const [s, v] = (sx < vx) ? [sx, vx] : [vx, sx];
+      // A and B are colinear, find t0 and t1 per (16) and (17)
+      const B1 = vec2.set(LineSegmentUtils.B1, B.x1, B.y1);
+      const aToB1 = vec2.sub(LineSegmentUtils.aToB1, B1, A0);
+      const DaDotDa = vec2.dot(Da, Da);
+      let t0 = vec2.dot(aToB, Da) / DaDotDa;
+      let t1 = vec2.dot(aToB1, Da) / DaDotDa;
+      [t0, t1] = (t0 < t1) ? [t0, t1] : [t1, t0];
 
-      // B0 can be before, inside, or after A (3 states) (s is negative, between 0 and 1, or >1)
-      // B1 can be before, inside, or after A (3 states) (v is negative, between 0 and 1, or >1)
-      // That gives a total of 9 states for each possible combination of those two conditions.
-      // Two of those states can be removed completely: [-, -] and [+, +] as having no collision
-      if ((s < 0 && v < 0) || (s > 1 && v > 1)) {
+      // No collision cases: (-, -) and (+, +)
+      if ((t0 < 0 && t1 < 0) || (t0 > 1 && t1 > 1)) {
         return null;
       }
 
-      // Of the seven remaining states, three are invalid since they break the ordering we gave
-      //  before (where B1 must come after B0): [0, -], [+, -], and [+, 0].
-      // That leaves four remaining states, each to be considered:
-
-      // For the remaining entries, we have a collision and need the length.
-      const len = Math.sqrt((B_1x-B_0x)**2+(B_1y-B_0y)**2);
-
-      // [-, 0]
-      if (s < 0 && v > 0 && v < 1) {
-        return { isColinear: true, collisionStartAlongA: 0, collisionLength: v * len };
-      }
-
-      // [-, +]
-      if (s < 0 && v > 1) {
-        return { isColinear: true, collisionStartAlongA: 0, collisionLength: len };
-      }
-
-      // [0, 0]
-      if (s > 0 && s < 1 && v > 0 && v < 1) {
-        return { isColinear: true, collisionStartAlongA: s * len, collisionLength: (v - s) * len };
-      }
-
-      // [0, +]
-      if (s > 0 && s < 1 && v > 1) {
-        return { isColinear: true, collisionStartAlongA: s * len, collisionLength: (1 - s) * len };
-      }
-
-      // Code should not reach this point - all cases should have been considered.
-      throw new Error('Unanticipated condition in colinear collision check');
+      // All other cases repesent a collision per (18) (scale up to length of A)
+      const alen = vec2.len(Da);
+      const collisionStart = Math.max(0, t0 * alen);
+      const collisionEnd = Math.min(alen, t1 * alen);
+      return {
+        isColinear: true,
+        collisionStartAlongA: collisionStart,
+        collisionLength: collisionEnd - collisionStart,
+      };
     }
 
-    // As a reminder:
-    // (1): 0<=t<=1, 0<=u<=1, AND
-    // (2): A_0 + t(A_1 - A_0) = B_0 + u(B_1 - B_0)
-    // (9): t=-A_0y+B_0y+(A_0x(B_1y-B_0y)/(B_1x-B_0x)+B_0x(B_1y-B_0y)/(B_1x-B_0x)-A_0y)
-    //        /((A_1y-A_0y)+(A_1x-A_0x)(B_1y-B_0y)/(B_1x-B_0x))
-    // (5): u=(A_0x+t(A_1x-A_0x)-B_0x)/(B_1x-B_0x)
-    const t = -A_0y+B_0y
-        +(A_0x*(B_1y-B_0y)/(B_1x-B_0x)+B_0x*(B_1y-B_0y)/(B_1x-B_0x)-A_0y) /
-         ((A_1y-A_0y)+(A_1x-A_0x)*(B_1y-B_0y)/(B_1x-B_0x));
+    // Find (t, u) per (12) and (13) since DaxDb is known to be non-zero
+    const t = (LineSegmentUtils.cross(B0, Db) - LineSegmentUtils.cross(A0, Db)) / DbxDa;
+    const u = (LineSegmentUtils.cross(A0, Da) - LineSegmentUtils.cross(B0, Da)) / -DbxDa;
 
-    // Case 1: Line A may hit line B, but is travelling in the wrong direction
-    if (t < 0) {
+    // No collision if t or u are out of bounds (0, 1)
+    if (t < 0 || t > 1 || u < 0 || u > 1) {
       return null;
     }
 
-    // Case 2: Line A may hit line B, but is too short
-    if (t > 1) {
-      return null;
+    // Find collision point:
+    const A1 = [A.x1, A.y1];
+    const CollisionPoint = vec2.scaleAndAdd(LineSegmentUtils.CollisionPoint, A0, Da, t);
+    const CtoA1 = vec2.sub(LineSegmentUtils.CtoA1, A1, CollisionPoint);
+
+    const clen = vec2.len(CtoA1);
+    const blen = vec2.len(Db);
+    const alen = vec2.len(Da);
+    const cDotDb = vec2.dot(CtoA1, Db);
+    const dAdotdB = vec2.dot(Da, Db);
+    const angle = Math.abs(Math.acos(dAdotdB / (alen * blen))); // per (23)
+
+    if (clen < 1e-8) {
+      return { isColinear: false, angle, depth: 0 };
     }
-
-    const u = (A_0x+t*(A_1x-A_0x)-B_0x)/(B_1x-B_0x);
-    // Case 3: Line A misses line B completely, because line B does not cover where line A hits
-    if (u < 0 || u > 1) {
-      return null;
-    }
-
-    // Case 4: collision happens! Do the more expensive work here...
-    // Get length of A, B
-    const alen = Math.sqrt((A_1x-A_0x)**2+(A_1y-A_0y)**2);
-    const blen = Math.sqrt((B_1x-B_0x)**2+(B_1y-B_0y)**2);
-
-    // Get normalized delta vectors for A and B
-    const udax = (A_1x-A_0x)/alen;
-    const uday = (A_1y-A_0y)/alen;
-    const udbx = (B_1x-B_0x)/blen;
-    const udby = (B_1y-B_0y)/blen;
-
-    // Get dot product between them. Make it positive, because we don't care which direction B
-    //  is going relative to A (they should be considered to be in the same direction)
-    const udot = Math.abs(udax * udbx + uday * udby);
-    const angle = Math.acos(udot);
-
-    // The dot product, 0-1, is the percentage of a unit travelled along A that will also be
-    //  travelled along B, roughly speaking. If you take 1-dot, you get the opposite - the amount
-    //  perpendicular to B that travelling along A gets you. Fun, no?
-    // So! The length travelled along A beyond the collision is (1-t)*len(A), which can in turn
-    //  be multiplied by (1-dot) to give how far the collision is perpendicular to B.
-    const dist = (1-t)*alen*(1-udot);
-
-    // With that, we have everything we need!
-    return { isColinear: false, angle, depth: dist };
+    const penetrationCoefficient = Math.sqrt(1 - Math.abs(cDotDb / (blen * clen)) ** 2);
+    const depth = clen * penetrationCoefficient; // per (20) and (21)
+    return { isColinear: false, angle, depth };
   }
 
-  private static RAD_10 = glMatrix.toRadian(10);
-  private static MATROT10 = mat2.fromRotation(mat2.create(), LineSegmentUtils.RAD_10);
-
-  private static tmp = vec2.create();
-  private static tmp2 = vec2.create();
-  /** Possibly rotate and find points used for collision solution (documented above) */
-  private static findSolvableLines(A: LineSegment2D, B: LineSegment2D)
-      : {A: LineSegment2D, B: LineSegment2D} {
-    let A0X = A.x0; let A1X = A.x1; let A0Y = A.y0; let A1Y = A.y1;
-    let B0X = B.x0; let B1X = B.x1; let B0Y = B.y0; let B1Y = B.y1;
-    for (let i = 0; i < 3; i++) {
-      if ((((B1X-B0X)!==0)&&((A1Y-A0Y)!==0)&&((A1X-A0X)!==0))) {
-        return {
-          A: { x0: A0X, x1: A1X, y0: A0Y, y1: A1Y },
-          B: { x0: B0X, x1: B1X, y0: B0Y, y1: B1Y },
-        };
-      }
-      [A0X, A0Y] = LineSegmentUtils.rotatePoints(A0X, A0Y);
-      [A1X, A1Y] = LineSegmentUtils.rotatePoints(A1X, A1Y);
-      [B0X, B0Y] = LineSegmentUtils.rotatePoints(B0X, B0Y);
-      [B1X, B1Y] = LineSegmentUtils.rotatePoints(B1X, B1Y);
-    }
-    throw new Error('Unexpected case hit - no solvable points could be found');
-  }
-
-  private static rotatePoints(x: number, y: number): [number, number] {
-    const current = LineSegmentUtils.tmp;
-    const next = LineSegmentUtils.tmp2;
-    vec2.set(current, x, y);
-    vec2.transformMat2(next, current, LineSegmentUtils.MATROT10);
-    return [next[0], next[1]];
-  }
-
-  private static isParallel(A: LineSegment2D, B: LineSegment2D) {
-    // Taken from divisor of (9) above:
-    return ((A.y1-A.y0)+(A.x1-A.x0)*(B.y1-B.y0)/(B.x1-B.x0)) <= 1e-8;
+  private static cross(v: vec2, w: vec2): number {
+    return v[0]*w[1]-v[1]*w[0]; // per (4)
   }
 }
