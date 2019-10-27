@@ -206,7 +206,7 @@ export class LineSegmentUtils {
     const alen = vec2.len(Da);
     const cDotDb = vec2.dot(CtoA1, Db);
     const dAdotdB = vec2.dot(Da, Db);
-    const angle = Math.abs(Math.acos(dAdotdB / (alen * blen))); // per (23)
+    const angle = Math.acos(Math.abs(dAdotdB / (alen * blen))); // per (23)
 
     if (clen < 1e-8) {
       return { isColinear: false, angle, depth: 0 };

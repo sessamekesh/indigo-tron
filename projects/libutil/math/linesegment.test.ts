@@ -1,5 +1,7 @@
-import { LineSegmentUtils, LineSegment2DCollision } from "./linesegment";
+import { LineSegmentUtils, LineSegment2DCollision, LineSegment2D } from "./linesegment";
 import { fail } from "assert";
+import { glMatrix } from 'gl-matrix';
+import { MathUtils } from '@libutil/mathutils';
 
 function compare(expected: LineSegment2DCollision, actual: LineSegment2DCollision) {
   if (expected.isColinear) {
@@ -74,7 +76,7 @@ describe('LineSegmentUtils', () => {
           {x0: 0, x1: 3, y0: 0, y1: 0},
           {x0: 3, x1: 4, y0: 0, y1: 0});
         expect(touchEndHorizontal).not.toBeNull();
-        compare({isColinear:true,collisionStartAlongA:3,collisionLength:0}, touchEndHorizontal);
+        compare({isColinear:true,collisionStartAlongA:3,collisionLength:0}, touchEndHorizontal!);
 
         // Inverted
         const touchEndHorizontalInverted = LineSegmentUtils.getCollision(
@@ -82,7 +84,7 @@ describe('LineSegmentUtils', () => {
           {x0: 4, x1: 3, y0: 0, y1: 0});
         expect(touchEndHorizontalInverted).not.toBeNull();
         compare(
-          {isColinear:true,collisionStartAlongA:3,collisionLength:0}, touchEndHorizontalInverted);
+          {isColinear:true,collisionStartAlongA:3,collisionLength:0}, touchEndHorizontalInverted!);
 
         // At beginning of A
         const touchStart = LineSegmentUtils.getCollision(
@@ -90,7 +92,7 @@ describe('LineSegmentUtils', () => {
           {x0: -5, x1: 0, y0: 0, y1: 0});
         expect(touchStart).not.toBeNull();
         compare(
-          {isColinear:true,collisionStartAlongA:0,collisionLength:0}, touchStart);
+          {isColinear:true,collisionStartAlongA:0,collisionLength:0}, touchStart!);
       });
 
       it('returns correctly for overlaps', () => {
@@ -99,28 +101,28 @@ describe('LineSegmentUtils', () => {
           {x0: -5, x1: 2, y0: 0, y1: 0});
         expect(overlapAtStart).not.toBeNull();
         compare(
-          {isColinear:true,collisionStartAlongA:0,collisionLength:2}, overlapAtStart);
+          {isColinear:true,collisionStartAlongA:0,collisionLength:2}, overlapAtStart!);
 
         const overlapAtEnd = LineSegmentUtils.getCollision(
           {x0: 0, x1: 3, y0: 0, y1: 0},
           {x0: 5, x1: 2, y0: 0, y1: 0});
         expect(overlapAtEnd).not.toBeNull();
         compare(
-          {isColinear:true,collisionStartAlongA:2,collisionLength:1}, overlapAtEnd);
+          {isColinear:true,collisionStartAlongA:2,collisionLength:1}, overlapAtEnd!);
 
         const overlapInMiddle = LineSegmentUtils.getCollision(
           {x0: 0, x1: 8, y0: 0, y1: 0},
           {x0: 4, x1: 2, y0: 0, y1: 0});
         expect(overlapInMiddle).not.toBeNull();
         compare(
-          {isColinear:true,collisionStartAlongA:2,collisionLength:2}, overlapInMiddle);
+          {isColinear:true,collisionStartAlongA:2,collisionLength:2}, overlapInMiddle!);
 
         const fullOverlap = LineSegmentUtils.getCollision(
           {x0: 0, x1: 3, y0: 0, y1: 0},
           {x0: -5, x1: 5, y0: 0, y1: 0});
         expect(fullOverlap).not.toBeNull();
         compare(
-          {isColinear:true,collisionStartAlongA:0,collisionLength:3}, fullOverlap);
+          {isColinear:true,collisionStartAlongA:0,collisionLength:3}, fullOverlap!);
       });
     });
     it('rejects parallel but non-colinear inputs', () => {
@@ -163,7 +165,7 @@ describe('LineSegmentUtils', () => {
           isColinear: false,
           angle: Math.PI / 2,
           depth: 5,
-        }, cornerTouchStar);
+        }, cornerTouchStar!);
 
         const cornerTouchEnd = LineSegmentUtils.getCollision(
           {x0: 0, x1: 5, y0: 5, y1: 5},
@@ -173,7 +175,7 @@ describe('LineSegmentUtils', () => {
           isColinear: false,
           angle: Math.PI / 2,
           depth: 0,
-        }, cornerTouchEnd);
+        }, cornerTouchEnd!);
       });
 
       it('handles collisions', () => {
@@ -185,7 +187,43 @@ describe('LineSegmentUtils', () => {
           isColinear: false,
           angle: Math.PI / 4,
           depth: 1,
-        }, glancingCorner);
+        }, glancingCorner!);
+      });
+
+      it('gives correct angle in several rotated vectors', () => {
+        const expectedAngle = glMatrix.toRadian(15);
+        const collisionRadius = 3;
+        const lineBRadius = 5;
+        const a1Radius = 3;
+        const a2Radius = 0.85;
+        for (let theta = 0; theta < glMatrix.toRadian(360); theta += glMatrix.toRadian(20)) {
+          const x = Math.cos(theta);
+          const y = Math.sin(theta);
+          const lineB: LineSegment2D = {
+            x0: -lineBRadius * x,
+            y0: -lineBRadius * y,
+            x1: lineBRadius * x,
+            y1: lineBRadius * y,
+          };
+          const a0x = x * collisionRadius;
+          const a0y = y * collisionRadius;
+          const atheta = MathUtils.clampAngle(expectedAngle + theta);
+          const ax = Math.cos(atheta);
+          const ay = Math.sin(atheta);
+          const lineA: LineSegment2D = {
+            x0: a0x - a1Radius * ax,
+            y0: a0y - a1Radius * ay,
+            x1: a0x + a2Radius * ax,
+            y1: a0y + a2Radius * ay,
+          };
+          const collision = LineSegmentUtils.getCollision(lineA, lineB);
+          if (!collision || collision.isColinear !== false) {
+            fail('Collision is not found or colinear');
+            return;
+          }
+          expect(collision.angle).toBeCloseTo(
+            expectedAngle, 4, `15deg line rotated by ${theta}rad gives wrong result angle`);
+        }
       });
     });
   });

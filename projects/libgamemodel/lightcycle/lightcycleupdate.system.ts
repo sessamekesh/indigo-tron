@@ -2,7 +2,7 @@ import { ECSSystem } from '@libecs/ecssystem';
 import { BikeInputController } from '@io/bikeinput/bikeinputcontroller';
 import { ECSManager } from '@libecs/ecsmanager';
 import { Entity } from '@libecs/entity';
-import { LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
+import { LightcycleComponent2 } from '@libgamemodel/lightcycle/lightcycle.component';
 import { TempGroupAllocator } from '@libutil/allocator';
 import { vec3 } from 'gl-matrix';
 import { MathUtils } from '@libutil/mathutils';
@@ -11,8 +11,9 @@ import { BACK_WHEEL_OFFSET } from './lightcyclespawner.system';
 import { VelocityComponent } from '@libgamemodel/components/velocitycomponent';
 import { WallComponent } from '@libgamemodel/wall/wallcomponent';
 import { LineSegment2D, LineSegmentUtils } from '@libutil/math/linesegment';
-import { LightcycleCollisionBoundsComponent } from '@libgamemodel/components/lightcyclecollisionbounds.component';
+import { LightcycleCollisionBoundsComponent } from '@libgamemodel/lightcycle/lightcyclecollisionbounds.component';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
+import { LightcycleUtils } from './lightcycleutils';
 
 const LIGHTCYCLE_ANGULAR_VELOCITY = -1.85;
 
@@ -46,7 +47,9 @@ export class LightcycleUpdateSystem extends ECSSystem {
     lightcyclecomponent.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
 
     // Update all lightcycles
-    ecs.iterateComponents([LightcycleComponent2, VelocityComponent], (_, lightcycleComponent, velocityComponent) => {
+    ecs.iterateComponents(
+        [LightcycleComponent2, VelocityComponent],
+        (_, lightcycleComponent, velocityComponent) => {
       this.moveForwardBasedOnOrientation(
         lightcycleComponent.FrontWheelSceneNode, velocityComponent.Velocity * dt);
       this.moveForwardBasedOnOrientation(
@@ -83,20 +86,43 @@ export class LightcycleUpdateSystem extends ECSSystem {
         const rightCollision = LineSegmentUtils.getCollision(bikeRightLine, wallLine);
         const frontCollision = LineSegmentUtils.getCollision(bikeFrontLine, wallLine);
 
-        // TODO (sessamekesh): Check if lightcycle bounding box is colliding with the wall
-        // If so, remove vitality both from cycle and wall, breaking whichever reaches 0 first
-        // If wall, destroy the wall.
-        // If lightcycle, destroy the lightcycle (possibly ending the game)
-        // If less than 30deg collision, lightcycle just glances off of the wall
-        // If less than 60deg collision, lightcycle slams into and goes parallel with wall
-        // Otherwise, lightcycle collides head on with wall - it dies or wall dies
-
         // TODO (sessamekesh): Write unit tests for this system
-        // TODO (sessamekesh): Collisions aren't working
 
         // For now, just kill the wall entirely.
-        if (leftCollision || rightCollision || frontCollision) {
+        if (leftCollision) {
+          const action = LightcycleUtils.getSideCollisionAction(leftCollision, -1, Math.random);
+          LightcycleUtils.applyCollisionDamage(
+            action.vitalityLost, wallComponent, lightcycleComponent);
+          const newOrientation =
+            MathUtils.clampAngle(
+              lightcyclecomponent.FrontWheelSceneNode.getRotAngle()
+                  + action.bikeSteeringAdjustment);
+          lightcyclecomponent.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
+        } else if (rightCollision) {
+          const action = LightcycleUtils.getSideCollisionAction(rightCollision, 1, Math.random);
+          LightcycleUtils.applyCollisionDamage(
+            action.vitalityLost, wallComponent, lightcycleComponent);
+          const newOrientation =
+            MathUtils.clampAngle(
+              lightcyclecomponent.FrontWheelSceneNode.getRotAngle()
+                  + action.bikeSteeringAdjustment);
+          lightcyclecomponent.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
+        } else if (frontCollision) {
+          const action = LightcycleUtils.getFrontalCollisionAction(Math.random);
+          LightcycleUtils.applyCollisionDamage(
+            action.vitalityLost, wallComponent, lightcycleComponent);
+          const newOrientation =
+            MathUtils.clampAngle(
+              lightcyclecomponent.FrontWheelSceneNode.getRotAngle()
+                  + action.bikeSteeringAdjustment);
+          lightcyclecomponent.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
+        }
+
+        if (wallComponent.Vitality <= 0) {
           wallEntity.destroy();
+        }
+        if (lightcyclecomponent.Vitality <= 0) {
+          lightcycleEntity.destroy();
         }
       });
     });
@@ -134,15 +160,15 @@ export class LightcycleUpdateSystem extends ECSSystem {
       const blNode = this.sceneNodeFactory.createSceneNode();
       const brNode = this.sceneNodeFactory.createSceneNode();
       this.vec3Allocator.get(1, (tmp) => {
-        flNode.update({ pos: vec3.set(tmp, 0.5, 0, 0.5) });
-        frNode.update({ pos: vec3.set(tmp, -0.5, 0, 0.5) });
-        blNode.update({ pos: vec3.set(tmp, 0.5, 0, -0.5) });
-        brNode.update({ pos: vec3.set(tmp, -0.5, 0, -0.5) });
+        flNode.update({ pos: vec3.set(tmp, 0.5, 0, 1.5) });
+        frNode.update({ pos: vec3.set(tmp, -0.5, 0, 1.5) });
+        blNode.update({ pos: vec3.set(tmp, 0.5, 0, -1.5) });
+        brNode.update({ pos: vec3.set(tmp, -0.5, 0, -1.5) });
       });
       flNode.attachToParent(lightcycleComponent.FrontWheelSceneNode);
       frNode.attachToParent(lightcycleComponent.FrontWheelSceneNode);
       blNode.attachToParent(lightcycleComponent.RearWheelSceneNode);
-      blNode.attachToParent(lightcycleComponent.RearWheelSceneNode);
+      brNode.attachToParent(lightcycleComponent.RearWheelSceneNode);
       entity.addListener('destroy', () => {
         flNode.detach(); frNode.detach(); blNode.detach(); brNode.detach();
       });
@@ -163,8 +189,8 @@ export class LightcycleUpdateSystem extends ECSSystem {
         x1: fr[0], y1: fr[2],
       };
       const frontLine = {
-        x0: fl[0], y0: fl[1],
-        x1: fr[0], y1: fr[1],
+        x0: fl[0], y0: fl[2],
+        x1: fr[0], y1: fr[2],
       };
       return [leftLine, rightLine, frontLine];
     });

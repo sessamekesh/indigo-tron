@@ -5,7 +5,7 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { Entity } from '@libecs/entity';
 import { LightcycleRenderComponent } from '@libgamerender/components/lightcycle.rendercomponent';
 import { mat4, glMatrix } from 'gl-matrix';
-import { LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
+import { LightcycleComponent2 } from '@libgamemodel/lightcycle/lightcycle.component';
 import { Texture } from '@librender/texture/texture';
 import { FrameSettings } from '@libgamerender/framesettings';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';

@@ -5,7 +5,7 @@ import { TempGroupAllocator } from '@libutil/allocator';
 import { vec3 } from 'gl-matrix';
 import { MathUtils } from '@libutil/mathutils';
 import { Entity } from '@libecs/entity';
-import { LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
+import { LightcycleComponent2 } from '@libgamemodel/lightcycle/lightcycle.component';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { BasicCamera } from './basiccamera';
 

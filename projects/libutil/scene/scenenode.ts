@@ -74,6 +74,14 @@ export class SceneNode {
     }
   }
 
+  updatePosRelative(movement: vec3) {
+    vec3.add(this.pos_, this.pos_, movement);
+    this.isSelfDirty_ = true;
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].dirty();
+    }
+  }
+
   copyFrom(sceneNode: SceneNode) {
     vec3.copy(this.pos_, sceneNode.pos_);
     vec3.copy(this.rotAxis_, sceneNode.rotAxis_);

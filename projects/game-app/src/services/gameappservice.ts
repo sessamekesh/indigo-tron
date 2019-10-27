@@ -7,13 +7,13 @@ import { LambertConverter } from '@librender/geo/draco/lambertconverter';
 import { Texture } from '@librender/texture/texture';
 import { LightcycleRenderSystem } from '@libgamerender/systems/lightcycle.rendersystem';
 import { ECSManager } from '@libecs/ecsmanager';
-import { LightcycleSpawnerSystem } from '@libgamemodel/systems/lightcyclespawner.system';
+import { LightcycleSpawnerSystem } from '@libgamemodel/lightcycle/lightcyclespawner.system';
 import { TempGroupAllocator } from '@libutil/allocator';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { BikeInputManager } from '@io/bikeinput/bikeinputmanager';
 import { KeyboardBikeInputController } from '@io/bikeinput/keyboardbikeinputcontroller';
 import { KeyboardManager } from '@io/keyboardmanager';
-import { LightcycleUpdateSystem } from '@libgamemodel/systems/lightcycleupdate.system';
+import { LightcycleUpdateSystem } from '@libgamemodel/lightcycle/lightcycleupdate.system';
 import { GamepadBikeInputController } from '@io/bikeinput/gamepadbikeinputcontroller';
 import { TouchEventBikeInputController } from '@io/bikeinput/toucheventbikeinputcontroller';
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
@@ -25,6 +25,7 @@ import { FrameSettings } from '@libgamerender/framesettings';
 import { EnvironmentSystem } from '@libgamemodel/systems/environment.system';
 import { WallspawnerSystem } from '@libgamemodel/wall/wallspawner.system';
 import { WallRenderSystem } from '@libgamerender/systems/wall.rendersystem';
+import { DebugBikeSystem } from '@libgamerender/debug/debugbike.system';
 
 const DRACO_CONFIG: DracoDecoderCreationOptions = {
   jsFallbackURL: '/assets/draco3d/draco_decoder.js',
@@ -50,7 +51,8 @@ export class GameAppService {
     private bikeRenderSystem: LightcycleRenderSystem,
     private camera: Camera,
     private environmentRenderSystem: EnvironmentRenderSystem,
-    private wallRenderSystem: WallRenderSystem) {}
+    private wallRenderSystem: WallRenderSystem,
+    private debugBikeRenderSystem: DebugBikeSystem) {}
 
   static async create(gl: WebGL2RenderingContext) {
     const lambertShader = LambertShader.create(gl);
@@ -117,6 +119,9 @@ export class GameAppService {
     ecs.addSystem(new WallspawnerSystem(vec3Allocator));
     const wallRenderSystem = ecs.addSystem(new WallRenderSystem(
       lambertShader, wallGeo, sceneNodeFactory, vec3Allocator, mat4Allocator, wallTexture));
+    // DEBUGGING
+    const debugBikeRenderSystem = ecs.addSystem(new DebugBikeSystem(lambertShader, mat4Allocator));
+    // END DEBUGGING
     if (!ecs.start()) {
       throw new Error('Failed to start all ECS systems, check output');
     }
@@ -130,7 +135,9 @@ export class GameAppService {
     lightcycleUpdateSystem.setPlayerCycle(playerCycle);
     cameraRiggingSystem.attachToLightcycle(playerCycle, vec3.fromValues(0, 7, -18), camera);
 
-    return new GameAppService(gl, ecs, bikeRenderSystem, camera, environmentRenderSystem, wallRenderSystem);
+    return new GameAppService(
+      gl, ecs, bikeRenderSystem, camera, environmentRenderSystem, wallRenderSystem,
+      debugBikeRenderSystem);
   }
 
   start() {
@@ -171,6 +178,7 @@ export class GameAppService {
     this.bikeRenderSystem.render(gl, this.ecs, frameSettings);
     this.environmentRenderSystem.render(gl, this.ecs, frameSettings);
     this.wallRenderSystem.render(gl, this.ecs, frameSettings);
+    this.debugBikeRenderSystem.render(gl, this.ecs, frameSettings);
   }
 
   changeClearColor() {

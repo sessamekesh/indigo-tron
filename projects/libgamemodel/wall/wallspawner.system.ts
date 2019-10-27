@@ -1,6 +1,6 @@
 import { ECSSystem } from '@libecs/ecssystem';
 import { ECSManager } from '@libecs/ecsmanager';
-import { LightcycleComponent2 } from '@libgamemodel/components/lightcycle.component';
+import { LightcycleComponent2 } from '@libgamemodel/lightcycle/lightcycle.component';
 import { Entity } from '@libecs/entity';
 import { WallGeneratorComponent } from './wallgenerator.component';
 import { VelocityComponent } from '@libgamemodel/components/velocitycomponent';
@@ -36,7 +36,8 @@ export class WallspawnerSystem extends ECSSystem {
             vec2.copy(wallGeneratorComponent.LastSpawnPoint, wallEnd);
           });
           const wallEntity = ecs.createEntity();
-          wallEntity.addComponent(WallComponent, wallStart, wallEnd, wallGeneratorComponent.VitalityAtSpawn);
+          wallEntity.addComponent(
+            WallComponent, wallStart, wallEnd, wallGeneratorComponent.VitalityAtSpawn);
         }
       });
     ecs.iterateComponents([WallComponent], (entity, wallComponent) => {

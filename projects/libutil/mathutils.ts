@@ -1,6 +1,8 @@
 import { vec3 } from "gl-matrix";
 import { TempGroupAllocator } from "./allocator";
 
+export type RandomNumberFn = ()=>number;
+
 export class MathUtils {
   static clamp(input: number, min: number, max: number) {
     return Math.min(max, Math.max(min, input));
