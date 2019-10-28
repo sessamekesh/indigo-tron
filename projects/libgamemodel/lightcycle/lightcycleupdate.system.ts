@@ -14,17 +14,49 @@ import { LineSegment2D, LineSegmentUtils } from '@libutil/math/linesegment';
 import { LightcycleCollisionBoundsComponent } from '@libgamemodel/lightcycle/lightcyclecollisionbounds.component';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { LightcycleUtils } from './lightcycleutils';
+import { IEventManager, EventManager } from '@libutil/eventmanager';
 
 const LIGHTCYCLE_ANGULAR_VELOCITY = -1.85;
 
-export class LightcycleUpdateSystem extends ECSSystem {
+type PlayerHealthEvent = {
+  MaxHealth: number,
+  CurrentHealth: number,
+};
+
+interface LightcycleUpdateEvents {
+  'playerhealthchange': PlayerHealthEvent,
+  'death': boolean,
+};
+
+export class LightcycleUpdateSystem
+    extends ECSSystem
+    implements IEventManager<LightcycleUpdateEvents> {
+
   private playerCycle_: Entity|null = null;
+  private eventManager_ = new EventManager<LightcycleUpdateEvents>();
 
   constructor(
       private bikeInputController: BikeInputController,
       private vec3Allocator: TempGroupAllocator<vec3>,
       private sceneNodeFactory: SceneNodeFactory) {
     super();
+  }
+
+  addListener<KeyType extends keyof LightcycleUpdateEvents>(
+      key: KeyType, listener: (evt: LightcycleUpdateEvents[KeyType]) => void):
+      (evt: LightcycleUpdateEvents[KeyType]) => void {
+    return this.eventManager_.addListener(key, listener);
+  }
+  removeListener<KeyType extends keyof LightcycleUpdateEvents>(
+      key: KeyType, listener: (evt: LightcycleUpdateEvents[KeyType]) => void): boolean {
+    return this.eventManager_.removeListener(key, listener);
+  }
+  fireEvent<KeyType extends keyof LightcycleUpdateEvents>(
+      key: KeyType, event: LightcycleUpdateEvents[KeyType]): void {
+    return this.eventManager_.fireEvent(key, event);
+  }
+  destroy(): void {
+    return this.eventManager_.destroy();
   }
 
   start(ecs: ECSManager) { return true; }
@@ -123,6 +155,12 @@ export class LightcycleUpdateSystem extends ECSSystem {
         }
         if (lightcyclecomponent.Vitality <= 0) {
           lightcycleEntity.destroy();
+          this.fireEvent('death', true);
+        }
+
+        if (frontCollision || rightCollision || leftCollision) {
+          this.fireEvent(
+            'playerhealthchange', { CurrentHealth: lightcyclecomponent.Vitality, MaxHealth: 100, });
         }
       });
     });

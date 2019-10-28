@@ -26,6 +26,8 @@ import { EnvironmentSystem } from '@libgamemodel/systems/environment.system';
 import { WallspawnerSystem } from '@libgamemodel/wall/wallspawner.system';
 import { WallRenderSystem } from '@libgamerender/systems/wall.rendersystem';
 import { DebugBikeSystem } from '@libgamerender/debug/debugbike.system';
+import { GameAppUIEvents } from './gameappuieventmanager';
+import { IEventManager } from '@libutil/eventmanager';
 
 const DRACO_CONFIG: DracoDecoderCreationOptions = {
   jsFallbackURL: '/assets/draco3d/draco_decoder.js',
@@ -47,14 +49,17 @@ export class GameAppService {
 
   private constructor(
     private gl: WebGL2RenderingContext,
+    private gameAppUiEventManager: IEventManager<GameAppUIEvents>,
     private ecs: ECSManager,
     private bikeRenderSystem: LightcycleRenderSystem,
     private camera: Camera,
     private environmentRenderSystem: EnvironmentRenderSystem,
     private wallRenderSystem: WallRenderSystem,
-    private debugBikeRenderSystem: DebugBikeSystem) {}
+    private debugBikeRenderSystem: DebugBikeSystem,
+    private onDestroyEvents: Function[]) {}
 
-  static async create(gl: WebGL2RenderingContext) {
+  static async create(
+      gl: WebGL2RenderingContext, gameAppUiEventManager: IEventManager<GameAppUIEvents>) {
     const lambertShader = LambertShader.create(gl);
     if (!lambertShader) {
       throw new Error('Failed to create lambert shader!');
@@ -135,9 +140,25 @@ export class GameAppService {
     lightcycleUpdateSystem.setPlayerCycle(playerCycle);
     cameraRiggingSystem.attachToLightcycle(playerCycle, vec3.fromValues(0, 7, -18), camera);
 
+    // UI State
+    const onDestroyEvents: Function[] = [];
+    const listener = lightcycleUpdateSystem.addListener(
+      'playerhealthchange',
+      (playerHealthEvent) => {
+        gameAppUiEventManager.fireEvent('playerhealth', {
+          CurrentHealth: playerHealthEvent.CurrentHealth,
+          MaxHealth: playerHealthEvent.MaxHealth,
+        });
+      });
+    onDestroyEvents.push(() => {
+      lightcycleUpdateSystem.removeListener('playerhealthchange', listener);
+    });
+    gameAppUiEventManager.fireEvent('playerhealth', { MaxHealth: 100, CurrentHealth: 100, });
+
     return new GameAppService(
-      gl, ecs, bikeRenderSystem, camera, environmentRenderSystem, wallRenderSystem,
-      debugBikeRenderSystem);
+      gl, gameAppUiEventManager, ecs,
+      bikeRenderSystem, camera, environmentRenderSystem, wallRenderSystem, debugBikeRenderSystem,
+      onDestroyEvents);
   }
 
   start() {
@@ -200,5 +221,10 @@ export class GameAppService {
   private getCameraMatrixValue(): mat4 {
     this.camera.matView(this.cameraMatrixValue_);
     return this.cameraMatrixValue_;
+  }
+
+  destroy() {
+    // TODO (sessamekesh): Fill in this method
+    this.onDestroyEvents.forEach(_=>_());
   }
 }

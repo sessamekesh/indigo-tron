@@ -1,15 +1,19 @@
-import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { GameAppService } from '../services/gameappservice';
+import { GameAppUIEvents } from '../services/gameappuieventmanager';
+import { CachingEventManager } from '@libutil/cachingeventmanager';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('gameCanvas') canvasElement: ElementRef<HTMLCanvasElement>|undefined;
   private gl_: WebGL2RenderingContext|undefined;
   private gameService_: GameAppService|undefined;
+  gameAppUiEventManager = new CachingEventManager<GameAppUIEvents>();
 
   async ngOnInit() {
     if (!this.canvasElement || !this.canvasElement.nativeElement) {
@@ -23,12 +27,17 @@ export class AppComponent implements OnInit {
     }
 
     this.gl_ = context;
-    this.gameService_ = await GameAppService.create(context);
+    this.gameService_ = await GameAppService.create(context, this.gameAppUiEventManager);
     this.gameService_.start();
   }
 
-  clickButton() {
-    if (!this.gameService_) return;
-    this.gameService_.changeClearColor();
+  ngOnDestroy() {
+    if (this.gameService_) {
+      this.gameService_.destroy();
+    }
+
+    if (this.gameAppUiEventManager) {
+      this.gameAppUiEventManager.destroy();
+    }
   }
 }

@@ -23,8 +23,13 @@
   padding: 0;
 }
 
-.buttons {
+.hud {
   position: absolute;
   left: 50%;
   bottom: 80px;
+}
+
+.hud-inner {
+  position: relative;
+  left: -50%;
 }

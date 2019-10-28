@@ -2,7 +2,7 @@
   <canvas #gameCanvas id="game-canvas">
     HTML5 Canvas is not available. Please get a better browser.
   </canvas>
-  <div class="buttons">
-    <button (click)="clickButton()">Change Color</button>
+  <div class="hud">
+      <game-hud class="hud-inner" [uiEventManager]="gameAppUiEventManager"></game-hud>
   </div>
 </div>

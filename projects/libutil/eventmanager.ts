@@ -1,6 +1,15 @@
 type CBType<ValueType> = (evt: ValueType)=>void;
 
-export class EventManager<EventsMap> {
+export interface IEventManager<EventsMap> {
+  addListener<KeyType extends keyof EventsMap>(
+    key: KeyType, listener: CBType<EventsMap[KeyType]>): CBType<EventsMap[KeyType]>;
+  removeListener<KeyType extends keyof EventsMap>(
+    key: KeyType, listener: CBType<EventsMap[KeyType]>): boolean;
+  fireEvent<KeyType extends keyof EventsMap>(key: KeyType, event: EventsMap[KeyType]): void;
+  destroy(): void;
+}
+
+export class EventManager<EventsMap> implements IEventManager<EventsMap> {
   private callbacks_ = new Map<any, ((event: any) => void)[]>();
 
   constructor() {}
