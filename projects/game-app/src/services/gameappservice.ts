@@ -17,7 +17,6 @@ import { LightcycleUpdateSystem } from '@libgamemodel/lightcycle/lightcycleupdat
 import { GamepadBikeInputController } from '@io/bikeinput/gamepadbikeinputcontroller';
 import { TouchEventBikeInputController } from '@io/bikeinput/toucheventbikeinputcontroller';
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
-import { Camera } from '@libgamemodel/camera/camera';
 import { CameraRigSystem } from '@libgamemodel/camera/camerarig.system';
 import { FloorTileTexture } from '@librender/texture/floortiletexture';
 import { EnvironmentRenderSystem } from '@libgamerender/systems/environment.rendersystem';
@@ -30,9 +29,9 @@ import { GameAppUIEvents } from './gameappuieventmanager';
 import { IEventManager } from '@libutil/eventmanager';
 
 const DRACO_CONFIG: DracoDecoderCreationOptions = {
-  jsFallbackURL: '/assets/draco3d/draco_decoder.js',
-  wasmBinaryURL: '/assets/draco3d/draco_decoder.wasm',
-  wasmLoaderURL: '/assets/draco3d/draco_wasm_wrapper.js',
+  jsFallbackURL: 'assets/draco3d/draco_decoder.js',
+  wasmBinaryURL: 'assets/draco3d/draco_decoder.wasm',
+  wasmLoaderURL: 'assets/draco3d/draco_wasm_wrapper.js',
 };
 
 // Order of teaching this one:
@@ -57,10 +56,7 @@ export class GameAppService {
     private environmentRenderSystem: EnvironmentRenderSystem,
     private wallRenderSystem: WallRenderSystem,
     private debugBikeRenderSystem: DebugBikeSystem,
-    private onDestroyEvents: Function[],
-    private lightcycleSpawner: LightcycleSpawnerSystem,
-    private cameraRiggingSystem: CameraRigSystem,
-    private lightcycleUpdateSystem: LightcycleUpdateSystem) {}
+    private onDestroyEvents: Function[]) {}
 
   static async create(
       gl: WebGL2RenderingContext, gameAppUiEventManager: IEventManager<GameAppUIEvents>) {
@@ -71,9 +67,9 @@ export class GameAppService {
 
     // Get GL resources
     const dracoDecoder = await DracoDecoder.create(DRACO_CONFIG);
-    const bikeRawData = await loadRawBuffer('/assets/models/lightcycle_base.drc');
-    const bikeWheelData = await loadRawBuffer('/assets/models/lightcycle_wheel.drc');
-    const bikeStickData = await loadRawBuffer('/assets/models/lightcycle_stick.drc');
+    const bikeRawData = await loadRawBuffer('assets/models/lightcycle_base.drc');
+    const bikeWheelData = await loadRawBuffer('assets/models/lightcycle_wheel.drc');
+    const bikeStickData = await loadRawBuffer('assets/models/lightcycle_stick.drc');
     const bikeBuffers = dracoDecoder.decodeMesh(bikeRawData, LambertConverter.BUFFER_DESC);
     const bikeWheelBuffers = dracoDecoder.decodeMesh(bikeWheelData, LambertConverter.BUFFER_DESC);
     const bikeStickBuffers = dracoDecoder.decodeMesh(bikeStickData, LambertConverter.BUFFER_DESC);
@@ -86,8 +82,8 @@ export class GameAppService {
     if (!bikeLambertGeo || !bikeWheelGeo || !bikeStickGeo) {
       throw new Error('Could not generate bike lambert geometry');
     }
-    const bikeTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_base_diffuse.png');
-    const bikeWheelTexture = await Texture.createFromURL(gl, '/assets/models/lightcycle_wheel_diffuse.png');
+    const bikeTexture = await Texture.createFromURL(gl, 'assets/models/lightcycle_base_diffuse.png');
+    const bikeWheelTexture = await Texture.createFromURL(gl, 'assets/models/lightcycle_wheel_diffuse.png');
     const floorTexture = FloorTileTexture.create(
       gl, vec4.fromValues(0.005, 0.005, 0.005, 1), vec4.fromValues(0.5, 0.5, 0.45, 0), 256, 256, 2, 3, 2, 3);
     const wallTexture = FloorTileTexture.create(
@@ -168,7 +164,7 @@ export class GameAppService {
     return new GameAppService(
       gl, gameAppUiEventManager, ecs,
       bikeRenderSystem, camera, environmentRenderSystem, wallRenderSystem, debugBikeRenderSystem,
-      onDestroyEvents, lightcycleSpawnerSystem, cameraRiggingSystem, lightcycleUpdateSystem);
+      onDestroyEvents);
   }
 
   start() {
@@ -194,16 +190,24 @@ export class GameAppService {
 
   restart() {
     if (this.isGameOver_) {
-      // TODO (sessamekesh): Fix all this eh?
-      console.log('Restart game');
-      const playerCycle = this.lightcycleSpawner.spawnLightcycle(this.ecs, {
-        Position: vec3.fromValues(5, 0, 0),
-        Orientation: glMatrix.toRadian(180),
-      });
-      this.lightcycleUpdateSystem.setPlayerCycle(playerCycle);
-      this.cameraRiggingSystem.attachToLightcycle(
-        playerCycle, vec3.fromValues(0, 7, -18), this.camera);
-      this.gameAppUiEventManager.fireEvent('player-death', false);
+      const lightcycleSpawner = this.ecs.getSystem(LightcycleSpawnerSystem);
+      const lightcycleUpdateSystem = this.ecs.getSystem(LightcycleUpdateSystem);
+      const cameraRiggingSystem = this.ecs.getSystem(CameraRigSystem);
+
+      if (lightcycleSpawner && lightcycleUpdateSystem && cameraRiggingSystem) {
+        const playerCycle = lightcycleSpawner.spawnLightcycle(this.ecs, {
+          Position: vec3.fromValues(5, 0, 0),
+          Orientation: glMatrix.toRadian(180),
+        });
+        lightcycleUpdateSystem.setPlayerCycle(playerCycle);
+        cameraRiggingSystem.attachToLightcycle(
+          playerCycle, vec3.fromValues(0, 7, -18), this.camera);
+        this.gameAppUiEventManager.fireEvent('player-death', false);
+      } else {
+        console.error(
+          'Could not restart game - missing required systems (spawner/update/rigging):',
+          lightcycleSpawner, lightcycleUpdateSystem, cameraRiggingSystem);
+      }
     }
   }
 

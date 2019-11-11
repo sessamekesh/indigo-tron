@@ -35,6 +35,17 @@ export class ECSManager {
     return system;
   }
 
+  getSystem<T extends ECSSystem>(klass: Klass<T>): T|null {
+    const systems = this.systems_.filter(_=>_ instanceof klass);
+    if (systems.length === 0) {
+      return null;
+    }
+    if (systems.length > 1) {
+      throw new Error('Multiple systems by that class type - could not resolve');
+    }
+    return systems[0] as T;
+  }
+
   start() {
     let success = true;
     this.systems_.forEach(system => success = success && system.start(this));
