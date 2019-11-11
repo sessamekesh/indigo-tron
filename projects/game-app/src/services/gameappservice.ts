@@ -46,17 +46,21 @@ export class GameAppService {
   private lightColor_ = vec3.fromValues(1, 1, 1);
   private lightDirection_ = vec3.fromValues(0, -1, 0);
   private ambientCoefficient_ = 0.3;
+  private isGameOver_ = false;
 
   private constructor(
     private gl: WebGL2RenderingContext,
     private gameAppUiEventManager: IEventManager<GameAppUIEvents>,
     private ecs: ECSManager,
     private bikeRenderSystem: LightcycleRenderSystem,
-    private camera: Camera,
+    private camera: BasicCamera,
     private environmentRenderSystem: EnvironmentRenderSystem,
     private wallRenderSystem: WallRenderSystem,
     private debugBikeRenderSystem: DebugBikeSystem,
-    private onDestroyEvents: Function[]) {}
+    private onDestroyEvents: Function[],
+    private lightcycleSpawner: LightcycleSpawnerSystem,
+    private cameraRiggingSystem: CameraRigSystem,
+    private lightcycleUpdateSystem: LightcycleUpdateSystem) {}
 
   static async create(
       gl: WebGL2RenderingContext, gameAppUiEventManager: IEventManager<GameAppUIEvents>) {
@@ -142,7 +146,7 @@ export class GameAppService {
 
     // UI State
     const onDestroyEvents: Function[] = [];
-    const listener = lightcycleUpdateSystem.addListener(
+    const playerHealthChangeListener = lightcycleUpdateSystem.addListener(
       'playerhealthchange',
       (playerHealthEvent) => {
         gameAppUiEventManager.fireEvent('playerhealth', {
@@ -150,18 +154,31 @@ export class GameAppService {
           MaxHealth: playerHealthEvent.MaxHealth,
         });
       });
+    const playerDeathListener = lightcycleUpdateSystem.addListener(
+      'death',
+      (deathEvent) => {
+        gameAppUiEventManager.fireEvent('player-death', true);
+      });
     onDestroyEvents.push(() => {
-      lightcycleUpdateSystem.removeListener('playerhealthchange', listener);
+      lightcycleUpdateSystem.removeListener('playerhealthchange', playerHealthChangeListener);
+      lightcycleUpdateSystem.removeListener('death', playerDeathListener);
     });
     gameAppUiEventManager.fireEvent('playerhealth', { MaxHealth: 100, CurrentHealth: 100, });
 
     return new GameAppService(
       gl, gameAppUiEventManager, ecs,
       bikeRenderSystem, camera, environmentRenderSystem, wallRenderSystem, debugBikeRenderSystem,
-      onDestroyEvents);
+      onDestroyEvents, lightcycleSpawnerSystem, cameraRiggingSystem, lightcycleUpdateSystem);
   }
 
   start() {
+    const gameOverListener = this.gameAppUiEventManager.addListener('player-death', () => {
+      this.isGameOver_ = true;
+    });
+    this.onDestroyEvents.push(() => {
+      this.gameAppUiEventManager.removeListener('player-death', gameOverListener);
+    });
+
     let lastFrame = performance.now();
     const frame = () => {
       const now = performance.now();
@@ -173,6 +190,21 @@ export class GameAppService {
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
+  }
+
+  restart() {
+    if (this.isGameOver_) {
+      // TODO (sessamekesh): Fix all this eh?
+      console.log('Restart game');
+      const playerCycle = this.lightcycleSpawner.spawnLightcycle(this.ecs, {
+        Position: vec3.fromValues(5, 0, 0),
+        Orientation: glMatrix.toRadian(180),
+      });
+      this.lightcycleUpdateSystem.setPlayerCycle(playerCycle);
+      this.cameraRiggingSystem.attachToLightcycle(
+        playerCycle, vec3.fromValues(0, 7, -18), this.camera);
+      this.gameAppUiEventManager.fireEvent('player-death', false);
+    }
   }
 
   drawFrame() {

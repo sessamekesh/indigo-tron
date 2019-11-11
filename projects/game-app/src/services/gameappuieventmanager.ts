@@ -17,4 +17,5 @@ export interface GameAppUIEvents {
   "biketilt": BikeTiltEvent,
   "uipresspause": null,
   "apppaused": boolean,
+  "player-death": boolean,
 }

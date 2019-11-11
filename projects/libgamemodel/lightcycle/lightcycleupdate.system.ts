@@ -86,6 +86,15 @@ export class LightcycleUpdateSystem
         lightcycleComponent.FrontWheelSceneNode, velocityComponent.Velocity * dt);
       this.moveForwardBasedOnOrientation(
         lightcycleComponent.BodySceneNode, velocityComponent.Velocity * dt);
+      const oldVitality = lightcycleComponent.Vitality;
+      lightcycleComponent.Vitality += dt * 0.5;
+      lightcycleComponent.Vitality = MathUtils.clamp(lightcycleComponent.Vitality, 0, 100);
+      if (lightcycleComponent === this.playerCycle_!.getComponent(LightcycleComponent2)) {
+        if (Math.round(oldVitality) !== Math.round(lightcyclecomponent.Vitality)) {
+          this.fireEvent(
+            'playerhealthchange', {CurrentHealth: lightcycleComponent.Vitality, MaxHealth: 100});
+        }
+      }
 
       this.vec3Allocator.get(3, (frontWheelPos, rearWheelPos, newRearPos) => {
         lightcycleComponent.FrontWheelSceneNode.getPos(frontWheelPos);
@@ -107,7 +116,9 @@ export class LightcycleUpdateSystem
 
     // Collision checking
     ecs.iterateComponents([LightcycleComponent2], (lightcycleEntity, lightcycleComponent) => {
+      let playerDeath = false;
       ecs.iterateComponents([WallComponent], (wallEntity, wallComponent) => {
+        if (playerDeath) return;
         const wallLine = {
           x0: wallComponent.Corner1[0], y0: wallComponent.Corner1[1],
           x1: wallComponent.Corner2[0], y1: wallComponent.Corner2[1],
@@ -155,7 +166,12 @@ export class LightcycleUpdateSystem
         }
         if (lightcyclecomponent.Vitality <= 0) {
           lightcycleEntity.destroy();
-          this.fireEvent('death', true);
+          if (lightcycleEntity === this.playerCycle_) {
+            this.fireEvent(
+              'playerhealthchange', {CurrentHealth: lightcyclecomponent.Vitality, MaxHealth: 100});
+            this.fireEvent('death', true);
+            playerDeath = true;
+          }
         }
 
         if (frontCollision || rightCollision || leftCollision) {

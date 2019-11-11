@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { GameAppService } from '../services/gameappservice';
 import { GameAppUIEvents } from '../services/gameappuieventmanager';
 import { CachingEventManager } from '@libutil/cachingeventmanager';
@@ -14,6 +14,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private gl_: WebGL2RenderingContext|undefined;
   private gameService_: GameAppService|undefined;
   gameAppUiEventManager = new CachingEventManager<GameAppUIEvents>();
+  isLoaded = false;
+  isDead = false;
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   async ngOnInit() {
     if (!this.canvasElement || !this.canvasElement.nativeElement) {
@@ -28,6 +32,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.gl_ = context;
     this.gameService_ = await GameAppService.create(context, this.gameAppUiEventManager);
+
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+      loadingScreen.classList.add('loading-finished');
+      setTimeout(() => loadingScreen.remove(), 550);
+    }
+
+    this.isLoaded = true;
+    this.cdr.markForCheck();
+
+    this.gameAppUiEventManager.addListener('player-death', (isDead) => {
+      this.isDead = isDead;
+      this.cdr.markForCheck();
+    });
+
     this.gameService_.start();
   }
 
@@ -38,6 +57,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
     if (this.gameAppUiEventManager) {
       this.gameAppUiEventManager.destroy();
+    }
+  }
+
+  restartGame() {
+    if (this.gameService_) {
+      this.gameService_.restart();
     }
   }
 }

@@ -1,4 +1,8 @@
-<div class="view-container">
+<div [class.hidden]="!isLoaded" class="view-container">
+  <div [class.hidden]="!isDead" class="death-message-container">
+    <p>Oh dear, you are dead!</p>
+    <div class="restart-button" (click)="restartGame()">Restart game</div>
+  </div>
   <canvas #gameCanvas id="game-canvas">
     HTML5 Canvas is not available. Please get a better browser.
   </canvas>
