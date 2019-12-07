@@ -25,9 +25,10 @@
       "@librender/*": ["projects/librender/*"],
       "@libutil/*": ["projects/libutil/*"],
       "@libecs/*": ["projects/libecs/*"],
+      "@libintegrationtest/*": ["projects/libintegrationtest/*"],
       "@libgamemodel/*": ["projects/libgamemodel/*"],
       "@libgamerender/*": ["projects/libgamerender/*"],
-      "@io/*": ["projects/io/*"]
+      "@io/*": ["projects/io/*"],
     }
   }
 }

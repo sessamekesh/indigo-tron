@@ -101,6 +101,70 @@
           }
         }
       }
+    },
+    "game-integration-tests": {
+      "root": "projects/game-integration-tests",
+      "sourceRoot": "projects/game-integration-tests/src",
+      "projectType": "application",
+      "prefix": "app",
+      "schematics": {
+        "@schematics/angular:component": {
+          "styleext": "scss"
+        }
+      },
+      "architect": {
+        "build": {
+          "builder":"@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/game-integration-tests",
+            "index": "projects/game-integration-tests/src/index.html",
+            "main": "projects/game-integration-tests/src/main.ts",
+            "polyfills": "projects/game-integration-tests/src/polyfill.ts",
+            "tsConfig": "projects/game-integration-tests/tsconfig.json",
+            "assets": [
+              "projects/game-integration-tests/src/favicon.ico",
+              {
+                "glob": "**/*",
+                "input": "projects/game-app/src/assets",
+                "output": "assets"
+              }
+            ],
+            "styles": [],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true,
+              "namedChunks": false,
+              "aot": true,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "game-integration-tests:build"
+          },
+          "configurations": {
+            "production": {
+              "browserTarget": "game-integration-tests:build:production"
+            }
+          }
+        }
+      }
     }
   },
   "defaultProject": "game-app"

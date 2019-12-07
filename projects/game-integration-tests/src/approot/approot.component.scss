@@ -1,0 +1,148 @@
+$background-black: #191919;
+$error-red: #b62c2a;
+$success-green: #768635;
+$success-green-dark: #829147;
+$standard-white: #fffce8;
+$pending-gray: #878472;
+$disabled-gray: #454554;
+
+.cols {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+}
+
+:host {
+  background-color: $background-black;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  margin: 0;
+  padding: 0;
+
+  color: $standard-white;
+  font-weight: 700;
+  font-size: 14pt;
+}
+
+.input-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.passed-tests {
+  color: $success-green;
+}
+
+.failed-tests {
+  color: $error-red;
+}
+
+.pending-tests {
+  color: $pending-gray;
+}
+
+.disabled-tests {
+  color: $disabled-gray;
+}
+
+.rows {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .vis-area {
+    width: 1280px;
+    height: 720px;
+    min-width: 1280px;
+    min-height: 720px;
+    background-color: black;
+
+    .testname {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+    }
+
+    .vis-canvas-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    .vis-canvas {
+      width: 100%;
+      height: 100%;
+      background-color: black;
+    }
+  }
+
+  .results-area {
+    border: 2px solid $pending-gray;
+    padding: 8px;
+    overflow: auto;
+    flex-grow: 1;
+    font-family: 'Work Sans', sans-serif;
+
+    .spacer {
+      width: 20px;
+      height: 2px;
+    }
+
+    .input-row {
+      margin: 4px;
+    }
+
+    .failure {
+      margin-left: 14px;
+      font-style: italic;
+      font-weight: 300;
+    }
+  }
+}
+
+.side-menu {
+  padding: 8px;
+  border: 2px solid $pending-gray;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+  color: lightgray;
+
+  &.disabled {
+    opacity: 0.5;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .menu-header {
+    align-self: center;
+    font-size: 24pt;
+  }
+
+  .divider {
+    width: 75%;
+    height: 0px;
+    border: 1px solid $pending-gray;
+    margin: 12px 0;
+    align-self: center;
+    align-content: center;
+  }
+
+  .start-button {
+    align-self: center;
+    background-color: $success-green-dark;
+    padding: 18px 80px;
+    border-radius: 30px;
+    color: white;
+    font-size: 24pt;
+
+    &:hover {
+      background-color: $success-green;
+      cursor: pointer;
+    }
+  }
+}
