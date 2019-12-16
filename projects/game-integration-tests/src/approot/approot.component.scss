@@ -1,4 +1,5 @@
 $background-black: #191919;
+$hover-background-black: #393939;
 $error-red: #b62c2a;
 $success-green: #768635;
 $success-green-dark: #829147;
@@ -31,6 +32,11 @@ $disabled-gray: #454554;
 .input-row {
   display: flex;
   flex-direction: row;
+
+  &:hover {
+    background-color: $hover-background-black;
+    cursor: pointer;
+  }
 }
 
 .passed-tests {

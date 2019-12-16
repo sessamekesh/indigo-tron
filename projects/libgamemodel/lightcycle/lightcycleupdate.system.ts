@@ -34,12 +34,21 @@ export class LightcycleUpdateSystem
 
   private playerCycle_: Entity|null = null;
   private eventManager_ = new EventManager<LightcycleUpdateEvents>();
+  private randomFunction = Math.random;
 
   constructor(
       private bikeInputController: BikeInputController,
       private vec3Allocator: TempGroupAllocator<vec3>,
       private sceneNodeFactory: SceneNodeFactory) {
     super();
+  }
+
+  setRandomFn(fn: (()=>number)|null) {
+    if (fn) {
+      this.randomFunction = fn;
+    } else {
+      this.randomFunction = Math.random;
+    }
   }
 
   addListener<KeyType extends keyof LightcycleUpdateEvents>(
@@ -130,10 +139,15 @@ export class LightcycleUpdateSystem
         const frontCollision = LineSegmentUtils.getCollision(bikeFrontLine, wallLine);
 
         // TODO (sessamekesh): Write unit tests for this system
+        // TODO (sessamekesh): Instead, queue up collisions, and handle them at the end of the frame
+        //  in a whole new system (instead of handling them in lightcycle updates)
+        // Lightcycle updates should really just be movement - and this really could just be a
+        //  movement system instead (which takes in certain locomotion parameters)
 
         // For now, just kill the wall entirely.
         if (leftCollision) {
-          const action = LightcycleUtils.getSideCollisionAction(leftCollision, -1, Math.random);
+          const action = LightcycleUtils.getSideCollisionAction(
+            leftCollision, -1, this.randomFunction);
           LightcycleUtils.applyCollisionDamage(
             action.vitalityLost, wallComponent, lightcycleComponent);
           const newOrientation =
@@ -142,7 +156,8 @@ export class LightcycleUpdateSystem
                   + action.bikeSteeringAdjustment);
           lightcyclecomponent.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
         } else if (rightCollision) {
-          const action = LightcycleUtils.getSideCollisionAction(rightCollision, 1, Math.random);
+          const action = LightcycleUtils.getSideCollisionAction(
+            rightCollision, 1, this.randomFunction);
           LightcycleUtils.applyCollisionDamage(
             action.vitalityLost, wallComponent, lightcycleComponent);
           const newOrientation =
@@ -151,7 +166,7 @@ export class LightcycleUpdateSystem
                   + action.bikeSteeringAdjustment);
           lightcyclecomponent.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
         } else if (frontCollision) {
-          const action = LightcycleUtils.getFrontalCollisionAction(Math.random);
+          const action = LightcycleUtils.getFrontalCollisionAction(this.randomFunction);
           LightcycleUtils.applyCollisionDamage(
             action.vitalityLost, wallComponent, lightcycleComponent);
           const newOrientation =

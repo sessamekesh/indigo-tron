@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, ViewChild, ElementRef, ChangeDetectorRef, OnInit } from "@angular/core";
 import { Ng2Harness } from './ng2harness';
-import { AllTests } from '../tests/testmain';
+import { AllTests, ManualVerificationStep } from '../tests/testmain';
+import { UiFriendlyTest } from '@libintegrationtest/testharness';
 
 @Component({
   selector: 'app-root',
@@ -17,15 +18,18 @@ export class AppRootComponent implements OnInit {
     return !!gl;
   })();
 
+  // TODO (kamaron): Ability to enable/disable tests by clicking on a checkbox by the name
   VisualizationEnabled = true;
   TestsRunning = false;
   CurrentTestName = '';
   SpeedupRate = '1';
+  EnableManualVerification = false;
 
   constructor(
       private cdr: ChangeDetectorRef,
       private tests: AllTests,
-      private harness: Ng2Harness) {
+      private harness: Ng2Harness,
+      private manualVerificationStep: ManualVerificationStep) {
     this.tests.install(harness);
   }
 
@@ -43,21 +47,37 @@ export class AppRootComponent implements OnInit {
     if (!this.WebGL2Supported) {
       this.VisualizationEnabled = false;
     }
-    if (!this.canvasElement) {
-      this.VisualizationEnabled = false;
-    }
     this.CurrentTestName = '';
   }
 
-  async runTests() {
-    this.harness.resetTests();
-    this.cdr.markForCheck();
+  private maybeSetupGl() {
+    this.manualVerificationStep.setTestFn(async () => true);
     if (this.VisualizationEnabled && this.canvasElement) {
       const gl2 =
           this.canvasElement.nativeElement.getContext('webgl2')
             || this.canvasElement.nativeElement.getContext('experimental-webgl2');
       this.harness.setGl(gl2);
+      if (gl2 && this.EnableManualVerification) {
+        // TODO (kamaron): Make a better manual verification flow
+        this.manualVerificationStep.setTestFn(async (message: string) => {
+          return confirm(`Verify: ${message}`);
+        });
+      }
     }
+  }
+
+  async runTest(entry: UiFriendlyTest) {
+    this.harness.clearResultForTest(entry.FullName);
+    this.cdr.markForCheck();
+    this.maybeSetupGl();
+    await this.harness.runIndividualTest(entry.FullName, parseInt(this.SpeedupRate));
+    this.cdr.markForCheck();
+  }
+
+  async runTests() {
+    this.harness.resetTests();
+    this.cdr.markForCheck();
+    this.maybeSetupGl();
 
     const testInterval = setInterval(() => this.cdr.markForCheck(), 500);
     this.TestsRunning = true;

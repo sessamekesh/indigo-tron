@@ -121,6 +121,58 @@ export class TestHarness {
     }
   }
 
+  clearResultForTest(name: string) {
+    const test = this.findTest(name);
+    if (!test) {
+      return;
+    }
+    test.ParentGroup.Tests.set(test.Name, {
+      Name: test.Name,
+      TestMethod: test.TestMethod,
+      ParentGroup: test.ParentGroup,
+      Result: 'pending',
+    });
+  }
+
+  async runIndividualTest(name: string, vizSpeedup: number = 8) {
+    const test = this.findTest(name);
+    if (!test) {
+      return;
+    }
+    try {
+      await test.TestMethod(this.context_, this.gl, vizSpeedup);
+    } catch (e) {
+      if (e instanceof AbortTestError) {
+        test.ParentGroup.Tests.set(test.Name, {
+          Name: test.Name,
+          TestMethod: test.TestMethod,
+          ParentGroup: test.ParentGroup,
+          Result: 'fail',
+          Reason: e.Reason,
+        });
+        return;
+      } else {
+        test.ParentGroup.Tests.set(test.Name, {
+          Name: test.Name,
+          TestMethod: test.TestMethod,
+          ParentGroup: test.ParentGroup,
+          Result: 'fail',
+          Reason: `Uncaught Exception ${e}`,
+        });
+        return;
+      }
+    }
+
+    if (test.Result === 'pending') {
+      test.ParentGroup.Tests.set(test.Name, {
+        Name: test.Name,
+        TestMethod: test.TestMethod,
+        ParentGroup: test.ParentGroup,
+        Result: 'pass',
+      });
+    }
+  }
+
   async runTests(vizSpeedup: number = 8, randomOrder: boolean = true) {
     let testsToRun: Test[] = [];
     this.addGroupTests(this.topLevelGroup_, testsToRun);
@@ -142,6 +194,15 @@ export class TestHarness {
             Reason: e.Reason,
           });
           continue;
+        } else {
+          test.ParentGroup.Tests.set(test.Name, {
+            Name: test.Name,
+            TestMethod: test.TestMethod,
+            ParentGroup: test.ParentGroup,
+            Result: 'fail',
+            Reason: `Uncaught Exception ${e}`,
+          });
+          continue;
         }
       }
 
@@ -156,12 +217,44 @@ export class TestHarness {
     }
   }
 
+  private addUiElementsFromGroup(
+      group: TestGroup,
+      o_uiTests: UiFriendlyTest[],
+      nameChain: string[] = [],
+      map: Map<TestGroup, 'pass'|'fail'|'pending'|'disabled'> = new Map()) {
+    let namePrefix = nameChain.join('.') + '.';
+    if (namePrefix === '.') namePrefix = '';
+    group.Tests.forEach(test => o_uiTests.push(
+        test.Result === 'fail' ? {
+          FullName: namePrefix + test.Name,
+          Indentation: nameChain.length,
+          Name: test.Name,
+          Result: test.Result,
+          Reason: test.Reason,
+        } : {
+          FullName: namePrefix + test.Name,
+          Indentation: nameChain.length,
+          Name: test.Name,
+          Result: test.Result,
+        } as UiFriendlyTest));
+    group.Groups.forEach(group => {
+      const result = this.getGroupStatus(group, map);
+      o_uiTests.push({
+        FullName: namePrefix + group.Name,
+        Name: group.Name,
+        Indentation: nameChain.length,
+        Result: result,
+      } as UiFriendlyTest);
+      this.addUiElementsFromGroup(group, o_uiTests, nameChain.map(_=>_).concat([group.Name]), map);
+    });
+  }
+
   getUiFriendlyResults(): UiFriendlyTest[] {
-    let testsToRun: Test[] = [];
-    this.addGroupTests(this.topLevelGroup_, testsToRun);
-    testsToRun = testsToRun.sort((a, b) => {
-      const asplit = a.Name.split('.');
-      const bsplit = b.Name.split('.');
+    let uiTests: UiFriendlyTest[] = [];
+    this.addUiElementsFromGroup(this.topLevelGroup_, uiTests);
+    uiTests = uiTests.sort((a, b) => {
+      const asplit = a.FullName.split('.');
+      const bsplit = b.FullName.split('.');
       for (let i = 0; i < Math.min(asplit.length, bsplit.length); i++) {
         if (asplit[i] < bsplit[i]) {
           return -1;
@@ -179,29 +272,7 @@ export class TestHarness {
       return 0;
     });
 
-    return testsToRun.map((test) => {
-      let name = test.Name;
-      let node = test.ParentGroup;
-      let indentation = 0;
-      while (node && node.ParentGroup) {
-        indentation++;
-        name = node.Name + '.' + name;
-        node = node.ParentGroup;
-      }
-      const result: UiFriendlyTest = (test.Result === 'fail') ? {
-        FullName: name,
-        Name: test.Name,
-        Indentation: indentation,
-        Result: test.Result,
-        Reason: test.Reason,
-      } : {
-        FullName: name,
-        Name: test.Name,
-        Indentation: indentation,
-        Result: test.Result,
-      } as UiFriendlyTest;
-      return result;
-    });
+    return uiTests;
   }
 
   private addGroupTests(group: TestGroup, o_testList: Test[]) {

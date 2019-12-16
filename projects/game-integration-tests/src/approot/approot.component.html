@@ -19,7 +19,8 @@
           [class.passed-tests]="entry.Result==='pass'"
           [class.pending-tests]="entry.Result==='pending'"
           [class.disabled-tests]="entry.Result==='disabled'"
-          [class.failed-tests]="entry.Result==='fail'">
+          [class.failed-tests]="entry.Result==='fail'"
+          (click)="runTest(entry)">
           <div class="spacer" *ngFor="let unused of ' '.repeat(entry.Indentation).split('')"></div>
           <span class="label">{{entry.Name}}</span>
           <div class="spacer" *ngIf="!!entry.Reason"></div>
@@ -44,6 +45,10 @@
           <option value="100">100x</option>
         </select>
         <span class="label">Visualization speedup rate</span>
+      </div>
+      <div class="input-row" *ngIf="WebGL2Supported">
+        <input type="checkbox" [(ngModel)]="EnableManualVerification">
+        <span class="label">Run with manual verification steps</span>
       </div>
       <div class="start-button" (click)="runTests()">Start</div>
     </div>
