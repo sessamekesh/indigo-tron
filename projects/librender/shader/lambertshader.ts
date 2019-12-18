@@ -44,7 +44,7 @@ void main() {
   float rawDiffuseCoefficient = -dot(fNormal, lightDirection);
   float colorPower = ambientCoefficient + (rawDiffuseCoefficient * (1.0 - ambientCoefficient));
 
-  color = vec4(colorPower * surfaceColor * lightColor, 1.0) * 0.01 + vec4(surfaceColor, 1.0) * 0.99;
+  color = vec4(colorPower * surfaceColor * lightColor, 1.0);
 }`;
 
 type Attribs = {

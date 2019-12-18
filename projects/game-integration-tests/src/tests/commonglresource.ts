@@ -6,8 +6,10 @@ import { LambertConverter } from '@librender/geo/draco/lambertconverter';
 import { IBData } from '@librender/geo/ibdesc';
 import { Texture } from '@librender/texture/texture';
 import { FloorTileTexture } from '@librender/texture/floortiletexture';
-import { vec4 } from 'gl-matrix';
+import { vec4, glMatrix } from 'gl-matrix';
 import { WallRenderSystem } from '@libgamerender/systems/wall.rendersystem';
+import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
+import { Framebuffer } from '@librender/texture/framebuffer';
 
 class AsyncResourceProvider<T> {
   private val_: T|null = null;
@@ -89,6 +91,19 @@ function _LambertGeoProvider(
 export class CommonGLResource {
   static DracoDecoder = new AsyncResourceProvider(() => DracoDecoder.create(DRACO_CONFIG));
   static LambertShader = new GLResourceProvider((gl) => LambertShader.create(gl));
+  static ArenaFloorShader = new GLResourceProvider((gl) => ArenaFloorShader.create(gl));
+
+  static FloorReflectionTexutre = new GLResourceProvider(
+    (gl) => Texture.createEmptyTexture(gl, 512, 512, 'rgba32'));
+  static FloorReflectionFBO = new GLResourceProvider((gl) => {
+    const floorReflectionTexture = CommonGLResource.FloorReflectionTexutre.get(gl);
+    return Framebuffer.create(gl, {
+      DepthEnabled: true,
+      ColorAttachment: 0,
+      AttachedTexture: floorReflectionTexture,
+      PerspectiveFOV: glMatrix.toRadian(45),
+    });
+  });
 
   static BikeRawData = new AsyncResourceProvider(() => loadRawBuffer('assets/models/lightcycle_base.drc'));
   static BikeWheelData = new AsyncResourceProvider(() => loadRawBuffer('assets/models/lightcycle_wheel.drc'));
@@ -102,7 +117,6 @@ export class CommonGLResource {
   static BikeTexture = new AsyncGLResourceProvider((gl) => Texture.createFromURL(gl, 'assets/models/lightcycle_base_diffuse.png'));
   static BikeWheelTexture = new AsyncGLResourceProvider((gl) => Texture.createFromURL(gl, 'assets/models/lightcycle_wheel_diffuse.png'));
 
-  static FloorTexture = new GLResourceProvider((gl) => FloorTileTexture.create(gl, vec4.fromValues(0.005, 0.005, 0.005, 1), vec4.fromValues(0.5, 0.5, 0.45, 0), 256, 256, 2, 3, 2, 3));
   static WallTexture = new GLResourceProvider((gl) => FloorTileTexture.create(gl, vec4.fromValues(0.1, 0.1, 0.98, 1), vec4.fromValues(0, 0, 1, 1), 32, 32, 8, 8, 8, 8));
   static WallGeo = new GLResourceProvider((gl) => WallRenderSystem.generateWallGeo(gl, CommonGLResource.LambertShader.get(gl), 1, 1));
 }

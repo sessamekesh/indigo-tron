@@ -25,6 +25,10 @@ export class BasicCamera implements Camera {
     vec3.copy(o, this.lookAt_);
   }
 
+  up(o: vec3) {
+    vec3.copy(o, this.up_);
+  }
+
   setPos(pos: vec3) {
     vec3.copy(this.pos_, pos);
     this.diry_ = true;

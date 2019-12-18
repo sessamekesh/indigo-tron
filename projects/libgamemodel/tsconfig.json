@@ -22,7 +22,8 @@
       "@libutil/*": ["../libutil/*"],
       "@libecs/*": ["../libecs/*"],
       "@libgamemodel/*": ["./*"],
-      "@testutils/*": ["../testutils/*"]
+      "@testutils/*": ["../testutils/*"],
+      "@io/*": ["../io/*"],
     }
   }
 }

@@ -8,6 +8,7 @@ export type SamplerState = {
   MinFilter: FilterType,
   MagFilter: FilterType,
 };
+type TextureFormat = 'rgba32'|'depth24';
 
 const DEFAULT_SAMPLER_STATE: SamplerState = {
   MinFilter: 'linear',
@@ -19,6 +20,8 @@ const DEFAULT_SAMPLER_STATE: SamplerState = {
 export class Texture {
   constructor(
     public readonly tex: WebGLTexture,
+    public readonly Width: number,
+    public readonly Height: number,
     private samplerState: SamplerState) {}
 
   static getTextureWrapGL(type: TextureWrapType) {
@@ -33,6 +36,29 @@ export class Texture {
     switch (type) {
       case 'linear': return WebGL2RenderingContext.LINEAR;
       default: throw new Error('Not implemented');
+    }
+  }
+
+  static getFormatGL(type: TextureFormat) {
+    switch (type) {
+      case 'rgba32': return WebGL2RenderingContext.RGBA;
+      case 'depth24': return WebGL2RenderingContext.DEPTH_COMPONENT;
+      default: throw new Error(`Unknown format ${type}`);
+    }
+  }
+
+  static getInternalFormatGL(type: TextureFormat) {
+    switch (type) {
+      case 'rgba32': return WebGL2RenderingContext.RGBA;
+      case 'depth24': return WebGL2RenderingContext.DEPTH_COMPONENT24;
+      default: throw new Error(`Unknown internalformat ${type}`);
+    }
+  }
+
+  static getTypeGL(type: TextureFormat) {
+    switch (type) {
+      case 'depth24': return WebGL2RenderingContext.UNSIGNED_INT;
+      default: return WebGL2RenderingContext.UNSIGNED_BYTE;
     }
   }
 
@@ -53,7 +79,7 @@ export class Texture {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Texture.getTextureFilterTypeGL(samplerState.MinFilter));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Texture.getTextureFilterTypeGL(samplerState.MagFilter));
 
-    return new Texture(tex, samplerState);
+    return new Texture(tex, img.width, img.height, samplerState);
   }
 
   static createFromData(
@@ -74,7 +100,36 @@ export class Texture {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Texture.getTextureFilterTypeGL(samplerState.MinFilter));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Texture.getTextureFilterTypeGL(samplerState.MagFilter));
 
-    return new Texture(tex, samplerState);
+    return new Texture(tex, width, height, samplerState);
+  }
+
+  static createEmptyTexture(
+      gl: WebGL2RenderingContext,
+      width: number,
+      height: number,
+      format: TextureFormat,
+      samplerState: SamplerState = DEFAULT_SAMPLER_STATE): Texture|null {
+    const tex = gl.createTexture();
+    if (!tex) {
+      console.error('Could not create GL texture object');
+      return null;
+    }
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0 /* level */,
+      Texture.getInternalFormatGL(format),
+      width, height,
+      0 /* border */,
+      Texture.getFormatGL(format),
+      Texture.getTypeGL(format),
+      null /* data */);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, Texture.getTextureWrapGL(samplerState.WrapU));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, Texture.getTextureWrapGL(samplerState.WrapV));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Texture.getTextureFilterTypeGL(samplerState.MinFilter));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Texture.getTextureFilterTypeGL(samplerState.MagFilter));
+    return new Texture(tex, width, height, samplerState);
   }
 
   bind(gl: WebGL2RenderingContext, slot: number = 0) {

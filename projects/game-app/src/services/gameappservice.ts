@@ -27,6 +27,10 @@ import { WallRenderSystem } from '@libgamerender/systems/wall.rendersystem';
 import { DebugBikeSystem } from '@libgamerender/debug/debugbike.system';
 import { GameAppUIEvents } from './gameappuieventmanager';
 import { IEventManager } from '@libutil/eventmanager';
+import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
+import { Framebuffer } from '@librender/texture/framebuffer';
+import { Camera } from '@libgamemodel/camera/camera';
+import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
 
 const DRACO_CONFIG: DracoDecoderCreationOptions = {
   jsFallbackURL: 'assets/draco3d/draco_decoder.js',
@@ -56,13 +60,20 @@ export class GameAppService {
     private environmentRenderSystem: EnvironmentRenderSystem,
     private wallRenderSystem: WallRenderSystem,
     private debugBikeRenderSystem: DebugBikeSystem,
+    private floorReflectionFramebuffer: Framebuffer,
+    private floorReflectionTexture: Texture,
+    private floorReflectionCamera: Camera,
     private onDestroyEvents: Function[]) {}
 
   static async create(
       gl: WebGL2RenderingContext, gameAppUiEventManager: IEventManager<GameAppUIEvents>) {
     const lambertShader = LambertShader.create(gl);
+    const arenaFloorShader = ArenaFloorShader.create(gl);
     if (!lambertShader) {
       throw new Error('Failed to create lambert shader!');
+    }
+    if (!arenaFloorShader) {
+      throw new Error('Failed to create arena floor shader');
     }
 
     // Get GL resources
@@ -84,11 +95,18 @@ export class GameAppService {
     }
     const bikeTexture = await Texture.createFromURL(gl, 'assets/models/lightcycle_base_diffuse.png');
     const bikeWheelTexture = await Texture.createFromURL(gl, 'assets/models/lightcycle_wheel_diffuse.png');
-    const floorTexture = FloorTileTexture.create(
-      gl, vec4.fromValues(0.005, 0.005, 0.005, 1), vec4.fromValues(0.5, 0.5, 0.45, 0), 256, 256, 2, 3, 2, 3);
+    const floorTexture = Texture.createEmptyTexture(gl, 512, 512, 'rgba32');
+    if (!floorTexture) throw new Error('Failed to create floor texture');
     const wallTexture = FloorTileTexture.create(
       gl, vec4.fromValues(0.1, 0.1, 0.98, 1), vec4.fromValues(0, 0, 1, 1), 32, 32, 8, 8, 8, 8);
     const wallGeo = WallRenderSystem.generateWallGeo(gl, lambertShader, 1, 1);
+    const floorReflectionFBO = Framebuffer.create(
+      gl, {
+        AttachedTexture: floorTexture,
+        ColorAttachment: 0,
+        DepthEnabled: true,
+      });
+    if (!floorReflectionFBO) throw new Error('Failed to create floor reflection framebuffer');
 
     // Utility objects
     const vec3Allocator = new TempGroupAllocator(vec3.create);
@@ -107,6 +125,8 @@ export class GameAppService {
     inputManager.addController(keyboardInputController);
     inputManager.addController(touchInputController);
     const camera = new BasicCamera(vec3.fromValues(13, 6, 8), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+    const floorReflectionCamera = new ReflectionCamera(
+      camera, vec3.fromValues(0, -0.5, 0), vec3.fromValues(0, 1, 0), vec3Allocator);
 
     // ECS + systems
     const ecs = new ECSManager();
@@ -120,7 +140,8 @@ export class GameAppService {
     const cameraRiggingSystem = ecs.addSystem(new CameraRigSystem(
       vec3Allocator, sceneNodeFactory, 55, 12, 4.5));
     const environmentSystem = ecs.addSystem(new EnvironmentSystem());
-    const environmentRenderSystem = ecs.addSystem(new EnvironmentRenderSystem(lambertShader, 0.15, floorTexture));
+    const environmentRenderSystem = ecs.addSystem(
+      new EnvironmentRenderSystem(arenaFloorShader, 0.15, floorTexture));
     ecs.addSystem(new WallspawnerSystem(vec3Allocator));
     const wallRenderSystem = ecs.addSystem(new WallRenderSystem(
       lambertShader, wallGeo, sceneNodeFactory, vec3Allocator, mat4Allocator, wallTexture));
@@ -164,7 +185,7 @@ export class GameAppService {
     return new GameAppService(
       gl, gameAppUiEventManager, ecs,
       bikeRenderSystem, camera, environmentRenderSystem, wallRenderSystem, debugBikeRenderSystem,
-      onDestroyEvents);
+      floorReflectionFBO, floorTexture, floorReflectionCamera, onDestroyEvents);
   }
 
   start() {
@@ -211,8 +232,43 @@ export class GameAppService {
     }
   }
 
+  // TODO (sessamekesh): Move common rendering steps to their own subsystems that can be invoked
+  //  on their own - that way, you don't have to duplicate all sorts of rendering logic between
+  //  the game and the tests, and you can also localize it nicely.
+  // Example: GenerateFloorReflectionSystem generates singleton components for rendering the floor
+  //  later. RenderFloorSystem renders the floor using that generated reflection.
+  private reflectionMat4_ = mat4.create();
+  private reflectionMatProj_ = mat4.create();
   drawFrame() {
     const gl = this.gl;
+
+    //
+    // Render floor reflection
+    //
+    {
+      this.floorReflectionFramebuffer.bind(gl);
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.enable(gl.DEPTH_TEST);
+      this.floorReflectionCamera.matView(this.reflectionMat4_);
+      const frameSettings: FrameSettings = {
+        AmbientCoefficient: this.ambientCoefficient_,
+        LightColor: this.lightColor_,
+        LightDirection: this.lightDirection_,
+        MatProj: mat4.perspective(
+          this.reflectionMatProj_,
+          glMatrix.toRadian(45),
+          gl.canvas.width / gl.canvas.height, 0.01, 1000.0),
+        MatView: this.reflectionMat4_,
+      };
+      this.bikeRenderSystem.render(gl, this.ecs, frameSettings);
+      this.wallRenderSystem.render(gl, this.ecs, frameSettings);
+    }
+
+    //
+    // Render Frame
+    //
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     // Cast: Narrows from type (HTMLCanvasElement | OffscreenCanvas)
     gl.canvas.width = (gl.canvas as HTMLCanvasElement).clientWidth * window.devicePixelRatio;

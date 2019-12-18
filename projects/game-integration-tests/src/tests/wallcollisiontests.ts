@@ -15,6 +15,7 @@ import { WallspawnerSystem } from '@libgamemodel/wall/wallspawner.system';
 import { EnvironmentRenderSystem } from '@libgamerender/systems/environment.rendersystem';
 import { FrameSettings } from '@libgamerender/framesettings';
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
+import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
 import { WallComponent } from '@libgamemodel/wall/wallcomponent';
 import { LightcycleComponent2 } from '@libgamemodel/lightcycle/lightcycle.component';
 import { BasicExpectations } from '@libintegrationtest/basicexpectations';
@@ -47,18 +48,20 @@ const setupUtilities = () => {
 
 const setupRenderUtilities = async (gl: WebGL2RenderingContext) => {
   const lambertShader = CommonGLResource.LambertShader.get(gl);
+  const arenaFloorShader = CommonGLResource.ArenaFloorShader.get(gl);
+  const floorReflectionFBO = CommonGLResource.FloorReflectionFBO.get(gl);
   const bikeTexture = await CommonGLResource.BikeTexture.get(gl);
   const bikeWheelTexture = await CommonGLResource.BikeWheelTexture.get(gl);
   const bikeLambertGeo = await CommonGLResource.BikeBodyLambertGeo.get(gl);
   const bikeWheelGeo = await CommonGLResource.BikeWheelLambertGeo.get(gl);
   const bikeStickGeo = await CommonGLResource.BikeStickLambertGeo.get(gl);
-  const floorTexture = CommonGLResource.FloorTexture.get(gl);
+  const floorTexture = CommonGLResource.FloorReflectionTexutre.get(gl);
   const wallTexture = CommonGLResource.WallTexture.get(gl);
   const wallGeo = CommonGLResource.WallGeo.get(gl);
 
   return {
-    lambertShader, bikeLambertGeo, bikeWheelGeo, bikeStickGeo, bikeTexture, bikeWheelTexture,
-    floorTexture, wallGeo, wallTexture,
+    lambertShader, arenaFloorShader, bikeLambertGeo, bikeWheelGeo, bikeStickGeo, bikeTexture,
+    bikeWheelTexture, floorTexture, wallGeo, wallTexture, floorReflectionFBO,
   };
 };
 
@@ -76,20 +79,22 @@ const setupCommonWallCollisionTest = async (glOpt: WebGL2RenderingContext|null, 
   const wallSpawnerSystem = ecs.addSystem(new WallspawnerSystem(vec3Allocator));
   const camera = new BasicCamera(
     vec3.fromValues(13, 6, 8), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+  const reflectionCamera = new ReflectionCamera(
+    camera, vec3.fromValues(0, -0.5, 0), vec3.fromValues(0, 1, 0), vec3Allocator);
 
   let gameLoop: MockGameLoop;
   let renderFn: MockRenderFn|null = null;
   let renderUtilities = glOpt && await setupRenderUtilities(glOpt);
   if (glOpt && renderUtilities) {
     const {
-      lambertShader, bikeLambertGeo, bikeWheelGeo, bikeStickGeo, bikeTexture, bikeWheelTexture,
-      floorTexture, wallGeo, wallTexture
+      lambertShader, arenaFloorShader, bikeLambertGeo, bikeWheelGeo, bikeStickGeo, bikeTexture,
+      bikeWheelTexture, floorTexture, wallGeo, wallTexture, floorReflectionFBO
     } = renderUtilities;
     const bikeRenderSystem = ecs.addSystem(new LightcycleRenderSystem(
       lambertShader, bikeLambertGeo, bikeWheelGeo, bikeStickGeo,
       bikeTexture, bikeWheelTexture, bikeWheelTexture, sceneNodeFactory, mat4Allocator));
     const environmentRenderSystem = ecs.addSystem(
-      new EnvironmentRenderSystem(lambertShader, 0.15, floorTexture));
+      new EnvironmentRenderSystem(arenaFloorShader, 0.15, floorTexture));
     const wallRenderSystem = ecs.addSystem(
       new WallRenderSystem(
         lambertShader, wallGeo, sceneNodeFactory, vec3Allocator, mat4Allocator, wallTexture));
@@ -98,6 +103,25 @@ const setupCommonWallCollisionTest = async (glOpt: WebGL2RenderingContext|null, 
     const matView = mat4.create();
 
     renderFn = (gl: WebGL2RenderingContext) => {
+      // Floor reflection
+      {
+        floorReflectionFBO.bind(gl);
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.enable(gl.DEPTH_TEST);
+        reflectionCamera.matView(matView);
+        const frameSettings: FrameSettings = {
+          AmbientCoefficient: 0.5,
+          LightColor: vec3.fromValues(1, 1, 1),
+          LightDirection: vec3.fromValues(0, -1, 0),
+          MatProj: matProj,
+          MatView: matView,
+        };
+        bikeRenderSystem.render(gl, ecs, frameSettings);
+        wallRenderSystem.render(gl, ecs, frameSettings);
+      }
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.canvas.width = (gl.canvas as HTMLCanvasElement).clientWidth * window.devicePixelRatio;
       gl.canvas.height = (gl.canvas as HTMLCanvasElement).clientHeight * window.devicePixelRatio;
 
