@@ -13,6 +13,7 @@ type BikeTiltEvent = {
 };
 
 export interface GameAppUIEvents {
+  "showloadingscreen": boolean,
   "playerhealth": PlayerHealthEvent,
   "biketilt": BikeTiltEvent,
   "uipresspause": null,

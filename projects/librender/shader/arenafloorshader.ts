@@ -3,6 +3,7 @@ import { Texture } from '@librender/texture/texture';
 import { ArenaFloorGeo } from '@librender/geo/arenafloorgeo';
 import { ShaderUtils } from './shaderutils';
 import { IBDescBitWidthToType } from '@librender/geo/ibdesc';
+import { RenderProvider } from '@librender/renderprovider';
 
 const VS_TEST = `#version 300 es
 precision mediump float;
@@ -77,6 +78,10 @@ export class ArenaFloorShader {
     private program: WebGLProgram,
     private attribs: Attribs,
     private uniforms: Uniforms) {}
+
+  static getRenderProvider() {
+    return new RenderProvider((gl) => ArenaFloorShader.create(gl));
+  }
 
   static create(gl: WebGL2RenderingContext): ArenaFloorShader|null {
     const program = ShaderUtils.createShaderFromSource(gl, 'arenaFloorShader', VS_TEST, FS_TEXT);

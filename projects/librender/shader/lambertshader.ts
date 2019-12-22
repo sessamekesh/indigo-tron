@@ -3,6 +3,7 @@ import { mat4, vec3 } from 'gl-matrix';
 import { ShaderUtils } from './shaderutils';
 import { IBDescBitWidthToType } from '@librender/geo/ibdesc';
 import { Texture } from '@librender/texture/texture';
+import { RenderProvider } from '@librender/renderprovider';
 
 const VS_TEXT = `#version 300 es
 precision mediump float;
@@ -85,6 +86,10 @@ export class LambertShader {
     private program: WebGLProgram,
     private attribs: Attribs,
     private uniforms: Uniforms) {}
+
+  static getRenderProvider(): RenderProvider<LambertShader> {
+    return new RenderProvider((gl) => LambertShader.create(gl));
+  }
 
   static create(gl: WebGL2RenderingContext): LambertShader|null {
     const program = ShaderUtils.createShaderFromSource(gl, 'lambertShader', VS_TEXT, FS_TEXT);

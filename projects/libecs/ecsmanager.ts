@@ -8,6 +8,7 @@ export class ECSManager {
   private indices_ = new Map<Klass<any>, Set<number>>();
   private systems_: ECSSystem[] = [];
   private started_ = false;
+  private singletonComponents_ = new Map<Klass<any>, any>();
 
   // Public API...
   createEntity(): Entity {
@@ -74,6 +75,21 @@ export class ECSManager {
     for (let i = 0; i < this.systems_.length; i++) {
       this.systems_[i].update(this, msDt);
     }
+  }
+
+  clearAllEntities() {
+    this.nextId_ = 0;
+    this.entities_.forEach(entity => entity.destroy());
+    this.entities_.clear();
+  }
+
+  getSingletonComponent<A>(klass: Klass<A>): A|null {
+    let out: A|null = null;
+    this.iterateComponents([klass], (entity, a) => {
+      out = a;
+      return;
+    });
+    return out;
   }
 
   iterateComponents<A>(klassList: [Klass<A>], cb: (entity: Entity, a: A)=>void): void;
