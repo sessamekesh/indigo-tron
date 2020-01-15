@@ -6,7 +6,7 @@ import { glMatrix } from 'gl-matrix';
 
 const FULL_COLLISION_DAMAGE = 75;
 
-interface CollisionAction {
+export interface CollisionAction {
   vitalityLost: number,
   bikeSteeringAdjustment: number,
 };

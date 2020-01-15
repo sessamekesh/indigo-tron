@@ -40,3 +40,42 @@ export class TempGroupAllocator<T extends Object> {
     this.buffer_ = this.buffer_.slice(0, size);
   }
 }
+
+export type OwnedResource<T> = {
+  Value: T,
+  ReleaseFn: ()=>void,
+};
+
+export class LifecycleOwnedAllocator<T extends Object> {
+  private buffer_: T[] = [];
+  private availability_: boolean[] = [];
+  private nextIdx_ = 0;
+
+  constructor(private genFn: ()=>T) {}
+
+  get(): OwnedResource<T> {
+    while (this.buffer_.length <= this.nextIdx_) {
+      this.buffer_.push(this.genFn());
+      this.availability_.push(true);
+    }
+    const idx = this.nextIdx_++;
+    this.availability_[idx] = false;
+    return {
+      Value: this.buffer_[idx],
+      ReleaseFn: () => this.release(idx),
+    };
+  }
+
+  reset() {
+    this.buffer_ = [];
+    this.availability_ = [];
+    this.nextIdx_ = 0;
+  }
+
+  private release(idx: number) {
+    this.availability_[idx] = true;
+    while (this.availability_[this.nextIdx_ - 1]) {
+      this.nextIdx_--;
+    }
+  }
+}

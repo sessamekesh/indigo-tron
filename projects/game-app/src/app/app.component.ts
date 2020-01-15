@@ -2,6 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectionStr
 import { GameAppService } from '../services/gameappservice';
 import { GameAppUIEvents } from '../services/gameappuieventmanager';
 import { CachingEventManager } from '@libutil/cachingeventmanager';
+import { GameAppService2 } from '../services/gameappservice2';
 
 @Component({
   selector: 'app-root',
@@ -12,7 +13,8 @@ import { CachingEventManager } from '@libutil/cachingeventmanager';
 export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('gameCanvas') canvasElement: ElementRef<HTMLCanvasElement>|undefined;
   private gl_: WebGL2RenderingContext|undefined;
-  private gameService_: GameAppService|undefined;
+  //private gameService_: GameAppService|undefined;
+  private gameService_: GameAppService2|undefined;
   gameAppUiEventManager = new CachingEventManager<GameAppUIEvents>();
   isLoaded = false;
   isDead = false;
@@ -31,7 +33,8 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.gl_ = context;
-    this.gameService_ = await GameAppService.create(context, this.gameAppUiEventManager);
+    // this.gameService_ = await GameAppService.create(context, this.gameAppUiEventManager);
+    this.gameService_ = await GameAppService2.create(context, this.gameAppUiEventManager);
 
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {
@@ -52,7 +55,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.gameService_) {
-      this.gameService_.destroy();
+      // this.gameService_.destroy();
     }
 
     if (this.gameAppUiEventManager) {

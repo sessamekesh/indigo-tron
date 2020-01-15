@@ -1,5 +1,5 @@
 import { Entity } from './entity';
-import { Klass } from './klass';
+import { Klass, Klass0 } from './klass';
 import { ECSSystem } from './ecssystem';
 
 export class ECSManager {
@@ -36,6 +36,10 @@ export class ECSManager {
     return system;
   }
 
+  addSystem2<T extends ECSSystem>(klass: Klass0<T>) {
+    this.systems_.push(new klass());
+  }
+
   getSystem<T extends ECSSystem>(klass: Klass<T>): T|null {
     const systems = this.systems_.filter(_=>_ instanceof klass);
     if (systems.length === 0) {
@@ -48,6 +52,15 @@ export class ECSManager {
   }
 
   start() {
+    let success = true;
+    this.systems_.forEach(system => success = success && system.start(this));
+    if (success) {
+      this.started_ = true;
+    }
+    return success;
+  }
+
+  restart() {
     let success = true;
     this.systems_.forEach(system => success = success && system.start(this));
     if (success) {
@@ -90,6 +103,14 @@ export class ECSManager {
       return;
     });
     return out;
+  }
+
+  getSingletonComponentOrThrow<A>(klass: Klass<A>): A {
+    const component = this.getSingletonComponent(klass);
+    if (!component) {
+      throw new Error(`Failed to get singleton: ${klass.name}`);
+    }
+    return component;
   }
 
   iterateComponents<A>(klassList: [Klass<A>], cb: (entity: Entity, a: A)=>void): void;

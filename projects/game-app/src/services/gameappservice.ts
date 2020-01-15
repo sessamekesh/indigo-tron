@@ -131,12 +131,13 @@ export class GameAppService {
     // ECS + systems
     const ecs = new ECSManager();
     const lightcycleSpawnerSystem = ecs.addSystem(new LightcycleSpawnerSystem(sceneNodeFactory));
+    const lightcycleUpdateSystem = ecs.addSystem(
+      new LightcycleUpdateSystem(inputManager, vec3Allocator, sceneNodeFactory));
+    // MIGRATION: Continue here (replacing stuff after this mark!)
     const bikeRenderSystem = ecs.addSystem(new LightcycleRenderSystem(
       lambertShader, bikeLambertGeo, bikeWheelGeo, bikeStickGeo,
       bikeTexture, bikeWheelTexture, bikeWheelTexture,
       sceneNodeFactory, mat4Allocator));
-    const lightcycleUpdateSystem = ecs.addSystem(
-      new LightcycleUpdateSystem(inputManager, vec3Allocator, sceneNodeFactory));
     const cameraRiggingSystem = ecs.addSystem(new CameraRigSystem(
       vec3Allocator, sceneNodeFactory, 55, 12, 4.5));
     const environmentSystem = ecs.addSystem(new EnvironmentSystem());

@@ -7,9 +7,8 @@ import { loadRawBuffer } from '@libutil/loadutils';
 import { LambertConverter } from '@librender/geo/draco/lambertconverter';
 import { Texture } from '@librender/texture/texture';
 import { WallRenderSystem } from '@libgamerender/systems/wall.rendersystem';
-import { LambertGeo } from '@librender/geo/lambertgeo';
 import { Framebuffer } from '@librender/texture/framebuffer';
-import { TempGroupAllocator } from '@libutil/allocator';
+import { TempGroupAllocator, LifecycleOwnedAllocator } from '@libutil/allocator';
 import { vec3, mat4, quat } from 'gl-matrix';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 
@@ -22,38 +21,6 @@ const DRACO_CONFIG: DracoDecoderCreationOptions = {
   wasmLoaderURL: 'assets/draco3d/draco_wasm_wrapper.js',
 };
 const REFLECTION_FRAMEBUFFER_TEXTURE_WIDTH = 512;
-
-//
-// Game-specific singleton component definitions
-//
-export class LightcycleLambertRenderResourcesComponent {
-  constructor(
-    public readonly Body: LambertGeo,
-    public readonly Wheel: LambertGeo,
-    public readonly Stick: LambertGeo,
-    private readonly BodyTexture: Texture,
-    private readonly WheelTexture: Texture,
-    private readonly StickTexture: Texture) {}
-}
-
-export class ArenaFloorReflectionFramebufferComponent {
-  constructor(public readonly FBO: Framebuffer) {}
-}
-
-export class ArenaFloorReflectionTextureComponent {
-  constructor(public readonly Texture: Texture) {}
-}
-
-export class MathAllocatorsComponent {
-  constructor(
-    public readonly Vec3: TempGroupAllocator<vec3>,
-    public readonly Mat4: TempGroupAllocator<mat4>,
-    public readonly Quat: TempGroupAllocator<quat>) {}
-}
-
-export class SceneNodeFactoryComponent {
-  constructor(public readonly SceneNodeFactory: SceneNodeFactory) {}
-}
 
 //
 // Render providers class (entry point to all this)
@@ -106,6 +73,9 @@ export class GameAppRenderProviders2 {
   readonly Vec3Allocator = new Provider(() => new TempGroupAllocator(vec3.create));
   readonly Mat4Allocator = new Provider(() => new TempGroupAllocator(mat4.create));
   readonly QuatAllocator = new Provider(() => new TempGroupAllocator(quat.create));
+  readonly OwnedVec3Allocator = new Provider(() => new LifecycleOwnedAllocator(vec3.create));
+  readonly OwnedMat4Allocator = new Provider(() => new LifecycleOwnedAllocator(mat4.create));
+  readonly OwnedQuatAllocator = new Provider(() => new LifecycleOwnedAllocator(quat.create));
   readonly SceneNodeFactory = new Provider(
     () => new SceneNodeFactory(this.Mat4Allocator.get(), this.QuatAllocator.get()));
 

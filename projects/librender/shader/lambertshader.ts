@@ -4,6 +4,7 @@ import { ShaderUtils } from './shaderutils';
 import { IBDescBitWidthToType } from '@librender/geo/ibdesc';
 import { Texture } from '@librender/texture/texture';
 import { RenderProvider } from '@librender/renderprovider';
+import { OwnedResource } from '@libutil/allocator';
 
 const VS_TEXT = `#version 300 es
 precision mediump float;
@@ -76,6 +77,21 @@ export type LambertRenderCall = {
   //SurfaceColor: vec3,
   LightColor: vec3,
   LightDirection: vec3,
+  AmbientCoefficient: number,
+
+  DiffuseTexture: Texture,
+};
+
+export type LambertRenderCall2 = {
+  Geo: LambertGeo,
+
+  MatWorld: OwnedResource<mat4>,
+  MatView: OwnedResource<mat4>,
+  MatProj: OwnedResource<mat4>,
+
+  //SurfaceColor: vec3,
+  LightColor: OwnedResource<vec3>,
+  LightDirection: OwnedResource<vec3>,
   AmbientCoefficient: number,
 
   DiffuseTexture: Texture,
@@ -156,6 +172,22 @@ export class LambertShader {
     gl.uniform3fv(this.uniforms.LightColor, call.LightColor);
     gl.uniform3fv(this.uniforms.LightDirection, call.LightDirection);
     //gl.uniform3fv(this.uniforms.SurfaceColor, call.SurfaceColor);
+    gl.uniform1f(this.uniforms.AmbientCoefficient, call.AmbientCoefficient);
+    gl.uniform1i(this.uniforms.DiffuseSampler, 0);
+    call.DiffuseTexture.bind(gl, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.Geo.ib);
+    gl.drawElements(
+      gl.TRIANGLES, call.Geo.numIndices,
+      IBDescBitWidthToType[call.Geo.ibDesc.BitWidth], 0);
+  }
+
+  render2(gl: WebGL2RenderingContext, call: LambertRenderCall2) {
+    gl.bindVertexArray(call.Geo.vao);
+    gl.uniformMatrix4fv(this.uniforms.MatProj, false, call.MatProj.Value);
+    gl.uniformMatrix4fv(this.uniforms.MatView, false, call.MatView.Value);
+    gl.uniformMatrix4fv(this.uniforms.MatWorld, false, call.MatWorld.Value);
+    gl.uniform3fv(this.uniforms.LightColor, call.LightColor.Value);
+    gl.uniform3fv(this.uniforms.LightDirection, call.LightDirection.Value);
     gl.uniform1f(this.uniforms.AmbientCoefficient, call.AmbientCoefficient);
     gl.uniform1i(this.uniforms.DiffuseSampler, 0);
     call.DiffuseTexture.bind(gl, 0);
