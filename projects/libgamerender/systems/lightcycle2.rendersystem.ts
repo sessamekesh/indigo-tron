@@ -7,7 +7,7 @@ import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { Z_UNIT_DIR } from '@libutil/helpfulconstants';
 import { glMatrix, vec3, mat4 } from 'gl-matrix';
 import { SceneNodeFactoryComponent, OwnedMathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
-import { MainRenderPassComponent } from '@libgamerender/components/mainrenderpass.component';
+import { MainRenderPassComponent, FloorReflectionRenderPassComponent } from '@libgamerender/components/mainrenderpass.component';
 import { LightcycleLambertRenderResourcesComponent } from '@libgamerender/components/renderresourcecomponents';
 
 export class LightcycleRenderSystem2 extends ECSSystem {
@@ -20,6 +20,7 @@ export class LightcycleRenderSystem2 extends ECSSystem {
       SceneNodeFactory: sceneNodeFactory,
     } = ecs.getSingletonComponentOrThrow(SceneNodeFactoryComponent);
     const mainRenderPass = ecs.getSingletonComponentOrThrow(MainRenderPassComponent);
+    const floorReflectionPass = ecs.getSingletonComponentOrThrow(FloorReflectionRenderPassComponent);
     const {
       Vec3: vec3Allocator,
       Mat4: mat4Allocator,
@@ -31,64 +32,41 @@ export class LightcycleRenderSystem2 extends ECSSystem {
       const lightcycleRenderComponent = this.getRenderComponent(
         sceneNodeFactory, entity, lightcycleComponent);
 
-      const lightColor = vec3Allocator.get();
-      const lightDirection = vec3Allocator.get();
-      const matView = mat4Allocator.get();
-      const matProj = mat4Allocator.get();
-      vec3.copy(lightColor.Value, mainRenderPass.FrameSettings.LightColor);
-      vec3.copy(lightDirection.Value, mainRenderPass.FrameSettings.LightDirection);
-      mat4.copy(matView.Value, mainRenderPass.FrameSettings.MatView);
-      mat4.copy(matProj.Value, mainRenderPass.FrameSettings.MatProj);
-
       const bodyMatWorld = mat4Allocator.get();
       lightcycleRenderComponent.BodySceneNode.getMatWorld(bodyMatWorld.Value);
-      mainRenderPass.LambertCalls.push({
-        AmbientCoefficient: mainRenderPass.FrameSettings.AmbientCoefficient,
+      const bodyCall = {
         DiffuseTexture: lambertResources.BodyTexture,
         Geo: lambertResources.Body,
-        LightColor: lightColor,
-        LightDirection: lightDirection,
-        MatProj: matProj,
-        MatView: matView,
         MatWorld: bodyMatWorld,
-      });
+      };
+      mainRenderPass.LambertCalls.push(bodyCall);
+      floorReflectionPass.LambertCalls.push(bodyCall);
 
       const frontWheelMatWorld = mat4Allocator.get();
       lightcycleRenderComponent.FrontWheelSceneNode.getMatWorld(frontWheelMatWorld.Value);
-      mainRenderPass.LambertCalls.push({
-        AmbientCoefficient: mainRenderPass.FrameSettings.AmbientCoefficient,
+      const frontWheelCall = {
         DiffuseTexture: lambertResources.WheelTexture,
         Geo: lambertResources.Wheel,
-        LightColor: lightColor,
-        LightDirection: lightDirection,
-        MatProj: matProj,
-        MatView: matView,
         MatWorld: frontWheelMatWorld,
-      });
+      };
+      mainRenderPass.LambertCalls.push(frontWheelCall);
+      floorReflectionPass.LambertCalls.push(frontWheelCall);
 
       const backWheelMatWorld = mat4Allocator.get();
       lightcycleRenderComponent.BackWheelSceneNode.getMatWorld(backWheelMatWorld.Value);
-      mainRenderPass.LambertCalls.push({
-        AmbientCoefficient: mainRenderPass.FrameSettings.AmbientCoefficient,
+      const backWheelCall = {
         DiffuseTexture: lambertResources.WheelTexture,
         Geo: lambertResources.Wheel,
-        LightColor: lightColor,
-        LightDirection: lightDirection,
-        MatProj: matProj,
-        MatView: matView,
         MatWorld: backWheelMatWorld,
-      });
+      };
+      mainRenderPass.LambertCalls.push(backWheelCall);
+      floorReflectionPass.LambertCalls.push(backWheelCall);
 
       const spawnStickMatWorld = mat4Allocator.get();
       lightcycleRenderComponent.SpawnStickSceneNode.getMatWorld(spawnStickMatWorld.Value);
       mainRenderPass.LambertCalls.push({
-        AmbientCoefficient: mainRenderPass.FrameSettings.AmbientCoefficient,
         DiffuseTexture: lambertResources.StickTexture,
         Geo: lambertResources.Stick,
-        LightColor: lightColor,
-        LightDirection: lightDirection,
-        MatProj: matProj,
-        MatView: matView,
         MatWorld: spawnStickMatWorld,
       });
     });

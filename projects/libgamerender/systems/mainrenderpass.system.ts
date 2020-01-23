@@ -2,7 +2,7 @@ import { ECSSystem } from '@libecs/ecssystem';
 import { ECSManager } from '@libecs/ecsmanager';
 import { MainRenderPassComponent } from '@libgamerender/components/mainrenderpass.component';
 import { GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
-import { LambertShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { LambertShaderComponent, ArenaFloorShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
 
 export class MainRenderPassSystem extends ECSSystem {
   start() {
@@ -14,6 +14,9 @@ export class MainRenderPassSystem extends ECSSystem {
     const {
       LambertShader: lambertShader
     } = ecs.getSingletonComponentOrThrow(LambertShaderComponent);
+    const {
+      ArenaFloorShader: arenaFloorShader,
+    } = ecs.getSingletonComponentOrThrow(ArenaFloorShaderComponent);
     const mainRenderPass = ecs.getSingletonComponentOrThrow(MainRenderPassComponent);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -29,7 +32,15 @@ export class MainRenderPassSystem extends ECSSystem {
       lambertShader.activate(gl);
     }
     for (let i = 0; i < mainRenderPass.LambertCalls.length; i++) {
-      lambertShader.render2(gl, mainRenderPass.LambertCalls[i]);
+      lambertShader.render2(gl, mainRenderPass.LambertCalls[i], mainRenderPass.FrameSettings);
+    }
+
+    if (mainRenderPass.FloorReflectionCalls.length > 0) {
+      arenaFloorShader.activate(gl);
+    }
+    for (let i = 0; i < mainRenderPass.FloorReflectionCalls.length; i++) {
+      arenaFloorShader.render2(
+        gl, mainRenderPass.FloorReflectionCalls[i], mainRenderPass.FrameSettings);
     }
   }
 }

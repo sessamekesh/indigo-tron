@@ -1,4 +1,4 @@
-import { TempGroupAllocator } from "./allocator";
+import { TempGroupAllocator, LifecycleOwnedAllocator } from "./allocator";
 
 describe('TempGroupAllocator', () => {
   function getNewSpyCtor(): {ctor: ()=>number, invocationCount: ()=>number} {
@@ -97,6 +97,58 @@ describe('TempGroupAllocator', () => {
       seen.add(d);
       expect(seen.size).toBe(4);
       expect(spy.invocationCount()).toBe(4);
+    });
+  });
+});
+
+describe('LifecycleOwnedAllocator', () => {
+  function getNewSpyCtor(): {ctor: ()=>number, invocationCount: ()=>number} {
+    let timesInvoked = 0;
+    return {
+      ctor: () => { return timesInvoked++; },
+      invocationCount: ()=>timesInvoked,
+    };
+  }
+
+  it('allocates new resources on first use', () => {
+    const spy = getNewSpyCtor();
+    const allocator = new LifecycleOwnedAllocator(spy.ctor);
+
+    const first = allocator.get();
+    const second = allocator.get();
+
+    expect(first.Value).toBe(0);
+    expect(second.Value).toBe(1);
+    expect(spy.invocationCount()).toBe(2);
+  });
+
+  describe('resource re-use', () => {
+    it('re-uses old resources at the end', () => {
+      const spy = getNewSpyCtor();
+      const allocator = new LifecycleOwnedAllocator(spy.ctor);
+
+      const first = allocator.get();
+      const second = allocator.get();
+      second.ReleaseFn();
+      const third = allocator.get();
+
+      expect(first.Value).toBe(0);
+      expect(third.Value).toBe(1);
+    });
+
+    it('handles in-order removal', () => {
+      const spy = getNewSpyCtor();
+      const allocator = new LifecycleOwnedAllocator(spy.ctor);
+
+      const _1 = allocator.get();
+      const _2 = allocator.get();
+      _1.ReleaseFn();
+      _2.ReleaseFn();
+      const _3 = allocator.get();
+      const _4 = allocator.get();
+
+      expect(_3.Value).toBe(0);
+      expect(_4.Value).toBe(1);
     });
   });
 });

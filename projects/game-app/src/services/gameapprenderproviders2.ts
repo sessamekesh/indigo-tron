@@ -9,7 +9,7 @@ import { Texture } from '@librender/texture/texture';
 import { WallRenderSystem } from '@libgamerender/systems/wall.rendersystem';
 import { Framebuffer } from '@librender/texture/framebuffer';
 import { TempGroupAllocator, LifecycleOwnedAllocator } from '@libutil/allocator';
-import { vec3, mat4, quat } from 'gl-matrix';
+import { vec3, mat4, quat, vec2 } from 'gl-matrix';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 
 //
@@ -73,6 +73,7 @@ export class GameAppRenderProviders2 {
   readonly Vec3Allocator = new Provider(() => new TempGroupAllocator(vec3.create));
   readonly Mat4Allocator = new Provider(() => new TempGroupAllocator(mat4.create));
   readonly QuatAllocator = new Provider(() => new TempGroupAllocator(quat.create));
+  readonly OwnedVec2Allocator = new Provider(() => new LifecycleOwnedAllocator(vec2.create));
   readonly OwnedVec3Allocator = new Provider(() => new LifecycleOwnedAllocator(vec3.create));
   readonly OwnedMat4Allocator = new Provider(() => new LifecycleOwnedAllocator(mat4.create));
   readonly OwnedQuatAllocator = new Provider(() => new LifecycleOwnedAllocator(quat.create));

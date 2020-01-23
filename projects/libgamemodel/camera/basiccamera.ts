@@ -36,6 +36,9 @@ export class BasicCamera implements Camera {
 
   setLookAt(lookAt: vec3) {
     vec3.copy(this.lookAt_, lookAt);
+    if (this.lookAt_[0] == 0 && this.lookAt_[1] == -1 && this.lookAt_[2] == 0) {
+      throw new Error('bad case?');
+    }
     this.diry_ = true;
   }
 

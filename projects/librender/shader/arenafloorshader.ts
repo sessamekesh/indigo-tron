@@ -4,6 +4,8 @@ import { ArenaFloorGeo } from '@librender/geo/arenafloorgeo';
 import { ShaderUtils } from './shaderutils';
 import { IBDescBitWidthToType } from '@librender/geo/ibdesc';
 import { RenderProvider } from '@librender/renderprovider';
+import { OwnedResource } from '@libutil/allocator';
+import { FrameSettings } from '@libgamerender/framesettings';
 
 const VS_TEST = `#version 300 es
 precision mediump float;
@@ -71,6 +73,15 @@ export type ArenaFloorRenderCall = {
   ReflectionTexture: Texture,
 
   Geo: ArenaFloorGeo,
+};
+
+export type ArenaFloorRenderCall2 = {
+  Geo: ArenaFloorGeo,
+
+  MatWorld: OwnedResource<mat4>,
+  ViewportSize: OwnedResource<vec2>,
+
+  ReflectionTexture: Texture,
 };
 
 export class ArenaFloorShader {
@@ -143,6 +154,21 @@ export class ArenaFloorShader {
     gl.uniformMatrix4fv(this.uniforms.MatWorld, false, call.MatWorld);
     gl.uniform3fv(this.uniforms.LightColor, call.LightColor);
     gl.uniform2fv(this.uniforms.ViewportSize, call.ViewportSize);
+    gl.uniform1i(this.uniforms.ReflectionTexture, 0);
+    call.ReflectionTexture.bind(gl, 0);
+
+    gl.bindVertexArray(call.Geo.vao);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.Geo.ib);
+    gl.drawElements(
+      gl.TRIANGLES, call.Geo.numIndices, IBDescBitWidthToType[call.Geo.ibDesc.BitWidth], 0);
+  }
+
+  render2(gl: WebGL2RenderingContext, call: ArenaFloorRenderCall2, frameSettings: FrameSettings) {
+    gl.uniformMatrix4fv(this.uniforms.MatProj, false, frameSettings.MatProj);
+    gl.uniformMatrix4fv(this.uniforms.MatView, false, frameSettings.MatView);
+    gl.uniformMatrix4fv(this.uniforms.MatWorld, false, call.MatWorld.Value);
+    gl.uniform3fv(this.uniforms.LightColor, frameSettings.LightColor);
+    gl.uniform2fv(this.uniforms.ViewportSize, call.ViewportSize.Value);
     gl.uniform1i(this.uniforms.ReflectionTexture, 0);
     call.ReflectionTexture.bind(gl, 0);
 

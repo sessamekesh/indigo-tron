@@ -2,7 +2,11 @@ import { RandomNumberFn } from '@libutil/mathutils';
 import { LineSegment2DCollision } from '@libutil/math/linesegment';
 import { WallComponent } from '@libgamemodel/wall/wallcomponent';
 import { LightcycleComponent2 } from './lightcycle.component';
-import { glMatrix } from 'gl-matrix';
+import { glMatrix, vec3 } from 'gl-matrix';
+import { Entity } from '@libecs/entity';
+import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
+import { CameraRigComponent } from '@libgamemodel/camera/camerarig.component';
+import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 
 const FULL_COLLISION_DAMAGE = 75;
 
@@ -74,5 +78,27 @@ export class LightcycleUtils {
     const actualDamage = Math.min(damage, wallComponent.Vitality, lightcycleComponent.Vitality);
     wallComponent.Vitality -= actualDamage;
     lightcycleComponent.Vitality -= actualDamage;
+  }
+
+  static attachCameraRigToLightcycle(
+      entity: Entity,
+      offset: vec3,
+      camera: BasicCamera,
+      sceneNodeFactory: SceneNodeFactory) {
+    const lightcycleComponent = entity.getComponent(LightcycleComponent2);
+    if (!lightcycleComponent) {
+      throw new Error('Could not attach camera rig to non-lightcycle entity');
+    }
+    const riggingSceneNode = sceneNodeFactory.createSceneNode({ pos: offset });
+    riggingSceneNode.attachToParent(lightcycleComponent.BodySceneNode);
+
+    entity.addComponent(
+      CameraRigComponent, camera, lightcycleComponent.BodySceneNode, riggingSceneNode);
+    entity.addListener('destroy', (e) => {
+      const rigComponent = e.getComponent(CameraRigComponent);
+      if (rigComponent) {
+        rigComponent.PositionSceneNode.detach();
+      }
+    });
   }
 }

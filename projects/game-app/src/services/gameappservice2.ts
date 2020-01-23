@@ -24,6 +24,11 @@ import { LightcycleLambertRenderResourcesComponent, ArenaFloorReflectionFramebuf
 import { LightcycleRenderSystem2 } from '@libgamerender/systems/lightcycle2.rendersystem';
 import { MainRenderPassSystem } from '@libgamerender/systems/mainrenderpass.system';
 import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
+import { CameraRigSystem2, CameraRigSystemConfigurationComponent } from '@libgamemodel/camera/camerarig2.system';
+import { LightcycleUtils } from '@libgamemodel/lightcycle/lightcycleutils';
+import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
+import { EnvironmentRenderSystem2 } from '@libgamerender/systems/environment2.rendersystem';
+import { FloorReflectionPassSystem } from '@libgamerender/systems/floorreflectionpass.system';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -78,11 +83,18 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleUpdateSystem2);
 
     //
-    // Render Systems
+    // Render Pass Building Systems
     //
     ecs.addSystem2(RenderPassResetSystem);
     ecs.addSystem2(LightcycleRenderSystem2);
+    ecs.addSystem2(CameraRigSystem2);
+    ecs.addSystem2(EnvironmentRenderSystem2);
+
+    //
+    // Render Execution Systems
+    //
     ecs.addSystem2(MainRenderPassSystem);
+    ecs.addSystem2(FloorReflectionPassSystem);
   }
 
   private static async loadGlResources(
@@ -142,7 +154,9 @@ export class GameAppService2 {
       MathAllocatorsComponent, this.renderProviders_.Vec3Allocator.get(),
       this.renderProviders_.Mat4Allocator.get(), this.renderProviders_.QuatAllocator.get());
     utilitiesEntity.addComponent(
-      OwnedMathAllocatorsComponent, this.renderProviders_.OwnedVec3Allocator.get(),
+      OwnedMathAllocatorsComponent,
+      this.renderProviders_.OwnedVec2Allocator.get(),
+      this.renderProviders_.OwnedVec3Allocator.get(),
       this.renderProviders_.OwnedMat4Allocator.get(),
       this.renderProviders_.OwnedQuatAllocator.get());
     utilitiesEntity.addComponent(
@@ -166,14 +180,23 @@ export class GameAppService2 {
     camerasEntity.addComponent(ReflectionCameraComponent, floorReflectionCamera);
 
     //
-    // Initial player game state
-    // TODO (sessamekesh): Clean this up, where does it belong?
+    // System run-time configuration
     //
+    const configurationEntity = ecs.createEntity();
+    configurationEntity.addComponent(CameraRigSystemConfigurationComponent, 4.5, 12, 55);
+
+    //
+    // Initial game state
+    //
+    EnvironmentUtils.spawnFloor(ecs, 400, 400);
     const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
       Position: vec3.fromValues(5, 0, 0),
       Orientation: glMatrix.toRadian(180),
     });
     mainPlayerEntity.addComponent(MainPlayerComponent);
+    LightcycleUtils.attachCameraRigToLightcycle(
+      mainPlayerEntity, vec3.fromValues(0, 7, -18), camera,
+      this.renderProviders_.SceneNodeFactory.get());
   }
 
   private static loadInputResources(ecs: ECSManager, canvas: HTMLCanvasElement) {

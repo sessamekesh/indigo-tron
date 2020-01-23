@@ -1,6 +1,6 @@
 import { SceneNodeFactory } from "@libutil/scene/scenenodefactory";
 import { TempGroupAllocator, LifecycleOwnedAllocator } from "@libutil/allocator";
-import { quat, mat4, vec3 } from "gl-matrix";
+import { quat, mat4, vec3, vec2 } from "gl-matrix";
 
 export class MathAllocatorsComponent {
   constructor(
@@ -11,6 +11,7 @@ export class MathAllocatorsComponent {
 
 export class OwnedMathAllocatorsComponent {
   constructor(
+    public readonly Vec2: LifecycleOwnedAllocator<vec2>,
     public readonly Vec3: LifecycleOwnedAllocator<vec3>,
     public readonly Mat4: LifecycleOwnedAllocator<mat4>,
     public readonly Quat: LifecycleOwnedAllocator<quat>) {}
