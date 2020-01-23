@@ -14,7 +14,7 @@ import { MovementUtils } from "@libgamemodel/utilities/movementutils";
 import { MathAllocatorsComponent, SceneNodeFactoryComponent } from "@libgamemodel/components/commoncomponents";
 import { UIEventEmitterComponent } from "@libgamemodel/components/gameui";
 import { BACK_WHEEL_OFFSET } from "./lightcyclespawner.system";
-import { WallComponent } from "@libgamemodel/wall/wallcomponent";
+import { WallComponent2 } from "@libgamemodel/wall/wallcomponent";
 import { CollisionAction, LightcycleUtils } from "./lightcycleutils";
 
 const LIGHTCYCLE_ANGULAR_VELOCITY = -1.85;
@@ -124,11 +124,11 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
     // Collision checking
     ecs.iterateComponents([LightcycleComponent2], (lightcycleEntity, lightcycle) => {
       let playerDeath = false;
-      ecs.iterateComponents([WallComponent], (wallEntity, wall) => {
+      ecs.iterateComponents([WallComponent2], (wallEntity, wall) => {
         if (playerDeath) return;
         const wallLine = {
-          x0: wall.Corner1[0], y0: wall.Corner1[1],
-          x1: wall.Corner2[0], y1: wall.Corner2[1],
+          x0: wall.Corner1.Value[0], y0: wall.Corner1.Value[1],
+          x1: wall.Corner2.Value[0], y1: wall.Corner2.Value[1],
         };
         const [bikeLeftLine, bikeRightLine, bikeFrontLine] =
             this.getLightcycleLines(sceneNodeFactory, vec3Allocator, lightcycleEntity, lightcycle);
@@ -155,7 +155,7 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
         const newOrientation = MathUtils.clampAngle(
           lightcycle.FrontWheelSceneNode.getRotAngle() + angleAdjustment);
         lightcycle.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
-        LightcycleUtils.applyCollisionDamage(vitalityLost, wall, lightcycle);
+        LightcycleUtils.applyCollisionDamage2(vitalityLost, wall, lightcycle);
 
         if (wall.Vitality <= 0) {
           wallEntity.destroy();
@@ -168,6 +168,7 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
 
         if (lightcycle.Vitality <= 0) {
           lightcycleEntity.destroy();
+          playerDeath = true;
           if (lightcycleEntity.hasComponent(MainPlayerComponent)) {
             uiEventEmitter.fireEvent('player-death', true);
           }

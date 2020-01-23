@@ -29,6 +29,8 @@ import { LightcycleUtils } from '@libgamemodel/lightcycle/lightcycleutils';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { EnvironmentRenderSystem2 } from '@libgamerender/systems/environment2.rendersystem';
 import { FloorReflectionPassSystem } from '@libgamerender/systems/floorreflectionpass.system';
+import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
+import { WallRenderSystem2 } from '@libgamerender/systems/wall2.rendersystem';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -56,31 +58,32 @@ export class GameAppService2 {
     return gameAppService;
   }
 
-  start() {
+  async start() {
     const gameOverListener = this.gameAppUiManager.addListener('player-death', () => {
       this.isGameOver_ = true;
       this.gameAppUiManager.removeListener('player-death', gameOverListener);
     });
-    this.setFreshEcsState_();
+    await this.setFreshEcsState_();
     GameAppService2.initializeSystems_(this.ecs);
     this.ecs.start();
     this.beginRendering();
   }
 
-  restart() {
-    this.setFreshEcsState_();
+  async restart() {
+    await this.setFreshEcsState_();
     this.ecs.restart();
   }
 
   private static initializeSystems_(ecs: ECSManager) {
-    // This only needs to be done once if systems are truly stateless
-
-    // TODO (sessamekesh): Move over camera rigging system!
+    // This only needs to be done once if systems are truly stateless.
+    // However, systems may need to set up their own intermediate state - which should be done
+    //  as often as is needed.
 
     //
     // Logical Systems
     //
     ecs.addSystem2(LightcycleUpdateSystem2);
+    ecs.addSystem2(WallSpawnerSystem2);
 
     //
     // Render Pass Building Systems
@@ -89,6 +92,7 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleRenderSystem2);
     ecs.addSystem2(CameraRigSystem2);
     ecs.addSystem2(EnvironmentRenderSystem2);
+    ecs.addSystem2(WallRenderSystem2);
 
     //
     // Render Execution Systems
@@ -147,12 +151,15 @@ export class GameAppService2 {
     const ecs = this.ecs;
     ecs.clearAllEntities();
 
-    GameAppService2.loadGlResources(this.gl, ecs, this.renderProviders_);
+    await GameAppService2.loadGlResources(this.gl, ecs, this.renderProviders_);
 
     const utilitiesEntity = ecs.createEntity();
     utilitiesEntity.addComponent(
-      MathAllocatorsComponent, this.renderProviders_.Vec3Allocator.get(),
-      this.renderProviders_.Mat4Allocator.get(), this.renderProviders_.QuatAllocator.get());
+      MathAllocatorsComponent,
+      this.renderProviders_.Vec2Allocator.get(),
+      this.renderProviders_.Vec3Allocator.get(),
+      this.renderProviders_.Mat4Allocator.get(),
+      this.renderProviders_.QuatAllocator.get());
     utilitiesEntity.addComponent(
       OwnedMathAllocatorsComponent,
       this.renderProviders_.OwnedVec2Allocator.get(),

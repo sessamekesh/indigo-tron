@@ -6,11 +6,11 @@ import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
 import { loadRawBuffer } from '@libutil/loadutils';
 import { LambertConverter } from '@librender/geo/draco/lambertconverter';
 import { Texture } from '@librender/texture/texture';
-import { WallRenderSystem } from '@libgamerender/systems/wall.rendersystem';
 import { Framebuffer } from '@librender/texture/framebuffer';
 import { TempGroupAllocator, LifecycleOwnedAllocator } from '@libutil/allocator';
-import { vec3, mat4, quat, vec2 } from 'gl-matrix';
+import { vec3, mat4, quat, vec2, vec4 } from 'gl-matrix';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
+import { FloorTileTexture } from '@librender/texture/floortiletexture';
 
 //
 // Configuration Constants
@@ -39,11 +39,6 @@ export class GameAppRenderProviders2 {
   readonly BikeBodyLambertGeo = this.lambertGeoProvider('assets/models/lightcycle_base.drc');
   readonly BikeWheelLambertGeo = this.lambertGeoProvider('assets/models/lightcycle_wheel.drc');
   readonly BikeStickLambertGeo = this.lambertGeoProvider('assets/models/lightcycle_stick.drc');
-  readonly WallGeo = new RenderProvider((gl) => {
-    const lambertShader = this.LambertShader.get(gl);
-    if (!lambertShader) return null;
-    return WallRenderSystem.generateWallGeo(gl, lambertShader, 1, 1);
-  });
 
   //
   // Textures (non-framebuffer)
@@ -70,6 +65,7 @@ export class GameAppRenderProviders2 {
   //
   // Utility Objects
   //
+  readonly Vec2Allocator = new Provider(() => new TempGroupAllocator(vec2.create));
   readonly Vec3Allocator = new Provider(() => new TempGroupAllocator(vec3.create));
   readonly Mat4Allocator = new Provider(() => new TempGroupAllocator(mat4.create));
   readonly QuatAllocator = new Provider(() => new TempGroupAllocator(quat.create));

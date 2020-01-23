@@ -1,6 +1,6 @@
 import { RandomNumberFn } from '@libutil/mathutils';
 import { LineSegment2DCollision } from '@libutil/math/linesegment';
-import { WallComponent } from '@libgamemodel/wall/wallcomponent';
+import { WallComponent, WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { LightcycleComponent2 } from './lightcycle.component';
 import { glMatrix, vec3 } from 'gl-matrix';
 import { Entity } from '@libecs/entity';
@@ -79,6 +79,13 @@ export class LightcycleUtils {
     wallComponent.Vitality -= actualDamage;
     lightcycleComponent.Vitality -= actualDamage;
   }
+
+  static applyCollisionDamage2(
+    damage: number, wallComponent: WallComponent2, lightcycleComponent: LightcycleComponent2) {
+  const actualDamage = Math.min(damage, wallComponent.Vitality, lightcycleComponent.Vitality);
+  wallComponent.Vitality -= actualDamage;
+  lightcycleComponent.Vitality -= actualDamage;
+}
 
   static attachCameraRigToLightcycle(
       entity: Entity,

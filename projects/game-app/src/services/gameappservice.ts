@@ -140,7 +140,6 @@ export class GameAppService {
     const cameraRiggingSystem = ecs.addSystem(new CameraRigSystem(
       vec3Allocator, sceneNodeFactory, 55, 12, 4.5));
     const environmentSystem = ecs.addSystem(new EnvironmentSystem());
-    // MIGRATION: Continue here (replacing stuff after this mark!)
     const environmentRenderSystem = ecs.addSystem(
       new EnvironmentRenderSystem(arenaFloorShader, 0.15, floorTexture));
     ecs.addSystem(new WallspawnerSystem(vec3Allocator));

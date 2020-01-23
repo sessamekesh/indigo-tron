@@ -4,6 +4,7 @@ import { quat, mat4, vec3, vec2 } from "gl-matrix";
 
 export class MathAllocatorsComponent {
   constructor(
+    public readonly Vec2: TempGroupAllocator<vec2>,
     public readonly Vec3: TempGroupAllocator<vec3>,
     public readonly Mat4: TempGroupAllocator<mat4>,
     public readonly Quat: TempGroupAllocator<quat>) {}
