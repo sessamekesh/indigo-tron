@@ -47,6 +47,15 @@ export class GameAppRenderProviders2 {
     (gl) => Texture.createFromURL(gl, 'assets/models/lightcycle_base_diffuse.png'));
   readonly BikeWheelTexture = new AsyncRenderProvider(
     (gl) => Texture.createFromURL(gl, 'assets/models/lightcycle_wheel_diffuse.png'));
+  readonly RoughTileTexture = new AsyncRenderProvider(
+    (gl) => Texture.createFromURL(gl, 'assets/textures/roughtiles_bump.jpg', {
+      MagFilter: 'linear',
+      MinFilter: 'linear',
+      WrapU: 'repeat',
+      WrapV: 'repeat',
+    }));
+  readonly FlatBumpmapDebugTexture = new RenderProvider(
+    (gl) => Texture.createFromData(gl, 1, 1, new Uint8Array([127, 127, 255, 255])));
 
   //
   // Framebuffers (and associated textures)

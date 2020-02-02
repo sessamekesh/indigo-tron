@@ -40,7 +40,8 @@ export class MainRenderPassSystem extends ECSSystem {
     }
     for (let i = 0; i < mainRenderPass.FloorReflectionCalls.length; i++) {
       arenaFloorShader.render2(
-        gl, mainRenderPass.FloorReflectionCalls[i], mainRenderPass.FrameSettings);
+        gl, mainRenderPass.FloorReflectionCalls[i],
+        mainRenderPass.FrameSettings, mainRenderPass.ArenaFloorFrameSettings);
     }
   }
 }

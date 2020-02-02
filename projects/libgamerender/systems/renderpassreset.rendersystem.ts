@@ -1,7 +1,7 @@
 import { ECSSystem } from '@libecs/ecssystem';
 import { ECSManager } from '@libecs/ecsmanager';
 import { MainRenderPassComponent, FloorReflectionRenderPassComponent } from '@libgamerender/components/mainrenderpass.component';
-import { vec3, mat4, glMatrix } from 'gl-matrix';
+import { vec3, mat4, glMatrix, vec4 } from 'gl-matrix';
 import { CameraComponent, ReflectionCameraComponent } from '@libgamemodel/components/gameappuicomponents';
 import { GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { LambertRenderCall2 } from '@librender/shader/lambertshader';
@@ -16,6 +16,11 @@ export class RenderPassResetSystem extends ECSSystem {
       LightDirection: vec3.fromValues(0, -1, 0),
       MatProj: mat4.create(),
       MatView: mat4.create(),
+    }, {
+      FloorGlowClampMin: 0.82,
+      FloorGlowClampMax: 1.0,
+      UVDownscaling: 48,
+      FloorGlowColor: vec4.fromValues(0.3, 0.3, 1.0, 1.0),
     });
     renderPassEntity.addComponent(FloorReflectionRenderPassComponent, [], {
       AmbientCoefficient: 0.3,

@@ -3,7 +3,6 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { Entity } from '@libecs/entity';
 import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { FloorRenderComponent } from '@libgamerender/components/floor.rendercomponent';
-import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
 import { ArenaFloorShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { mat4, vec3, vec2 } from 'gl-matrix';
 import { ArenaFloorGeo, ArenaFloorRawVertexData } from '@librender/geo/arenafloorgeo';
@@ -24,7 +23,8 @@ export class EnvironmentRenderSystem2 extends ECSSystem {
       Mat4: mat4Allocator,
     } = ecs.getSingletonComponentOrThrow(OwnedMathAllocatorsComponent);
     const {
-      Texture: floorTexture
+      Texture: floorTexture,
+      BumpmapTexture: bumpMapTexture,
     } = ecs.getSingletonComponentOrThrow(ArenaFloorReflectionTextureComponent);
     ecs.iterateComponents([FloorComponent], (entity, floorComponent) => {
       const floorRenderComponent = this.getFloorRenderComponent(ecs, entity, gl, floorComponent);
@@ -37,6 +37,7 @@ export class EnvironmentRenderSystem2 extends ECSSystem {
         MatWorld: matWorld,
         ReflectionTexture: floorTexture,
         ViewportSize: viewportSize,
+        BumpMapTexture: bumpMapTexture,
       });
     });
   }
@@ -57,10 +58,16 @@ export class EnvironmentRenderSystem2 extends ECSSystem {
       const h = floorComponent.Height / 2;
       const vertexData: ArenaFloorRawVertexData = {
         PosAttribLocation: lattribs.Pos,
+        UVAttribLocation: lattribs.UV,
         NormalAttribLocation: lattribs.Normal,
+        TangentAttribLocation: lattribs.Tangent,
+        BitangentAttribLocation: lattribs.Bitangent,
 
         PositionData: new Float32Array([-w, 0, -h, w, 0, -h, -w, 0, h, w, 0, h]),
+        UVData: new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]),
         NormalData: new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]),
+        TangentData: new Float32Array([1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0]),
+        BitangentData: new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]),
       };
       const matWorld = mat4.create();
       mat4.identity(matWorld);

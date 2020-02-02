@@ -140,7 +140,9 @@ export class GameAppService2 {
     const texturesEntity = ecs.createEntity();
     texturesEntity.addComponent(RenderResourcesSingletonTag);
     texturesEntity.addComponent(
-      ArenaFloorReflectionTextureComponent, rp.FloorReflectionTexture.getOrThrow(gl));
+      ArenaFloorReflectionTextureComponent,
+      rp.FloorReflectionTexture.getOrThrow(gl),
+      await rp.RoughTileTexture.getOrThrow(gl));
 
     const glGlobalsEntity = ecs.createEntity();
     glGlobalsEntity.addComponent(RenderResourcesSingletonTag);

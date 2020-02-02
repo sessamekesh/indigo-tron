@@ -44,27 +44,30 @@ export class EnvironmentRenderSystem extends ECSSystem {
       floorComponent: FloorComponent): FloorRenderComponent {
     let component = entity.getComponent(FloorRenderComponent);
 
-    if (!component) {
-      const lattribs = this.arenaFloorShader.getAttribLocations();
-      const w = floorComponent.Width / 2;
-      const h = floorComponent.Height / 2;
-      const uw = w * this.tilingFactor;
-      const uh = h * this.tilingFactor;
-      const vertexData: ArenaFloorRawVertexData = {
-        PosAttribLocation: lattribs.Pos,
-        NormalAttribLocation: lattribs.Normal,
+    throw new Error('This system is now deprecated!');
 
-        PositionData: new Float32Array([-w, 0, -h, w, 0, -h, -w, 0, h, w, 0, h]),
-        NormalData: new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]),
-      };
-      const matWorld = mat4.create();
-      mat4.identity(matWorld);
-      mat4.translate(matWorld, matWorld, vec3.fromValues(0, -0.5, 0));
-      const geo = ArenaFloorGeo.create(
-        gl, vertexData, {BitWidth: 8, Data: new Uint8Array([0, 1, 2, 2, 1, 3])});
-      component = entity.addComponent(FloorRenderComponent, matWorld, geo, this.floorTexture);
-    }
+  //   if (!component) {
+  //     const lattribs = this.arenaFloorShader.getAttribLocations();
+  //     const w = floorComponent.Width / 2;
+  //     const h = floorComponent.Height / 2;
+  //     const uw = w * this.tilingFactor;
+  //     const uh = h * this.tilingFactor;
+  //     const vertexData: ArenaFloorRawVertexData = {
+  //       PosAttribLocation: lattribs.Pos,
+  //       NormalAttribLocation: lattribs.Normal,
 
-    return component;
+  //       PositionData: new Float32Array([-w, 0, -h, w, 0, -h, -w, 0, h, w, 0, h]),
+  //       NormalData: new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]),
+  //     };
+  //     const matWorld = mat4.create();
+  //     mat4.identity(matWorld);
+  //     mat4.translate(matWorld, matWorld, vec3.fromValues(0, -0.5, 0));
+  //     const geo = ArenaFloorGeo.create(
+  //       gl, vertexData, {BitWidth: 8, Data: new Uint8Array([0, 1, 2, 2, 1, 3])});
+  //     component = entity.addComponent(FloorRenderComponent, matWorld, geo, this.floorTexture);
+  //   }
+
+  //   return component;
+  // }
   }
 }
