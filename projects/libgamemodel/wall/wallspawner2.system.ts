@@ -40,6 +40,7 @@ export class WallSpawnerSystem2 extends ECSSystem {
             });
             WallSpawnerUtil.spawnWall(
               ecs, start, end, wallGeneratorComponent.VitalityAtSpawn, ownedVec2Allocator);
+            wallGeneratorComponent.DistanceSinceLastSpawn = 0;
           });
         }
       });

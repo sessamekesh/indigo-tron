@@ -79,10 +79,13 @@ export class WallRenderSystem2 extends ECSSystem {
     let component = entity.getComponent(WallRenderComponent);
     if (!component) {
       const sceneNode = sceneNodeFactory.createSceneNode();
-      vec3Allocator.get(3, (midpoint, start, end) => {
+      vec3Allocator.get(5, (midpoint, start, end, scl, len) => {
         vec3.set(start, wallComponent.Corner1.Value[0], 0, wallComponent.Corner1.Value[1]);
         vec3.set(end, wallComponent.Corner2.Value[0], 0, wallComponent.Corner2.Value[1]);
+        vec3.sub(len, end, start);
+        const lenn = vec3.len(len);
         vec3.lerp(midpoint, start, end, 0.5);
+        vec3.set(scl, 0.5 * lenn, 1, 1);
 
         const angle = Math.atan2(
           -wallComponent.Corner2.Value[1] + wallComponent.Corner1.Value[1],
@@ -93,6 +96,7 @@ export class WallRenderSystem2 extends ECSSystem {
             axis: Y_UNIT_DIR,
             angle,
           },
+          scl,
         });
       });
       component = entity.addComponent(WallRenderComponent, sceneNode, wallTexture);

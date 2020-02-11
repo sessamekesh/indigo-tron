@@ -101,7 +101,6 @@ export class CommonGLResource {
       DepthEnabled: true,
       ColorAttachment: 0,
       AttachedTexture: floorReflectionTexture,
-      PerspectiveFOV: glMatrix.toRadian(45),
     });
   });
 
