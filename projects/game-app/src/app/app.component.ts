@@ -1,5 +1,4 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { GameAppService } from '../services/gameappservice';
 import { GameAppUIEvents } from '../services/gameappuieventmanager';
 import { CachingEventManager } from '@libutil/cachingeventmanager';
 import { GameAppService2 } from '../services/gameappservice2';

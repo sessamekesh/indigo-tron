@@ -1,9 +1,10 @@
 import { ECSManager } from "@libecs/ecsmanager";
-import { vec3 } from "gl-matrix";
+import { vec3, vec2 } from "gl-matrix";
 import { SceneNodeFactoryComponent } from "@libgamemodel/components/commoncomponents";
 import { BACK_WHEEL_OFFSET } from "./lightcyclespawner.system";
 import { LightcycleComponent2 } from "./lightcycle.component";
 import { VelocityComponent } from "@libgamemodel/components/velocitycomponent";
+import { WallGeneratorComponent } from "@libgamemodel/wall/wallgenerator.component";
 
 type LightcycleInitialSpawnConfig = {
   Position: vec3,
@@ -42,6 +43,13 @@ export class LightcycleSpawner {
     entity.addComponent(
       LightcycleComponent2, frontWheelSceneNode, backWheelSceneNode, bodySceneNode, 100);
     entity.addComponent(VelocityComponent, 38.5);
+
+    // TODO (sessamekesh): Use temp allocator instead (not urgent, this is infrequently used)
+    const backWheelPos = vec3.create();
+    backWheelSceneNode.getPos(backWheelPos);
+    entity.addComponent(
+      WallGeneratorComponent, backWheelSceneNode, 10, 1,
+      vec2.fromValues(backWheelPos[0], backWheelPos[2]));
 
     return entity;
   }

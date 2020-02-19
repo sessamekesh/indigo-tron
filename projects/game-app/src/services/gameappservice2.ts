@@ -17,7 +17,7 @@ import { vec3, glMatrix } from 'gl-matrix';
 import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
 import { MathAllocatorsComponent, SceneNodeFactoryComponent, OwnedMathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
-import { LightcycleUpdateSystem2, MainPlayerComponent } from '@libgamemodel/lightcycle/lightcycleupdate2.system';
+import { LightcycleUpdateSystem2 } from '@libgamemodel/lightcycle/lightcycleupdate2.system';
 import { RenderPassResetSystem } from '@libgamerender/systems/renderpassreset.rendersystem';
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
 import { LightcycleLambertRenderResourcesComponent, ArenaFloorReflectionFramebufferComponent, ArenaFloorReflectionTextureComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
@@ -31,6 +31,9 @@ import { EnvironmentRenderSystem2 } from '@libgamerender/systems/environment2.re
 import { FloorReflectionPassSystem } from '@libgamerender/systems/floorreflectionpass.system';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
 import { WallRenderSystem2 } from '@libgamerender/systems/wall2.rendersystem';
+import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
+import { LightcycleSteeringSystem, MainPlayerComponent } from '@libgamemodel/lightcycle/lightcyclesteeringsystem';
+import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -82,7 +85,10 @@ export class GameAppService2 {
     //
     // Logical Systems
     //
+    ecs.addSystem2(LightcycleSteeringSystem);
     ecs.addSystem2(LightcycleUpdateSystem2);
+    ecs.addSystem2(LightcycleCollisionSystem);
+    ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
 
     //
