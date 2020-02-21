@@ -109,9 +109,13 @@ export type ArenaFloorRenderCall = {
   MatProj: mat4,
 
   LightColor: vec3,
+  LightDirection: vec3,
+
   ViewportSize: vec2,
   ReflectionTexture: Texture,
   BumpMapTexture: Texture,
+
+  FloorGlowColor: vec4,
 
   Geo: ArenaFloorGeo,
 };
@@ -226,11 +230,19 @@ export class ArenaFloorShader {
     gl.uniformMatrix4fv(this.uniforms.MatView, false, call.MatView);
     gl.uniformMatrix4fv(this.uniforms.MatWorld, false, call.MatWorld);
     gl.uniform3fv(this.uniforms.LightColor, call.LightColor);
+    gl.uniform3fv(this.uniforms.LightDirection, call.LightDirection);
     gl.uniform2fv(this.uniforms.ViewportSize, call.ViewportSize);
     gl.uniform1i(this.uniforms.ReflectionTexture, 0);
     call.ReflectionTexture.bind(gl, 0);
     gl.uniform1i(this.uniforms.BumpMapTexture, 1);
     call.BumpMapTexture.bind(gl, 1);
+
+    // TODO (sessamekesh): Pass this in as a parameter to the draw call (based on the floor size?)
+    gl.uniform2f(this.uniforms.UVDownscale, 48, 48);
+
+    // TODO (sessamekesh): Make these part of the frame settings, oscillating or whatever
+    gl.uniform2f(this.uniforms.FloorGlowClampValues, 0.82, 1.0);
+    gl.uniform4fv(this.uniforms.FloorGlowColor, call.FloorGlowColor);
 
     gl.bindVertexArray(call.Geo.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.Geo.ib);

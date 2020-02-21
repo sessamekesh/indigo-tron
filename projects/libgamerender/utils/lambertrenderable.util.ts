@@ -1,6 +1,6 @@
 import { LambertShader } from '@librender/shader/lambertshader';
 import { LambertRenderableComponent } from '@libgamerender/components/lambertrenderable.component';
-import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
+import { LightSettingsComponent, OverrideAmbientCoefficientComponent } from '@libgamerender/components/lightsettings.component';
 import { mat4 } from 'gl-matrix';
 import { ECSManager } from '@libecs/ecsmanager';
 import { Klass } from '@libecs/klass';
@@ -39,7 +39,13 @@ export class LambertRenderableUtil {
       matView: mat4,
       matProj: mat4) {
     ecs.iterateComponents([tag, LambertRenderableComponent], (entity, _, renderable) => {
-      LambertRenderableUtil.render(gl, lambertShader, renderable, lightSettings, matView, matProj);
+      const overriddenSettings = {...lightSettings};
+      const ambientOverride = entity.getComponent(OverrideAmbientCoefficientComponent);
+      if (ambientOverride) {
+        overriddenSettings.AmbientCoefficient = ambientOverride.AmbientCoefficient;
+      }
+      LambertRenderableUtil.render(
+        gl, lambertShader, renderable, overriddenSettings, matView, matProj);
     });
   }
 
@@ -51,6 +57,7 @@ export class LambertRenderableUtil {
       lightSettings: LightSettingsComponent,
       matView: mat4,
       matProj: mat4) {
+    lambertShader.activate(gl);
     for (let i = 0; i < tags.length; i++) {
       const tag = tags[i];
       LambertRenderableUtil.renderEntitiesMatchingTagsInternal(

@@ -18,22 +18,21 @@ import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
 import { MathAllocatorsComponent, SceneNodeFactoryComponent, OwnedMathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
 import { LightcycleUpdateSystem2 } from '@libgamemodel/lightcycle/lightcycleupdate2.system';
-import { RenderPassResetSystem } from '@libgamerender/systems/renderpassreset.rendersystem';
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
 import { LightcycleLambertRenderResourcesComponent, ArenaFloorReflectionFramebufferComponent, ArenaFloorReflectionTextureComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
-import { LightcycleRenderSystem2 } from '@libgamerender/systems/lightcycle2.rendersystem';
-import { MainRenderPassSystem } from '@libgamerender/systems/mainrenderpass.system';
 import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
 import { CameraRigSystem2, CameraRigSystemConfigurationComponent } from '@libgamemodel/camera/camerarig2.system';
 import { LightcycleUtils } from '@libgamemodel/lightcycle/lightcycleutils';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
-import { EnvironmentRenderSystem2 } from '@libgamerender/systems/environment2.rendersystem';
-import { FloorReflectionPassSystem } from '@libgamerender/systems/floorreflectionpass.system';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
-import { WallRenderSystem2 } from '@libgamerender/systems/wall2.rendersystem';
 import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
 import { LightcycleSteeringSystem, MainPlayerComponent } from '@libgamemodel/lightcycle/lightcyclesteeringsystem';
 import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
+import { LightcycleLambertSystem } from '@libgamerender/systems/lightcycle.lambertsystem';
+import { GameAppRenderSystem } from '@libgamerender/systems/gameapp.rendersystem';
+import { BasicWallLambertSystem } from '@libgamerender/systems/basicwall.lambertsystem';
+import { EnvironmentArenaFloorSystem } from '@libgamerender/systems/environment.arenafloorsystem';
+import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -91,20 +90,17 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
 
-    //
-    // Render Pass Building Systems
-    //
-    ecs.addSystem2(RenderPassResetSystem);
-    ecs.addSystem2(LightcycleRenderSystem2);
     ecs.addSystem2(CameraRigSystem2);
-    ecs.addSystem2(EnvironmentRenderSystem2);
-    ecs.addSystem2(WallRenderSystem2);
 
     //
-    // Render Execution Systems
+    // Renderable Generation Systems
     //
-    ecs.addSystem2(MainRenderPassSystem);
-    ecs.addSystem2(FloorReflectionPassSystem);
+    ecs.addSystem2(LightcycleLambertSystem);
+    ecs.addSystem2(BasicWallLambertSystem);
+    ecs.addSystem2(EnvironmentArenaFloorSystem);
+
+    // Special case, the game frame render system (full frame generation code in there)
+    ecs.addSystem2(GameAppRenderSystem);
   }
 
   private static async loadGlResources(
@@ -185,6 +181,9 @@ export class GameAppService2 {
     const gameAppUiEntity = ecs.createEntity();
     gameAppUiEntity.addComponent(UIEventEmitterComponent, this.gameAppUiManager);
 
+    //
+    // Logical rendering resources (camera, lights)
+    //
     const camera = new BasicCamera(
       vec3.fromValues(5, 10, 5), vec3.fromValues(5, 8, -5), vec3.fromValues(0, 1, 0));
     const floorReflectionCamera = new ReflectionCamera(
@@ -193,6 +192,10 @@ export class GameAppService2 {
     const camerasEntity = ecs.createEntity();
     camerasEntity.addComponent(CameraComponent, camera);
     camerasEntity.addComponent(ReflectionCameraComponent, floorReflectionCamera);
+
+    const lightsEntity = ecs.createEntity();
+    lightsEntity.addComponent(
+      LightSettingsComponent, vec3.fromValues(0, -1, 0), vec3.fromValues(1, 1, 1), 0.3);
 
     //
     // System run-time configuration

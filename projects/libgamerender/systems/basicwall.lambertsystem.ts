@@ -14,6 +14,7 @@ import { TempGroupAllocator } from '@libutil/allocator';
 import { MathAllocatorsComponent, SceneNodeFactoryComponent } from '@libgamemodel/components/commoncomponents';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { Y_UNIT_DIR } from '@libutil/helpfulconstants';
+import { OverrideAmbientCoefficientComponent } from '@libgamerender/components/lightsettings.component';
 
 export class WallGeometryComponent {
   constructor(public Geo: LambertGeo, public Texture: Texture) {}
@@ -90,6 +91,7 @@ export class BasicWallLambertSystem extends ECSSystem {
 
       component = entity.addComponent(
         LambertRenderableComponent, matWorld, wallGeo, wallTexture);
+      entity.addComponent(OverrideAmbientCoefficientComponent, 0.9);
     }
     return component;
   }

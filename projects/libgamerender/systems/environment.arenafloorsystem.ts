@@ -5,7 +5,7 @@ import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { ArenaFloorShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { ArenaFloorReflectionTextureComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { ArenaFloorRawVertexData, ArenaFloorGeo } from '@librender/geo/arenafloorgeo';
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4, vec3, vec4 } from 'gl-matrix';
 import { ArenaFloorRenderableComponent } from '@libgamerender/components/arenafloorrenderable.component';
 
 // TODO (sessamekesh): Migrate this over!
@@ -58,7 +58,8 @@ export class EnvironmentArenaFloorSystem extends ECSSystem {
       const geo = ArenaFloorGeo.create(
         gl, vertexData, {BitWidth: 8, Data: new Uint8Array([0, 1, 2, 2, 1, 3])});
       component = entity.addComponent(
-        ArenaFloorRenderableComponent, floorTexture, floorBumpmap, geo, matWorld);
+        ArenaFloorRenderableComponent, floorTexture, floorBumpmap, geo, matWorld,
+        vec4.fromValues(0.3, 0.3, 1.0, 1.0));
     }
 
     return component;

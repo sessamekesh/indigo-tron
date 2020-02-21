@@ -23,6 +23,8 @@ export class ArenaFloorRenderableUtil {
       MatWorld: renderable.MatWorld,
       ReflectionTexture: renderable.ReflectionTexture,
       ViewportSize: viewportDimensions,
+      FloorGlowColor: renderable.GlowColor,
+      LightDirection: lightSettings.Direction,
     });
   }
 
@@ -35,6 +37,7 @@ export class ArenaFloorRenderableUtil {
       matView: mat4,
       matProj: mat4,
       viewportDimensions: vec2) {
+    shader.activate(gl);
     for (let i = 0; i < tags.length; i++) {
       const tag = tags[i];
       ecs.iterateComponents([ArenaFloorRenderableComponent, tag], (entity, renderable) => {
