@@ -10,14 +10,14 @@ export class DracoDecoder {
         && await fetch(createOptions.wasmBinaryURL).then(r=>r.arrayBuffer());
 
     const jsUrl = (wasmBinary && createOptions.wasmLoaderURL) || createOptions.jsFallbackURL;
-    const DracoModuleCtor = window['DracoDecoderModule']
-        || (await loadScript(jsUrl) && window['DracoDecoderModule']);
+    const DracoModuleCtor = (window as any)['DracoDecoderModule']
+        || (await loadScript(jsUrl) && (window as any)['DracoDecoderModule']);
     if (typeof DracoModuleCtor !== 'function') {
       throw new Error('Could not create Draco decoder - DracoDecoderModule not found');
     }
 
     const dracoModule = await new Promise<{module: any}>((resolve) => {
-      DracoModuleCtor({'wasmBinary': wasmBinary}).then((module) => {
+      DracoModuleCtor({'wasmBinary': wasmBinary}).then((module: any) => {
         resolve({module});
       });
     });

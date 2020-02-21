@@ -8053,6 +8053,67 @@ exports.Entity = Entity;
 
 /***/ }),
 
+/***/ "../libgamemodel/camera/reflectioncamera.ts":
+/*!**************************************************!*\
+  !*** ../libgamemodel/camera/reflectioncamera.ts ***!
+  \**************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const gl_matrix_1 = __webpack_require__(/*! gl-matrix */ "../../node_modules/gl-matrix/esm/index.js");
+class ReflectionCamera {
+    constructor(baseCamera, reflectionPoint, reflectionNormal, vec3Allocator) {
+        this.baseCamera = baseCamera;
+        this.reflectionPoint = reflectionPoint;
+        this.reflectionNormal = reflectionNormal;
+        this.vec3Allocator = vec3Allocator;
+    }
+    pos(o) {
+        this.vec3Allocator.get(1, (cameraPos) => {
+            this.baseCamera.pos(cameraPos);
+            this.reflectPoint(o, cameraPos);
+        });
+    }
+    lookAt(o) {
+        this.vec3Allocator.get(1, (cameraLookAt) => {
+            this.baseCamera.lookAt(cameraLookAt);
+            this.reflectPoint(o, cameraLookAt);
+        });
+    }
+    up(o) {
+        this.vec3Allocator.get(1, (cameraUp) => {
+            this.baseCamera.up(cameraUp);
+            this.reflectNormal(o, cameraUp);
+        });
+    }
+    matView(o) {
+        this.vec3Allocator.get(3, (pos, lookAt, up) => {
+            this.pos(pos);
+            this.lookAt(lookAt);
+            this.up(up);
+            gl_matrix_1.mat4.lookAt(o, pos, lookAt, up);
+        });
+    }
+    reflectPoint(o, point) {
+        this.vec3Allocator.get(1, (toPoint) => {
+            gl_matrix_1.vec3.sub(toPoint, point, this.reflectionPoint);
+            const dist = gl_matrix_1.vec3.dot(toPoint, this.reflectionNormal);
+            gl_matrix_1.vec3.scaleAndAdd(o, point, this.reflectionNormal, -2 * dist);
+        });
+    }
+    reflectNormal(o, normal) {
+        this.reflectPoint(o, normal);
+        gl_matrix_1.vec3.normalize(o, o);
+    }
+}
+exports.ReflectionCamera = ReflectionCamera;
+
+
+/***/ }),
+
 /***/ "../libgamemodel/camera/scenenodecamera.ts":
 /*!*************************************************!*\
   !*** ../libgamemodel/camera/scenenodecamera.ts ***!
@@ -8212,6 +8273,83 @@ exports.CommonComponentUtils = CommonComponentUtils;
 
 /***/ }),
 
+/***/ "../libgamemodel/components/floor.component.ts":
+/*!*****************************************************!*\
+  !*** ../libgamemodel/components/floor.component.ts ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class FloorComponent {
+    constructor(Width, Height) {
+        this.Width = Width;
+        this.Height = Height;
+    }
+}
+exports.FloorComponent = FloorComponent;
+
+
+/***/ }),
+
+/***/ "../libgamemodel/components/gameappuicomponents.ts":
+/*!*********************************************************!*\
+  !*** ../libgamemodel/components/gameappuicomponents.ts ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class KeyboardManagerComponent {
+    constructor(KeyboardManager) {
+        this.KeyboardManager = KeyboardManager;
+    }
+}
+exports.KeyboardManagerComponent = KeyboardManagerComponent;
+class KeyboardBikeInputControllerComponent {
+    constructor(KeyboardBikeInputController) {
+        this.KeyboardBikeInputController = KeyboardBikeInputController;
+    }
+}
+exports.KeyboardBikeInputControllerComponent = KeyboardBikeInputControllerComponent;
+class TouchEventBikeInputControllerComponent {
+    constructor(TouchEventBikeInputController) {
+        this.TouchEventBikeInputController = TouchEventBikeInputController;
+    }
+}
+exports.TouchEventBikeInputControllerComponent = TouchEventBikeInputControllerComponent;
+class GamepadBikeInputControllerComponent {
+    constructor(GamepadBikeInputController) {
+        this.GamepadBikeInputController = GamepadBikeInputController;
+    }
+}
+exports.GamepadBikeInputControllerComponent = GamepadBikeInputControllerComponent;
+class BikeInputManagerComponent {
+    constructor(BikeInputManager) {
+        this.BikeInputManager = BikeInputManager;
+    }
+}
+exports.BikeInputManagerComponent = BikeInputManagerComponent;
+class CameraComponent {
+    constructor(Camera) {
+        this.Camera = Camera;
+    }
+}
+exports.CameraComponent = CameraComponent;
+class ReflectionCameraComponent {
+    constructor(ReflectionCamera) {
+        this.ReflectionCamera = ReflectionCamera;
+    }
+}
+exports.ReflectionCameraComponent = ReflectionCameraComponent;
+
+
+/***/ }),
+
 /***/ "../libgamemodel/components/velocitycomponent.ts":
 /*!*******************************************************!*\
   !*** ../libgamemodel/components/velocitycomponent.ts ***!
@@ -8228,6 +8366,29 @@ class VelocityComponent {
     }
 }
 exports.VelocityComponent = VelocityComponent;
+
+
+/***/ }),
+
+/***/ "../libgamemodel/environment/environmentutils.ts":
+/*!*******************************************************!*\
+  !*** ../libgamemodel/environment/environmentutils.ts ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const floor_component_1 = __webpack_require__(/*! @libgamemodel/components/floor.component */ "../libgamemodel/components/floor.component.ts");
+class EnvironmentUtils {
+    static spawnFloor(ecs, width, height) {
+        const e = ecs.createEntity();
+        e.addComponent(floor_component_1.FloorComponent, width, height);
+        return e;
+    }
+}
+exports.EnvironmentUtils = EnvironmentUtils;
 
 
 /***/ }),
@@ -8324,6 +8485,7 @@ const commoncomponents_1 = __webpack_require__(/*! @libgamemodel/components/comm
 const lightcyclespawner_system_1 = __webpack_require__(/*! ./lightcyclespawner.system */ "../libgamemodel/lightcycle/lightcyclespawner.system.ts");
 const lightcycle_component_1 = __webpack_require__(/*! ./lightcycle.component */ "../libgamemodel/lightcycle/lightcycle.component.ts");
 const velocitycomponent_1 = __webpack_require__(/*! @libgamemodel/components/velocitycomponent */ "../libgamemodel/components/velocitycomponent.ts");
+const wallgenerator_component_1 = __webpack_require__(/*! @libgamemodel/wall/wallgenerator.component */ "../libgamemodel/wall/wallgenerator.component.ts");
 class LightcycleSpawner {
     static spawnLightcycle(ecs, config) {
         const entity = ecs.createEntity();
@@ -8350,6 +8512,10 @@ class LightcycleSpawner {
         backWheelSceneNode.attachToParent(bodySceneNode);
         entity.addComponent(lightcycle_component_1.LightcycleComponent2, frontWheelSceneNode, backWheelSceneNode, bodySceneNode, 100);
         entity.addComponent(velocitycomponent_1.VelocityComponent, 38.5);
+        // TODO (sessamekesh): Use temp allocator instead (not urgent, this is infrequently used)
+        const backWheelPos = gl_matrix_1.vec3.create();
+        backWheelSceneNode.getPos(backWheelPos);
+        entity.addComponent(wallgenerator_component_1.WallGeneratorComponent, backWheelSceneNode, 10, 1, gl_matrix_1.vec2.fromValues(backWheelPos[0], backWheelPos[2]));
         return entity;
     }
 }
@@ -8525,9 +8691,9 @@ exports.WallComponent2 = WallComponent2;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 class WallGeneratorComponent {
-    constructor(VitalityAtSpawn, DistanceSinceLastSpawn, DistanceBetweenSpawns, LastSpawnPoint) {
+    constructor(PositionSceneNode, VitalityAtSpawn, DistanceBetweenSpawns, LastSpawnPoint) {
+        this.PositionSceneNode = PositionSceneNode;
         this.VitalityAtSpawn = VitalityAtSpawn;
-        this.DistanceSinceLastSpawn = DistanceSinceLastSpawn;
         this.DistanceBetweenSpawns = DistanceBetweenSpawns;
         this.LastSpawnPoint = LastSpawnPoint;
     }
@@ -8550,6 +8716,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gl_matrix_1 = __webpack_require__(/*! gl-matrix */ "../../node_modules/gl-matrix/esm/index.js");
 const wallcomponent_1 = __webpack_require__(/*! ./wallcomponent */ "../libgamemodel/wall/wallcomponent.ts");
 class WallSpawnerUtil {
+    static spawnWallsBetween(vec2Allocator, vec2OwnedAllocator, ecs, lastSpawnPoint, wallSegmentLength, destinationPoint, wallSpawnVitality, o_lastSpawnPoint) {
+        vec2Allocator.get(4, (destinationFromSource, normal, lastSpawn, nextSpawn) => {
+            gl_matrix_1.vec2.copy(lastSpawn, lastSpawnPoint);
+            gl_matrix_1.vec2.sub(destinationFromSource, destinationPoint, lastSpawn);
+            let remainingLength = gl_matrix_1.vec2.len(destinationFromSource);
+            if (remainingLength > wallSegmentLength) {
+                gl_matrix_1.vec2.scale(normal, destinationFromSource, 1 / remainingLength);
+            }
+            while (remainingLength > wallSegmentLength) {
+                gl_matrix_1.vec2.scaleAndAdd(nextSpawn, lastSpawn, normal, wallSegmentLength);
+                WallSpawnerUtil.spawnWall(ecs, lastSpawn, nextSpawn, wallSpawnVitality, vec2OwnedAllocator);
+                gl_matrix_1.vec2.copy(lastSpawn, nextSpawn);
+                remainingLength -= wallSegmentLength;
+            }
+            gl_matrix_1.vec2.copy(o_lastSpawnPoint, lastSpawn);
+        });
+    }
     static spawnWall(ecs, start, end, vitality, vec2Allocator) {
         const entity = ecs.createEntity();
         const startResource = vec2Allocator.get();
@@ -8580,10 +8763,8 @@ exports.WallSpawnerUtil = WallSpawnerUtil;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const ecssystem_1 = __webpack_require__(/*! @libecs/ecssystem */ "../libecs/ecssystem.ts");
-const lightcycle_component_1 = __webpack_require__(/*! @libgamemodel/lightcycle/lightcycle.component */ "../libgamemodel/lightcycle/lightcycle.component.ts");
 const wallgenerator_component_1 = __webpack_require__(/*! ./wallgenerator.component */ "../libgamemodel/wall/wallgenerator.component.ts");
 const gl_matrix_1 = __webpack_require__(/*! gl-matrix */ "../../node_modules/gl-matrix/esm/index.js");
-const velocitycomponent_1 = __webpack_require__(/*! @libgamemodel/components/velocitycomponent */ "../libgamemodel/components/velocitycomponent.ts");
 const commoncomponents_1 = __webpack_require__(/*! @libgamemodel/components/commoncomponents */ "../libgamemodel/components/commoncomponents.ts");
 const wallspawner_util_1 = __webpack_require__(/*! ./wallspawner.util */ "../libgamemodel/wall/wallspawner.util.ts");
 const wallcomponent_1 = __webpack_require__(/*! ./wallcomponent */ "../libgamemodel/wall/wallcomponent.ts");
@@ -8593,23 +8774,14 @@ class WallSpawnerSystem2 extends ecssystem_1.ECSSystem {
         const { Vec2: vec2Allocator, Vec3: vec3Allocator, } = ecs.getSingletonComponentOrThrow(commoncomponents_1.MathAllocatorsComponent);
         const { Vec2: ownedVec2Allocator, } = ecs.getSingletonComponentOrThrow(commoncomponents_1.OwnedMathAllocatorsComponent);
         // Spawn new walls
-        ecs.iterateComponents([lightcycle_component_1.LightcycleComponent2, velocitycomponent_1.VelocityComponent], (entity, lightcycleComponent, velocityComponent) => {
-            const wallGeneratorComponent = this.getWallGenerator(entity, lightcycleComponent, vec3Allocator);
-            const distanceTravelled = velocityComponent.Velocity * msDt / 1000;
-            wallGeneratorComponent.DistanceSinceLastSpawn += distanceTravelled;
-            if (wallGeneratorComponent.DistanceSinceLastSpawn > wallGeneratorComponent.DistanceBetweenSpawns) {
-                // Spawn a wall
-                vec2Allocator.get(2, (start, end) => {
-                    gl_matrix_1.vec2.copy(start, wallGeneratorComponent.LastSpawnPoint);
-                    vec3Allocator.get(1, (pos) => {
-                        lightcycleComponent.RearWheelSceneNode.getPos(pos);
-                        gl_matrix_1.vec2.set(end, pos[0], pos[2]);
-                        gl_matrix_1.vec2.copy(wallGeneratorComponent.LastSpawnPoint, end);
-                    });
-                    wallspawner_util_1.WallSpawnerUtil.spawnWall(ecs, start, end, wallGeneratorComponent.VitalityAtSpawn, ownedVec2Allocator);
-                    wallGeneratorComponent.DistanceSinceLastSpawn = 0;
+        ecs.iterateComponents([wallgenerator_component_1.WallGeneratorComponent], (entity, wallGenerator) => {
+            vec3Allocator.get(1, pos3 => {
+                vec2Allocator.get(1, pos2 => {
+                    wallGenerator.PositionSceneNode.getPos(pos3);
+                    gl_matrix_1.vec2.set(pos2, pos3[0], pos3[2]);
+                    wallspawner_util_1.WallSpawnerUtil.spawnWallsBetween(vec2Allocator, ownedVec2Allocator, ecs, wallGenerator.LastSpawnPoint, wallGenerator.DistanceBetweenSpawns, pos2, wallGenerator.VitalityAtSpawn, wallGenerator.LastSpawnPoint);
                 });
-            }
+            });
         });
         // Destroy old walls
         ecs.iterateComponents([wallcomponent_1.WallComponent2], (entity, wallComponent) => {
@@ -8619,18 +8791,754 @@ class WallSpawnerSystem2 extends ecssystem_1.ECSSystem {
             }
         });
     }
-    getWallGenerator(entity, lightcycleComponent, vec3Allocator) {
-        let component = entity.getComponent(wallgenerator_component_1.WallGeneratorComponent);
-        if (!component) {
-            vec3Allocator.get(1, startPos => {
-                lightcycleComponent.RearWheelSceneNode.getPos(startPos);
-                component = entity.addComponent(wallgenerator_component_1.WallGeneratorComponent, 10, 0, 1, gl_matrix_1.vec2.fromValues(startPos[0], startPos[2]));
-            });
-        }
-        return component;
-    }
 }
 exports.WallSpawnerSystem2 = WallSpawnerSystem2;
+
+
+/***/ }),
+
+/***/ "../libgamerender/renderresourcesingletons/dracodecodercomponent.ts":
+/*!**************************************************************************!*\
+  !*** ../libgamerender/renderresourcesingletons/dracodecodercomponent.ts ***!
+  \**************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class DracoDecoderComponent {
+    constructor(DracoDecoder) {
+        this.DracoDecoder = DracoDecoder;
+    }
+}
+exports.DracoDecoderComponent = DracoDecoderComponent;
+
+
+/***/ }),
+
+/***/ "../libgamerender/renderresourcesingletons/georenderresourcessingletontag.ts":
+/*!***********************************************************************************!*\
+  !*** ../libgamerender/renderresourcesingletons/georenderresourcessingletontag.ts ***!
+  \***********************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class GeoRenderResourcesSingletonTag {
+}
+exports.GeoRenderResourcesSingletonTag = GeoRenderResourcesSingletonTag;
+
+
+/***/ }),
+
+/***/ "../libgamerender/renderresourcesingletons/shadercomponents.ts":
+/*!*********************************************************************!*\
+  !*** ../libgamerender/renderresourcesingletons/shadercomponents.ts ***!
+  \*********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class ShaderSingletonTag {
+}
+exports.ShaderSingletonTag = ShaderSingletonTag;
+class LambertShaderComponent {
+    constructor(LambertShader) {
+        this.LambertShader = LambertShader;
+    }
+}
+exports.LambertShaderComponent = LambertShaderComponent;
+class ArenaFloorShaderComponent {
+    constructor(ArenaFloorShader) {
+        this.ArenaFloorShader = ArenaFloorShader;
+    }
+}
+exports.ArenaFloorShaderComponent = ArenaFloorShaderComponent;
+
+
+/***/ }),
+
+/***/ "../librender/geo/draco/decoder.ts":
+/*!*****************************************!*\
+  !*** ../librender/geo/draco/decoder.ts ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const loadutils_1 = __webpack_require__(/*! @libutil/loadutils */ "../libutil/loadutils.ts");
+class DracoDecoder {
+    constructor(dracoModule) {
+        this.dracoModule = dracoModule;
+    }
+    static create(createOptions) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const wasmBinary = (typeof window['WebAssembly'] === 'object')
+                && (yield fetch(createOptions.wasmBinaryURL).then(r => r.arrayBuffer()));
+            const jsUrl = (wasmBinary && createOptions.wasmLoaderURL) || createOptions.jsFallbackURL;
+            const DracoModuleCtor = window['DracoDecoderModule']
+                || ((yield loadutils_1.loadScript(jsUrl)) && window['DracoDecoderModule']);
+            if (typeof DracoModuleCtor !== 'function') {
+                throw new Error('Could not create Draco decoder - DracoDecoderModule not found');
+            }
+            const dracoModule = yield new Promise((resolve) => {
+                DracoModuleCtor({ 'wasmBinary': wasmBinary }).then((module) => {
+                    resolve({ module });
+                });
+            });
+            return new DracoDecoder(dracoModule.module);
+        });
+    }
+    decodeMesh(data, bufferEntries) {
+        const dataView = new Uint8Array(data);
+        const decoderModule = this.dracoModule;
+        // https://github.com/BabylonJS/Babylon.js/blob/c74e75c1402995a8b7fa8317607baec7fe0e2175/src/Meshes/Compression/dracoCompression.ts
+        const buffer = new decoderModule['DecoderBuffer']();
+        buffer['Init'](dataView, dataView.byteLength);
+        const decoder = new decoderModule['Decoder']();
+        let geometry;
+        let status;
+        const outs = [];
+        let indices = undefined;
+        try {
+            const type = decoder['GetEncodedGeometryType'](buffer);
+            switch (type) {
+                case decoderModule['TRIANGULAR_MESH']:
+                    geometry = new decoderModule['Mesh']();
+                    status = decoder['DecodeBufferToMesh'](buffer, geometry);
+                    break;
+                default:
+                    throw new Error(`Invalid geometry type ${type}`);
+            }
+            if (!status['ok']() || !geometry['ptr']) {
+                throw new Error(status['error_msg']());
+            }
+            const numVertices = geometry['num_points']();
+            const numFaces = geometry['num_faces']();
+            const faceIndices = new decoderModule['DracoInt32Array']();
+            try {
+                indices = (() => {
+                    if (numVertices < 0xFF) {
+                        return {
+                            Data: new Uint8Array(numFaces * 3),
+                            BitWidth: 8,
+                        };
+                    }
+                    else if (numVertices < 0xFFFF) {
+                        return {
+                            Data: new Uint16Array(numFaces * 3),
+                            BitWidth: 16,
+                        };
+                    }
+                    else {
+                        return {
+                            Data: new Uint32Array(numFaces * 3),
+                            BitWidth: 32,
+                        };
+                    }
+                })();
+                for (let i = 0; i < numFaces; i++) {
+                    decoder['GetFaceFromMesh'](geometry, i, faceIndices);
+                    const offset = i * 3;
+                    indices.Data[offset + 0] = faceIndices['GetValue'](0);
+                    indices.Data[offset + 1] = faceIndices['GetValue'](1);
+                    indices.Data[offset + 2] = faceIndices['GetValue'](2);
+                }
+            }
+            finally {
+                decoderModule['destroy'](faceIndices);
+            }
+            // CUSTOM CODE
+            for (let i = 0; i < bufferEntries.length; i++) {
+                const attribId = this.getAttribIndex(decoderModule, decoder, geometry, bufferEntries[i].AttributeName);
+                const attribute = decoder['GetAttributeByUniqueId'](geometry, attribId);
+                const numComponents = attribute['num_components']();
+                const rslBuffer = new ArrayBuffer(Float32Array.BYTES_PER_ELEMENT * numComponents * numVertices);
+                const f32 = new Float32Array(rslBuffer);
+                const u32 = new Uint32Array(rslBuffer);
+                const dracoData = bufferEntries[i].DataType === 'float32'
+                    ? new decoderModule['DracoFloat32Array']()
+                    : new decoderModule['DracoUInt32Array']();
+                try {
+                    if (bufferEntries[i].DataType === 'float32') {
+                        decoder['GetAttributeFloatForAllPoints'](geometry, attribute, dracoData);
+                    }
+                    else {
+                        decoder['GetAttributeUInt32ForAllPoints'](geometry, attribute, dracoData);
+                    }
+                    for (let j = 0; j < numVertices * numComponents; j++) {
+                        if (bufferEntries[i].DataType === 'float32') {
+                            f32[j] = dracoData['GetValue'](j);
+                        }
+                        else {
+                            u32[j] = dracoData['GetValue'](j);
+                        }
+                    }
+                }
+                finally {
+                    decoderModule['destroy'](dracoData);
+                }
+                outs.push({ Desc: bufferEntries[i], Data: rslBuffer });
+            }
+            // END CUSTOM CODE
+        }
+        finally {
+            if (geometry) {
+                decoderModule['destroy'](geometry);
+            }
+            decoderModule['destroy'](decoder);
+            decoderModule['destroy'](buffer);
+        }
+        if (outs.length > 0 && indices) {
+            return {
+                VertexData: outs,
+                IndexData: indices,
+            };
+        }
+        throw new Error('Failed to decode mesh for an unknown reason - vertices/indices not present');
+    }
+    getAttribIndex(emModule, emDecoder, emMesh, attribName) {
+        switch (attribName) {
+            case 'position': return emDecoder['GetAttributeId'](emMesh, emModule['POSITION']);
+            case 'normal': return emDecoder['GetAttributeId'](emMesh, emModule['NORMAL']);
+            case 'texcoord': return emDecoder['GetAttributeId'](emMesh, emModule['TEX_COORD']);
+            case 'boneidx':
+                return emDecoder['GetAttributeIdByMetadataEntry'](emMesh, 'attrib_type', 'bone_idx_attrib');
+            case 'boneweight':
+                return emDecoder['GetAttributeIdByMetadataEntry'](emMesh, 'attrib_type', 'bone_weight_attrib');
+            default: return -1;
+        }
+    }
+}
+exports.DracoDecoder = DracoDecoder;
+
+
+/***/ }),
+
+/***/ "../librender/geo/ibdesc.ts":
+/*!**********************************!*\
+  !*** ../librender/geo/ibdesc.ts ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+;
+exports.IBDescBitWidthToType = {
+    8: WebGL2RenderingContext.UNSIGNED_BYTE,
+    16: WebGL2RenderingContext.UNSIGNED_SHORT,
+    32: WebGL2RenderingContext.UNSIGNED_INT,
+};
+
+
+/***/ }),
+
+/***/ "../librender/renderprovider.ts":
+/*!**************************************!*\
+  !*** ../librender/renderprovider.ts ***!
+  \**************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+class Provider {
+    constructor(genFn) {
+        this.genFn = genFn;
+        this.val_ = undefined;
+    }
+    get() {
+        if (!this.val_) {
+            this.val_ = this.genFn();
+        }
+        return this.val_;
+    }
+}
+exports.Provider = Provider;
+class RenderProvider {
+    constructor(genFn) {
+        this.genFn = genFn;
+        this.val_ = undefined;
+    }
+    get(gl) {
+        if (this.val_ === undefined) {
+            this.val_ = this.genFn(gl);
+        }
+        return this.val_;
+    }
+    getOrThrow(gl) {
+        const toReturn = this.get(gl);
+        if (!toReturn) {
+            throw new Error('Value missing for render provider');
+        }
+        return toReturn;
+    }
+}
+exports.RenderProvider = RenderProvider;
+class AsyncRenderProvider {
+    constructor(genFn) {
+        this.genFn = genFn;
+        this.val_ = undefined;
+        this.alreadyLoading_ = undefined;
+    }
+    gen(gl) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.alreadyLoading_) {
+                this.alreadyLoading_ = this.genFn(gl);
+                this.alreadyLoading_.finally(() => this.alreadyLoading_ = undefined);
+            }
+            return this.alreadyLoading_;
+        });
+    }
+    get(gl) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.val_ === undefined) {
+                this.val_ = yield this.gen(gl);
+            }
+            return this.val_;
+        });
+    }
+    getOrThrow(gl) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const val = yield this.get(gl);
+            if (!val) {
+                throw new Error('Value missing for async render provider');
+            }
+            return val;
+        });
+    }
+    getSync() {
+        return this.val_ || null;
+    }
+    getSyncOrThrow() {
+        if (!this.val_) {
+            throw new Error('Value missing for async render provider (sync)');
+        }
+        return this.val_;
+    }
+}
+exports.AsyncRenderProvider = AsyncRenderProvider;
+
+
+/***/ }),
+
+/***/ "../librender/shader/arenafloorshader.ts":
+/*!***********************************************!*\
+  !*** ../librender/shader/arenafloorshader.ts ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const shaderutils_1 = __webpack_require__(/*! ./shaderutils */ "../librender/shader/shaderutils.ts");
+const ibdesc_1 = __webpack_require__(/*! @librender/geo/ibdesc */ "../librender/geo/ibdesc.ts");
+const renderprovider_1 = __webpack_require__(/*! @librender/renderprovider */ "../librender/renderprovider.ts");
+const VS_TEST = `#version 300 es
+precision mediump float;
+
+uniform mat4 matProj;
+uniform mat4 matView;
+uniform mat4 matWorld;
+
+uniform vec3 lightDirection;
+
+in vec3 pos;
+in vec2 uv;
+in vec3 normal;
+in vec3 tangent;
+in vec3 bitangent;
+
+out vec3 fTangentSpaceLightDirection;
+out vec2 fUV;
+
+void main() {
+  mat3 mv3x3 = mat3(matView  * matWorld);
+  vec3 cameraSpaceNormal = mv3x3 * normalize(normal);
+  vec3 cameraSpaceTangent = mv3x3 * normalize(tangent);
+  vec3 cameraSpaceBitangent = mv3x3 * normalize(bitangent);
+  mat3 TBN = transpose(mat3(
+    cameraSpaceTangent,
+    cameraSpaceBitangent,
+    cameraSpaceNormal
+  ));
+
+  fTangentSpaceLightDirection = TBN * -lightDirection;
+  fUV = uv;
+
+  gl_Position = matProj * matView * matWorld * vec4(pos, 1.0);
+}`;
+const REFLECTIVE_COEFFICIENT = 0.15;
+const FS_TEXT = `#version 300 es
+precision mediump float;
+
+uniform vec3 lightColor;
+uniform vec2 viewportSize;
+uniform vec2 uvDownscale;
+uniform vec2 floorGlowClampValues;
+uniform vec4 floorGlowColor;
+
+uniform sampler2D reflectionTexture;
+uniform sampler2D bumpMapTexture;
+
+in vec3 fTangentSpaceLightDirection;
+in vec2 fUV;
+
+out vec4 color;
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / viewportSize;
+  uv.x = 1.0 - uv.x;
+  vec4 reflectionColor = texture(reflectionTexture, uv);
+  vec3 tangentSpaceNormal = normalize(texture(bumpMapTexture, fUV * uvDownscale).rgb * 2.0 - 1.0);
+
+  // Even though we're using reflection mapping, for now just use bump mapping for lighting strength
+  float diffuseCoefficient = clamp(dot(tangentSpaceNormal, fTangentSpaceLightDirection), 0.0, 1.0);
+  diffuseCoefficient = floorGlowClampValues.x + (floorGlowClampValues.y - floorGlowClampValues.x) * diffuseCoefficient;
+
+  vec4 diffuseColor = vec4(vec3(0.05) * lightColor, 1.0) * ${1.0 - REFLECTIVE_COEFFICIENT}
+        + reflectionColor * ${REFLECTIVE_COEFFICIENT};
+
+  // TODO (sessamekesh): Make this underlying color variable with the frame (red for debugging only)
+  color = diffuseCoefficient * diffuseColor + (1.0 - diffuseCoefficient) * floorGlowColor;
+}`;
+class ArenaFloorShader {
+    constructor(program, attribs, uniforms) {
+        this.program = program;
+        this.attribs = attribs;
+        this.uniforms = uniforms;
+    }
+    static getRenderProvider() {
+        return new renderprovider_1.RenderProvider((gl) => ArenaFloorShader.create(gl));
+    }
+    static create(gl) {
+        const program = shaderutils_1.ShaderUtils.createShaderFromSource(gl, 'arenaFloorShader', VS_TEST, FS_TEXT);
+        if (!program) {
+            return null;
+        }
+        const matWorld = gl.getUniformLocation(program, 'matWorld');
+        const matView = gl.getUniformLocation(program, 'matView');
+        const matProj = gl.getUniformLocation(program, 'matProj');
+        const lightColor = gl.getUniformLocation(program, 'lightColor');
+        const reflectionTexture = gl.getUniformLocation(program, 'reflectionTexture');
+        const viewportSize = gl.getUniformLocation(program, 'viewportSize');
+        const lightDirection = gl.getUniformLocation(program, 'lightDirection');
+        const bumpMapTexture = gl.getUniformLocation(program, 'bumpMapTexture');
+        const uvDownscale = gl.getUniformLocation(program, 'uvDownscale');
+        const floorGlowClampValues = gl.getUniformLocation(program, 'floorGlowClampValues');
+        const floorGlowColor = gl.getUniformLocation(program, 'floorGlowColor');
+        if (!matWorld || !matView || !matProj || !lightColor || !reflectionTexture || !viewportSize
+            || !lightDirection || !bumpMapTexture || !uvDownscale || !floorGlowClampValues
+            || !floorGlowColor) {
+            console.error(`Failed to get all uniform locations for arena floor shader, {
+        MatWorld: ${matWorld},
+        MatView: ${matView},
+        MatProj: ${matProj},
+        LightColor: ${lightColor},
+        ReflectionTexture: ${reflectionTexture},
+        ViewportSize: ${viewportSize},
+        LightDirection: ${lightDirection},
+        BumpMapTexture: ${bumpMapTexture},
+        UVDownscale: ${uvDownscale},
+        FloorGlowClampValues: ${floorGlowClampValues},
+        FloorGlowColor: ${floorGlowColor},
+      }`);
+            return null;
+        }
+        const posAttrib = gl.getAttribLocation(program, 'pos');
+        const uvAttrib = gl.getAttribLocation(program, 'uv');
+        const normalAttrib = gl.getAttribLocation(program, 'normal');
+        const tangentAttrib = gl.getAttribLocation(program, 'tangent');
+        const bitangentAttrib = gl.getAttribLocation(program, 'bitangent');
+        if (posAttrib < 0 || uvAttrib < 0 || normalAttrib < 0 ||
+            tangentAttrib < 0 || bitangentAttrib < 0) {
+            console.error(`Failed to get all attrib locations for arena floor shader, {
+        Pos: ${posAttrib},
+        UV: ${uvAttrib},
+        Normal: ${normalAttrib},
+        Tangent: ${tangentAttrib},
+        Bitangent: ${bitangentAttrib},
+      }`);
+        }
+        return new ArenaFloorShader(program, {
+            Pos: posAttrib, UV: uvAttrib, Normal: normalAttrib, Tangent: tangentAttrib,
+            Bitangent: bitangentAttrib,
+        }, {
+            MatWorld: matWorld,
+            MatView: matView,
+            MatProj: matProj,
+            LightColor: lightColor,
+            ReflectionTexture: reflectionTexture,
+            ViewportSize: viewportSize,
+            LightDirection: lightDirection,
+            BumpMapTexture: bumpMapTexture,
+            UVDownscale: uvDownscale,
+            FloorGlowClampValues: floorGlowClampValues,
+            FloorGlowColor: floorGlowColor,
+        });
+    }
+    getAttribLocations() {
+        return Object.assign({}, this.attribs);
+    }
+    activate(gl) {
+        gl.useProgram(this.program);
+    }
+    render(gl, call) {
+        gl.uniformMatrix4fv(this.uniforms.MatProj, false, call.MatProj);
+        gl.uniformMatrix4fv(this.uniforms.MatView, false, call.MatView);
+        gl.uniformMatrix4fv(this.uniforms.MatWorld, false, call.MatWorld);
+        gl.uniform3fv(this.uniforms.LightColor, call.LightColor);
+        gl.uniform2fv(this.uniforms.ViewportSize, call.ViewportSize);
+        gl.uniform1i(this.uniforms.ReflectionTexture, 0);
+        call.ReflectionTexture.bind(gl, 0);
+        gl.bindVertexArray(call.Geo.vao);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.Geo.ib);
+        gl.drawElements(gl.TRIANGLES, call.Geo.numIndices, ibdesc_1.IBDescBitWidthToType[call.Geo.ibDesc.BitWidth], 0);
+    }
+    render2(gl, call, frameSettings, arenaFloorFrameSettings) {
+        gl.uniformMatrix4fv(this.uniforms.MatProj, false, frameSettings.MatProj);
+        gl.uniformMatrix4fv(this.uniforms.MatView, false, frameSettings.MatView);
+        gl.uniformMatrix4fv(this.uniforms.MatWorld, false, call.MatWorld.Value);
+        gl.uniform3fv(this.uniforms.LightColor, frameSettings.LightColor);
+        gl.uniform3fv(this.uniforms.LightDirection, frameSettings.LightDirection);
+        gl.uniform2fv(this.uniforms.ViewportSize, call.ViewportSize.Value);
+        gl.uniform1i(this.uniforms.ReflectionTexture, 0);
+        call.ReflectionTexture.bind(gl, 0);
+        gl.uniform1i(this.uniforms.BumpMapTexture, 1);
+        call.BumpMapTexture.bind(gl, 1);
+        // TODO (sessamekesh): Pass this in as a parameter to the draw call (based on the floor size?)
+        gl.uniform2f(this.uniforms.UVDownscale, arenaFloorFrameSettings.UVDownscaling, arenaFloorFrameSettings.UVDownscaling);
+        // TODO (sessamekesh): Make these part of the frame settings, oscillating or whatever
+        gl.uniform2f(this.uniforms.FloorGlowClampValues, arenaFloorFrameSettings.FloorGlowClampMin, arenaFloorFrameSettings.FloorGlowClampMax);
+        gl.uniform4fv(this.uniforms.FloorGlowColor, arenaFloorFrameSettings.FloorGlowColor);
+        gl.bindVertexArray(call.Geo.vao);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.Geo.ib);
+        gl.drawElements(gl.TRIANGLES, call.Geo.numIndices, ibdesc_1.IBDescBitWidthToType[call.Geo.ibDesc.BitWidth], 0);
+    }
+}
+exports.ArenaFloorShader = ArenaFloorShader;
+
+
+/***/ }),
+
+/***/ "../librender/shader/lambertshader.ts":
+/*!********************************************!*\
+  !*** ../librender/shader/lambertshader.ts ***!
+  \********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const shaderutils_1 = __webpack_require__(/*! ./shaderutils */ "../librender/shader/shaderutils.ts");
+const ibdesc_1 = __webpack_require__(/*! @librender/geo/ibdesc */ "../librender/geo/ibdesc.ts");
+const renderprovider_1 = __webpack_require__(/*! @librender/renderprovider */ "../librender/renderprovider.ts");
+const VS_TEXT = `#version 300 es
+precision mediump float;
+
+uniform mat4 matProj;
+uniform mat4 matView;
+uniform mat4 matWorld;
+
+in vec3 pos;
+in vec3 normal;
+in vec2 uv;
+
+out vec2 fUV;
+out vec3 fNormal;
+
+void main() {
+  fNormal = (matWorld * vec4(normal, 0.0)).xyz;
+  fUV = uv;
+  gl_Position = matProj * matView * matWorld * vec4(pos, 1.0);
+}`;
+const FS_TEXT = `#version 300 es
+precision mediump float;
+
+// Use the surface color initially when teaching lambert shading
+//uniform vec3 surfaceColor;
+uniform sampler2D diffuseSampler;
+uniform vec3 lightColor;
+uniform vec3 lightDirection;
+uniform float ambientCoefficient;
+
+in vec2 fUV;
+in vec3 fNormal;
+
+out vec4 color;
+
+void main() {
+  vec3 surfaceColor = texture(diffuseSampler, fUV).rgb;
+  float rawDiffuseCoefficient = -dot(fNormal, lightDirection);
+  float colorPower = ambientCoefficient + (rawDiffuseCoefficient * (1.0 - ambientCoefficient));
+
+  color = vec4(colorPower * surfaceColor * lightColor, 1.0);
+}`;
+class LambertShader {
+    constructor(program, attribs, uniforms) {
+        this.program = program;
+        this.attribs = attribs;
+        this.uniforms = uniforms;
+    }
+    static getRenderProvider() {
+        return new renderprovider_1.RenderProvider((gl) => LambertShader.create(gl));
+    }
+    static create(gl) {
+        const program = shaderutils_1.ShaderUtils.createShaderFromSource(gl, 'lambertShader', VS_TEXT, FS_TEXT);
+        if (!program) {
+            return null;
+        }
+        const matWorld = gl.getUniformLocation(program, 'matWorld');
+        const matView = gl.getUniformLocation(program, 'matView');
+        const matProj = gl.getUniformLocation(program, 'matProj');
+        //const surfaceColor = gl.getUniformLocation(program, 'surfaceColor');
+        const lightColor = gl.getUniformLocation(program, 'lightColor');
+        const lightDirection = gl.getUniformLocation(program, 'lightDirection');
+        const ambientCoefficient = gl.getUniformLocation(program, 'ambientCoefficient');
+        const diffuseSampler = gl.getUniformLocation(program, 'diffuseSampler');
+        if (!matWorld || !matView || !matProj || !diffuseSampler
+            || !lightColor || !lightDirection || !ambientCoefficient) {
+            console.error('Failed to get all uniform locations for lambert program, aborting');
+            return null;
+        }
+        const posAttrib = gl.getAttribLocation(program, 'pos');
+        const normalAttrib = gl.getAttribLocation(program, 'normal');
+        const uvAttrib = gl.getAttribLocation(program, 'uv');
+        if (posAttrib < 0 || normalAttrib < 0 || uvAttrib < 0) {
+            console.error('Failed to get all attribs for lambert program, aborting');
+            return null;
+        }
+        return new LambertShader(program, {
+            Pos: posAttrib,
+            Normal: normalAttrib,
+            UV: uvAttrib,
+        }, {
+            MatProj: matProj,
+            MatView: matView,
+            MatWorld: matWorld,
+            AmbientCoefficient: ambientCoefficient,
+            LightColor: lightColor,
+            LightDirection: lightDirection,
+            //SurfaceColor: surfaceColor,
+            DiffuseSampler: diffuseSampler,
+        });
+    }
+    getAttribLocations() {
+        return {
+            Normal: this.attribs.Normal,
+            Pos: this.attribs.Pos,
+            UV: this.attribs.UV,
+        };
+    }
+    activate(gl) {
+        gl.useProgram(this.program);
+    }
+    render(gl, call) {
+        gl.bindVertexArray(call.Geo.vao);
+        gl.uniformMatrix4fv(this.uniforms.MatProj, false, call.MatProj);
+        gl.uniformMatrix4fv(this.uniforms.MatView, false, call.MatView);
+        gl.uniformMatrix4fv(this.uniforms.MatWorld, false, call.MatWorld);
+        gl.uniform3fv(this.uniforms.LightColor, call.LightColor);
+        gl.uniform3fv(this.uniforms.LightDirection, call.LightDirection);
+        //gl.uniform3fv(this.uniforms.SurfaceColor, call.SurfaceColor);
+        gl.uniform1f(this.uniforms.AmbientCoefficient, call.AmbientCoefficient);
+        gl.uniform1i(this.uniforms.DiffuseSampler, 0);
+        call.DiffuseTexture.bind(gl, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.Geo.ib);
+        gl.drawElements(gl.TRIANGLES, call.Geo.numIndices, ibdesc_1.IBDescBitWidthToType[call.Geo.ibDesc.BitWidth], 0);
+    }
+    render2(gl, call, frameSettings) {
+        gl.bindVertexArray(call.Geo.vao);
+        gl.uniformMatrix4fv(this.uniforms.MatProj, false, frameSettings.MatProj);
+        gl.uniformMatrix4fv(this.uniforms.MatView, false, frameSettings.MatView);
+        gl.uniformMatrix4fv(this.uniforms.MatWorld, false, call.MatWorld.Value);
+        gl.uniform3fv(this.uniforms.LightColor, frameSettings.LightColor);
+        gl.uniform3fv(this.uniforms.LightDirection, frameSettings.LightDirection);
+        gl.uniform1f(this.uniforms.AmbientCoefficient, call.AmbientCoefficientOverride != null
+            ? call.AmbientCoefficientOverride
+            : frameSettings.AmbientCoefficient);
+        gl.uniform1i(this.uniforms.DiffuseSampler, 0);
+        call.DiffuseTexture.bind(gl, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.Geo.ib);
+        gl.drawElements(gl.TRIANGLES, call.Geo.numIndices, ibdesc_1.IBDescBitWidthToType[call.Geo.ibDesc.BitWidth], 0);
+    }
+}
+exports.LambertShader = LambertShader;
+
+
+/***/ }),
+
+/***/ "../librender/shader/shaderutils.ts":
+/*!******************************************!*\
+  !*** ../librender/shader/shaderutils.ts ***!
+  \******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class ShaderUtils {
+    static createShaderFromSource(gl, programName, vsText, fsText) {
+        const vs = gl.createShader(gl.VERTEX_SHADER);
+        const fs = gl.createShader(gl.FRAGMENT_SHADER);
+        const program = gl.createProgram();
+        if (!vs || !fs || !program) {
+            console.error(`Cannot create shader program ${programName} - could not create shader objects`);
+            return null;
+        }
+        gl.shaderSource(vs, vsText);
+        gl.shaderSource(fs, fsText);
+        gl.compileShader(vs);
+        if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+            console.error(`Failed to compile vertex shader for ${programName}: ${gl.getShaderInfoLog(vs)}`);
+        }
+        gl.compileShader(fs);
+        if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+            console.error(`Failed to compile fragment shader for ${programName}: ${gl.getShaderInfoLog(fs)}`);
+        }
+        gl.attachShader(program, vs);
+        gl.attachShader(program, fs);
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error(`Failed to link shader program ${programName}: ${gl.getProgramInfoLog(program)}`);
+        }
+        gl.deleteShader(vs);
+        gl.deleteShader(fs);
+        return program;
+    }
+}
+exports.ShaderUtils = ShaderUtils;
 
 
 /***/ }),
@@ -8783,6 +9691,43 @@ exports.BlendSpaceModelRotation = {
 exports.X_UNIT_DIR = gl_matrix_1.vec3.fromValues(1, 0, 0);
 exports.Y_UNIT_DIR = gl_matrix_1.vec3.fromValues(0, 1, 0);
 exports.Z_UNIT_DIR = gl_matrix_1.vec3.fromValues(0, 0, 1);
+
+
+/***/ }),
+
+/***/ "../libutil/loadutils.ts":
+/*!*******************************!*\
+  !*** ../libutil/loadutils.ts ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+function loadScript(src) {
+    const js = document.createElement('script');
+    js.src = src;
+    document.body.appendChild(js);
+    return new Promise((resolve, reject) => {
+        js.onload = resolve;
+        js.onerror = reject;
+    });
+}
+exports.loadScript = loadScript;
+function loadRawBuffer(src) {
+    return fetch(src).then(data => data.arrayBuffer());
+}
+exports.loadRawBuffer = loadRawBuffer;
+function loadImage(src) {
+    const img = document.createElement('img');
+    img.src = src;
+    return new Promise((resolve, reject) => {
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+    });
+}
+exports.loadImage = loadImage;
 
 
 /***/ }),
@@ -9226,9 +10171,18 @@ const lightcyclesystemutils_1 = __webpack_require__(/*! @libgamemodel/lightcycle
 const commoncomponentutils_1 = __webpack_require__(/*! @libgamemodel/components/commoncomponentutils */ "../libgamemodel/components/commoncomponentutils.ts");
 const lightcyclespawner_1 = __webpack_require__(/*! @libgamemodel/lightcycle/lightcyclespawner */ "../libgamemodel/lightcycle/lightcyclespawner.ts");
 const gl_matrix_1 = __webpack_require__(/*! gl-matrix */ "../../node_modules/gl-matrix/esm/index.js");
+const gameappuicomponents_1 = __webpack_require__(/*! @libgamemodel/components/gameappuicomponents */ "../libgamemodel/components/gameappuicomponents.ts");
+const environmentutils_1 = __webpack_require__(/*! @libgamemodel/environment/environmentutils */ "../libgamemodel/environment/environmentutils.ts");
 const lightcycle_component_1 = __webpack_require__(/*! @libgamemodel/lightcycle/lightcycle.component */ "../libgamemodel/lightcycle/lightcycle.component.ts");
 const scenenodecamera_1 = __webpack_require__(/*! @libgamemodel/camera/scenenodecamera */ "../libgamemodel/camera/scenenodecamera.ts");
 const helpfulconstants_1 = __webpack_require__(/*! @libutil/helpfulconstants */ "../libutil/helpfulconstants.ts");
+const georenderresourcessingletontag_1 = __webpack_require__(/*! @libgamerender/renderresourcesingletons/georenderresourcessingletontag */ "../libgamerender/renderresourcesingletons/georenderresourcessingletontag.ts");
+const reflectioncamera_1 = __webpack_require__(/*! @libgamemodel/camera/reflectioncamera */ "../libgamemodel/camera/reflectioncamera.ts");
+const shadercomponents_1 = __webpack_require__(/*! @libgamerender/renderresourcesingletons/shadercomponents */ "../libgamerender/renderresourcesingletons/shadercomponents.ts");
+const lambertshader_1 = __webpack_require__(/*! @librender/shader/lambertshader */ "../librender/shader/lambertshader.ts");
+const arenafloorshader_1 = __webpack_require__(/*! @librender/shader/arenafloorshader */ "../librender/shader/arenafloorshader.ts");
+const dracodecodercomponent_1 = __webpack_require__(/*! @libgamerender/renderresourcesingletons/dracodecodercomponent */ "../libgamerender/renderresourcesingletons/dracodecodercomponent.ts");
+const decoder_1 = __webpack_require__(/*! @librender/geo/draco/decoder */ "../librender/geo/draco/decoder.ts");
 /**
  * Engine Service for WALL EDITOR APP
  *
@@ -9283,6 +10237,11 @@ function assertLoaded(name, t) {
     }
     return t;
 }
+const DRACO_CONFIG = {
+    jsFallbackURL: 'assets/draco3d/draco_decoder.js',
+    wasmBinaryURL: 'assets/draco3d/draco_decoder.wasm',
+    wasmLoaderURL: 'assets/draco3d/draco_wasm_wrapper.js',
+};
 class WallEditorAppService {
     constructor(gl, ecs) {
         this.gl = gl;
@@ -9292,6 +10251,8 @@ class WallEditorAppService {
         return __awaiter(this, void 0, void 0, function* () {
             const ecs = new ecsmanager_1.ECSManager();
             WallEditorAppService.createLogicalSystems(ecs);
+            yield WallEditorAppService.createRenderingSystems(ecs, gl);
+            WallEditorAppService.createInitialWorldState(ecs);
             return new WallEditorAppService(gl, ecs);
         });
     }
@@ -9305,16 +10266,41 @@ class WallEditorAppService {
         lightcyclesystemutils_1.LightcycleSystemUtils.installLightcycleUpdateSystem(ecs);
         lightcyclesystemutils_1.LightcycleSystemUtils.installWallSpawnerSystem(ecs);
     }
-    static createRenderingSystems(ecs) {
+    static createRenderingSystems(ecs, gl) {
         return __awaiter(this, void 0, void 0, function* () {
             const { SceneNodeFactory } = commoncomponentutils_1.CommonComponentUtils.getSceneNodeFactoryComponent(ecs);
             const { Vec3 } = commoncomponentutils_1.CommonComponentUtils.getTempMathAllocatorsComponent(ecs);
-            const newLightcycle = lightcyclespawner_1.LightcycleSpawner.spawnLightcycle(ecs, {
-                Orientation: 0,
-                Position: gl_matrix_1.vec3.fromValues(0, 0, 0),
-            });
-            const camera = scenenodecamera_1.SceneNodeCamera.attachAtFixedOffsetTo(Vec3, newLightcycle.getComponent(lightcycle_component_1.LightcycleComponent2).BodySceneNode, SceneNodeFactory, gl_matrix_1.vec3.fromValues(0, 0, 5), helpfulconstants_1.Y_UNIT_DIR);
+            //
+            // Shaders
+            //
+            ecs.iterateComponents([shadercomponents_1.ShaderSingletonTag], (entity) => entity.destroy());
+            const shadersEntity = ecs.createEntity();
+            shadersEntity.addComponent(shadercomponents_1.ShaderSingletonTag);
+            shadersEntity.addComponent(shadercomponents_1.LambertShaderComponent, assertLoaded('LambertShader', lambertshader_1.LambertShader.create(gl)));
+            shadersEntity.addComponent(shadercomponents_1.ArenaFloorShaderComponent, assertLoaded('ArenaFloorShader', arenafloorshader_1.ArenaFloorShader.create(gl)));
+            //
+            // Geometry
+            //
+            ecs.iterateComponents([georenderresourcessingletontag_1.GeoRenderResourcesSingletonTag], (entity) => entity.destroy());
+            const geoEntity = ecs.createEntity();
+            geoEntity.addComponent(georenderresourcessingletontag_1.GeoRenderResourcesSingletonTag);
+            geoEntity.addComponent(dracodecodercomponent_1.DracoDecoderComponent, yield decoder_1.DracoDecoder.create(DRACO_CONFIG));
+            // TODO (sessamekesh): Add in geometry here! For the environment, mind you.
         });
+    }
+    static createInitialWorldState(ecs) {
+        const { SceneNodeFactory } = commoncomponentutils_1.CommonComponentUtils.getSceneNodeFactoryComponent(ecs);
+        const { Vec3 } = commoncomponentutils_1.CommonComponentUtils.getTempMathAllocatorsComponent(ecs);
+        const newLightcycle = lightcyclespawner_1.LightcycleSpawner.spawnLightcycle(ecs, {
+            Orientation: 0,
+            Position: gl_matrix_1.vec3.fromValues(0, 0, 0),
+        });
+        const camera = scenenodecamera_1.SceneNodeCamera.attachAtFixedOffsetTo(Vec3, newLightcycle.getComponent(lightcycle_component_1.LightcycleComponent2).BodySceneNode, SceneNodeFactory, gl_matrix_1.vec3.fromValues(0, 0, 5), helpfulconstants_1.Y_UNIT_DIR);
+        const floorReflectionCamera = new reflectioncamera_1.ReflectionCamera(camera, gl_matrix_1.vec3.fromValues(0, -0.5, 0), gl_matrix_1.vec3.fromValues(0, 1, 0), Vec3);
+        const cameraEntity = ecs.createEntity();
+        cameraEntity.addComponent(gameappuicomponents_1.CameraComponent, camera);
+        cameraEntity.addComponent(gameappuicomponents_1.ReflectionCameraComponent, floorReflectionCamera);
+        environmentutils_1.EnvironmentUtils.spawnFloor(ecs, 400, 400);
     }
     startRendering() {
         let lastFrame = performance.now();

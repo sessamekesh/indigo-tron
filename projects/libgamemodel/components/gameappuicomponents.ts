@@ -3,8 +3,8 @@ import { KeyboardBikeInputController } from '@io/bikeinput/keyboardbikeinputcont
 import { TouchEventBikeInputController } from '@io/bikeinput/toucheventbikeinputcontroller';
 import { GamepadBikeInputController } from '@io/bikeinput/gamepadbikeinputcontroller';
 import { BikeInputManager } from '@io/bikeinput/bikeinputmanager';
-import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
+import { Camera } from '@libgamemodel/camera/camera';
 
 export class KeyboardManagerComponent {
   constructor(public KeyboardManager: KeyboardManager) {}
@@ -27,7 +27,7 @@ export class BikeInputManagerComponent {
 }
 
 export class CameraComponent {
-  constructor(public Camera: BasicCamera) {}
+  constructor(public Camera: Camera) {}
 }
 
 export class ReflectionCameraComponent {

@@ -111,6 +111,7 @@ export type ArenaFloorRenderCall = {
   LightColor: vec3,
   ViewportSize: vec2,
   ReflectionTexture: Texture,
+  BumpMapTexture: Texture,
 
   Geo: ArenaFloorGeo,
 };
@@ -228,6 +229,8 @@ export class ArenaFloorShader {
     gl.uniform2fv(this.uniforms.ViewportSize, call.ViewportSize);
     gl.uniform1i(this.uniforms.ReflectionTexture, 0);
     call.ReflectionTexture.bind(gl, 0);
+    gl.uniform1i(this.uniforms.BumpMapTexture, 1);
+    call.BumpMapTexture.bind(gl, 1);
 
     gl.bindVertexArray(call.Geo.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.Geo.ib);

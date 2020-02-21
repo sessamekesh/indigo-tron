@@ -5,7 +5,7 @@ import { Entity } from '@libecs/entity';
 import { LightcycleRenderComponent } from '@libgamerender/components/lightcycle.rendercomponent';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { Z_UNIT_DIR } from '@libutil/helpfulconstants';
-import { glMatrix, vec3, mat4 } from 'gl-matrix';
+import { glMatrix } from 'gl-matrix';
 import { SceneNodeFactoryComponent, OwnedMathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { MainRenderPassComponent, FloorReflectionRenderPassComponent } from '@libgamerender/components/mainrenderpass.component';
 import { LightcycleLambertRenderResourcesComponent } from '@libgamerender/components/renderresourcecomponents';

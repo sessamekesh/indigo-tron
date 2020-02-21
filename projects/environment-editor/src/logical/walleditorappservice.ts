@@ -3,9 +3,19 @@ import { LightcycleSystemUtils } from '@libgamemodel/lightcycle/lightcyclesystem
 import { CommonComponentUtils } from '@libgamemodel/components/commoncomponentutils';
 import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
 import { vec3 } from "gl-matrix";
+import { CameraComponent, ReflectionCameraComponent } from '@libgamemodel/components/gameappuicomponents';
+import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { LightcycleComponent2 } from "@libgamemodel/lightcycle/lightcycle.component";
 import { SceneNodeCamera } from '@libgamemodel/camera/scenenodecamera';
 import { Y_UNIT_DIR } from "@libutil/helpfulconstants";
+import { GeoRenderResourcesSingletonTag } from '@libgamerender/renderresourcesingletons/georenderresourcessingletontag';
+import { ReflectionCamera } from "@libgamemodel/camera/reflectioncamera";
+import { ShaderSingletonTag, LambertShaderComponent, ArenaFloorShaderComponent } from "@libgamerender/renderresourcesingletons/shadercomponents";
+import { LambertShader } from "@librender/shader/lambertshader";
+import { ArenaFloorShader } from "@librender/shader/arenafloorshader";
+import { DracoDecoderComponent } from '@libgamerender/renderresourcesingletons/dracodecodercomponent';
+import { DracoDecoderCreationOptions } from "@librender/geo/draco/decoderconfig";
+import { DracoDecoder } from "@librender/geo/draco/decoder";
 
 /**
  * Engine Service for WALL EDITOR APP
@@ -62,6 +72,12 @@ function assertLoaded<T>(name: string, t: T|null): T {
   return t;
 }
 
+const DRACO_CONFIG: DracoDecoderCreationOptions = {
+  jsFallbackURL: 'assets/draco3d/draco_decoder.js',
+  wasmBinaryURL: 'assets/draco3d/draco_decoder.wasm',
+  wasmLoaderURL: 'assets/draco3d/draco_wasm_wrapper.js',
+};
+
 export class WallEditorAppService {
   private constructor(
     private gl: WebGL2RenderingContext,
@@ -71,6 +87,8 @@ export class WallEditorAppService {
     const ecs = new ECSManager();
 
     WallEditorAppService.createLogicalSystems(ecs);
+    await WallEditorAppService.createRenderingSystems(ecs, gl);
+    WallEditorAppService.createInitialWorldState(ecs);
 
     return new WallEditorAppService(gl, ecs);
   }
@@ -85,9 +103,35 @@ export class WallEditorAppService {
     LightcycleSystemUtils.installWallSpawnerSystem(ecs);
   }
 
-  private static async createRenderingSystems(ecs: ECSManager) {
+  private static async createRenderingSystems(ecs: ECSManager, gl: WebGL2RenderingContext) {
     const { SceneNodeFactory } = CommonComponentUtils.getSceneNodeFactoryComponent(ecs);
     const { Vec3 } = CommonComponentUtils.getTempMathAllocatorsComponent(ecs);
+
+    //
+    // Shaders
+    //
+    ecs.iterateComponents([ShaderSingletonTag], (entity) => entity.destroy());
+    const shadersEntity = ecs.createEntity();
+    shadersEntity.addComponent(ShaderSingletonTag);
+    shadersEntity.addComponent(
+      LambertShaderComponent, assertLoaded('LambertShader', LambertShader.create(gl)));
+    shadersEntity.addComponent(
+      ArenaFloorShaderComponent, assertLoaded('ArenaFloorShader', ArenaFloorShader.create(gl)));
+
+    //
+    // Geometry
+    //
+    ecs.iterateComponents([GeoRenderResourcesSingletonTag], (entity) => entity.destroy());
+    const geoEntity = ecs.createEntity();
+    geoEntity.addComponent(GeoRenderResourcesSingletonTag);
+    geoEntity.addComponent(DracoDecoderComponent, await DracoDecoder.create(DRACO_CONFIG));
+    // TODO (sessamekesh): Add in geometry here! For the environment, mind you.
+  }
+
+  private static createInitialWorldState(ecs: ECSManager) {
+    const { SceneNodeFactory } = CommonComponentUtils.getSceneNodeFactoryComponent(ecs);
+    const { Vec3 } = CommonComponentUtils.getTempMathAllocatorsComponent(ecs);
+
     const newLightcycle = LightcycleSpawner.spawnLightcycle(ecs, {
       Orientation: 0,
       Position: vec3.fromValues(0, 0, 0),
@@ -95,8 +139,12 @@ export class WallEditorAppService {
     const camera = SceneNodeCamera.attachAtFixedOffsetTo(
       Vec3, newLightcycle.getComponent(LightcycleComponent2)!.BodySceneNode,
       SceneNodeFactory, vec3.fromValues(0, 0, 5), Y_UNIT_DIR);
-
-
+    const floorReflectionCamera = new ReflectionCamera(
+      camera, vec3.fromValues(0, -0.5, 0), vec3.fromValues(0, 1, 0), Vec3);
+    const cameraEntity = ecs.createEntity();
+    cameraEntity.addComponent(CameraComponent, camera);
+    cameraEntity.addComponent(ReflectionCameraComponent, floorReflectionCamera);
+    EnvironmentUtils.spawnFloor(ecs, 400, 400);
   }
 
   private startRendering() {
