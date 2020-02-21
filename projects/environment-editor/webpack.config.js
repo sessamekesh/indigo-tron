@@ -1,4 +1,5 @@
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const path = require('path');
 
 module.exports = {
   mode: "development",
@@ -6,7 +7,7 @@ module.exports = {
   devtool: "source-map",
 
   resolve: {
-    extensions: ['.ts', '.tsx'],
+    extensions: ['.js', '.ts', '.tsx'],
     plugins: [new TsconfigPathsPlugin({
       configFile: "./tsconfig.json",
     })]
@@ -35,4 +36,7 @@ module.exports = {
     "react-dom": "ReactDOM"
   },
   watch: true,
+  devServer: {
+    contentBase: ['./', path.join(__dirname, '../game-app/src')],
+  }
 };

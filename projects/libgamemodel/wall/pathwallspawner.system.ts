@@ -27,6 +27,7 @@ export class PathWallSpawnerSystem extends ECSSystem {
       entity.addComponent(WallGeneratorComponent, sceneNode, vitalityAtSpawn, 1, pos);
       entity.addListener('destroy', () => sceneNode.detach());
     });
+    return entity;
   }
 
   start() { return true; }
@@ -40,6 +41,11 @@ export class PathWallSpawnerSystem extends ECSSystem {
       [WallSpawningPathComponent, WallGeneratorComponent],
       (entity, pathSpawner, wallGenerator) => {
         pathSpawner.t += msDt / 1000;
+        if (pathSpawner.t >= pathSpawner.Path.maxTime()) {
+          // Restart
+          pathSpawner.Path.posAt(0, wallGenerator.LastSpawnPoint);
+          pathSpawner.t = 0;
+        }
         vec2Allocator.get(1, pos2d => {
           pathSpawner.Path.posAt(pathSpawner.t, pos2d);
           vec3Allocator.get(1, pos3d => {

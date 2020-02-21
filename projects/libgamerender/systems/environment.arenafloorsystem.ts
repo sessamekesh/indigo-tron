@@ -9,10 +9,6 @@ import { mat4, vec3, vec4 } from 'gl-matrix';
 import { ArenaFloorRenderableComponent } from '@libgamerender/components/arenafloorrenderable.component';
 
 // TODO (sessamekesh): Migrate this over!
-// - After that, go ahead and remove all the old style rendering systems, and replace them with the
-//   new style ones in the game app itself.
-// - After that, please please PLEASE delete all the old files - there are way too many render
-//   systems using different paradigms now!
 // - After that, go ahead and add the render systems to the wall editor app as well!
 
 export class EnvironmentArenaFloorSystem extends ECSSystem {

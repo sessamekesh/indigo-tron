@@ -1,6 +1,7 @@
 import { vec2 } from "gl-matrix";
 
 export interface Path2D {
+  maxTime(): number;
   posAt(time: number, o_pos: vec2): void;
 }
 
@@ -12,7 +13,11 @@ export class PointToPointRepeatPath implements Path2D {
     vec2.copy(this.b_, end);
   }
 
+  maxTime() {
+    return this.timeToComplete;
+  }
+
   posAt(time: number, o_pos: vec2) {
-    vec2.lerp(o_pos, this.a_, this.b_, time % this.timeToComplete);
+    vec2.lerp(o_pos, this.a_, this.b_, (time % this.timeToComplete) / this.timeToComplete);
   }
 }

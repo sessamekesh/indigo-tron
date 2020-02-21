@@ -1,21 +1,26 @@
 import { ECSManager } from "@libecs/ecsmanager";
 import { LightcycleSystemUtils } from '@libgamemodel/lightcycle/lightcyclesystemutils';
 import { CommonComponentUtils } from '@libgamemodel/components/commoncomponentutils';
-import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
-import { vec3 } from "gl-matrix";
+import { vec3, vec2 } from "gl-matrix";
+import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { CameraComponent, ReflectionCameraComponent } from '@libgamemodel/components/gameappuicomponents';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
-import { LightcycleComponent2 } from "@libgamemodel/lightcycle/lightcycle.component";
-import { SceneNodeCamera } from '@libgamemodel/camera/scenenodecamera';
-import { Y_UNIT_DIR } from "@libutil/helpfulconstants";
 import { GeoRenderResourcesSingletonTag } from '@libgamerender/renderresourcesingletons/georenderresourcessingletontag';
 import { ReflectionCamera } from "@libgamemodel/camera/reflectioncamera";
 import { ShaderSingletonTag, LambertShaderComponent, ArenaFloorShaderComponent } from "@libgamerender/renderresourcesingletons/shadercomponents";
 import { LambertShader } from "@librender/shader/lambertshader";
 import { ArenaFloorShader } from "@librender/shader/arenafloorshader";
-import { DracoDecoderComponent } from '@libgamerender/renderresourcesingletons/dracodecodercomponent';
-import { DracoDecoderCreationOptions } from "@librender/geo/draco/decoderconfig";
-import { DracoDecoder } from "@librender/geo/draco/decoder";
+import { WallSpawnerSystem2 } from "@libgamemodel/wall/wallspawner2.system";
+import { EnvironmentArenaFloorSystem } from '@libgamerender/systems/environment.arenafloorsystem';
+import { WallEditorAppRenderSystem } from "./walleditorapp.rendersystem";
+import { RenderResourcesSingletonTag } from "@libgamerender/renderresourcesingletons/renderresourcessingletontag";
+import { GLContextComponent, ArenaFloorReflectionTextureComponent, ArenaFloorReflectionFramebufferComponent } from "@libgamerender/components/renderresourcecomponents";
+import { Texture } from "@librender/texture/texture";
+import { Framebuffer } from "@librender/texture/framebuffer";
+import { LightSettingsComponent } from "@libgamerender/components/lightsettings.component";
+import { PointToPointRepeatPath } from '@libutil/math/path';
+import { PathWallSpawnerSystem } from '@libgamemodel/wall/pathwallspawner.system';
+import { BasicWallLambertSystem } from '@libgamerender/systems/basicwall.lambertsystem';
 
 /**
  * Engine Service for WALL EDITOR APP
@@ -72,12 +77,6 @@ function assertLoaded<T>(name: string, t: T|null): T {
   return t;
 }
 
-const DRACO_CONFIG: DracoDecoderCreationOptions = {
-  jsFallbackURL: 'assets/draco3d/draco_decoder.js',
-  wasmBinaryURL: 'assets/draco3d/draco_decoder.wasm',
-  wasmLoaderURL: 'assets/draco3d/draco_wasm_wrapper.js',
-};
-
 export class WallEditorAppService {
   private constructor(
     private gl: WebGL2RenderingContext,
@@ -94,6 +93,7 @@ export class WallEditorAppService {
   }
 
   async start() {
+    console.log('Starting WallEditorAppService...');
     this.ecs.start();
     this.startRendering();
   }
@@ -106,6 +106,23 @@ export class WallEditorAppService {
   private static async createRenderingSystems(ecs: ECSManager, gl: WebGL2RenderingContext) {
     const { SceneNodeFactory } = CommonComponentUtils.getSceneNodeFactoryComponent(ecs);
     const { Vec3 } = CommonComponentUtils.getTempMathAllocatorsComponent(ecs);
+
+    const floorReflectionTexture = assertLoaded(
+      'FloorReflectionTexture', Texture.createEmptyTexture(gl, 512, 512, 'rgba32'));
+    const roughTileTexture = assertLoaded(
+      'RoughTileTexture',
+      await Texture.createFromURL(gl, 'assets/textures/roughtiles_bump.jpg', {
+        MagFilter: 'linear',
+        MinFilter: 'linear',
+        WrapU: 'repeat',
+        WrapV: 'repeat',
+      }));
+    const floorReflectionFramebuffer = assertLoaded(
+      'FloorReflectionFramebuffer', Framebuffer.create(gl, {
+        AttachedTexture: floorReflectionTexture,
+        ColorAttachment: 0,
+        DepthEnabled: true,
+      }));
 
     //
     // Shaders
@@ -124,26 +141,62 @@ export class WallEditorAppService {
     ecs.iterateComponents([GeoRenderResourcesSingletonTag], (entity) => entity.destroy());
     const geoEntity = ecs.createEntity();
     geoEntity.addComponent(GeoRenderResourcesSingletonTag);
-    geoEntity.addComponent(DracoDecoderComponent, await DracoDecoder.create(DRACO_CONFIG));
     // TODO (sessamekesh): Add in geometry here! For the environment, mind you.
+
+    //
+    // Miscellaneous objects
+    //
+    const glGlobalsEntity = ecs.createEntity();
+    glGlobalsEntity.addComponent(RenderResourcesSingletonTag);
+    glGlobalsEntity.addComponent(GLContextComponent, gl);
+
+    const globalTexturesEntity = ecs.createEntity();
+    globalTexturesEntity.addComponent(RenderResourcesSingletonTag);
+    globalTexturesEntity.addComponent(
+      ArenaFloorReflectionTextureComponent, floorReflectionTexture, roughTileTexture);
+
+    const globalFramebuffersEntity = ecs.createEntity();
+    globalFramebuffersEntity.addComponent(RenderResourcesSingletonTag);
+    globalFramebuffersEntity.addComponent(
+      ArenaFloorReflectionFramebufferComponent, floorReflectionFramebuffer);
+
+    //
+    // Install systems
+    //
+    ecs.addSystem2(PathWallSpawnerSystem);
+    ecs.addSystem2(WallSpawnerSystem2);
+    ecs.addSystem2(BasicWallLambertSystem);
+    ecs.addSystem2(EnvironmentArenaFloorSystem);
+    ecs.addSystem2(WallEditorAppRenderSystem);
   }
 
   private static createInitialWorldState(ecs: ECSManager) {
     const { SceneNodeFactory } = CommonComponentUtils.getSceneNodeFactoryComponent(ecs);
     const { Vec3 } = CommonComponentUtils.getTempMathAllocatorsComponent(ecs);
 
-    const newLightcycle = LightcycleSpawner.spawnLightcycle(ecs, {
-      Orientation: 0,
-      Position: vec3.fromValues(0, 0, 0),
-    });
-    const camera = SceneNodeCamera.attachAtFixedOffsetTo(
-      Vec3, newLightcycle.getComponent(LightcycleComponent2)!.BodySceneNode,
-      SceneNodeFactory, vec3.fromValues(0, 0, 5), Y_UNIT_DIR);
+    //
+    // Logical rendering resources (camera, light)
+    //
+    const camera = new BasicCamera(
+      vec3.fromValues(0, 3, -15), vec3.fromValues(0, 0.85, 0), vec3.fromValues(0, 1, 0));
     const floorReflectionCamera = new ReflectionCamera(
       camera, vec3.fromValues(0, -0.5, 0), vec3.fromValues(0, 1, 0), Vec3);
     const cameraEntity = ecs.createEntity();
     cameraEntity.addComponent(CameraComponent, camera);
     cameraEntity.addComponent(ReflectionCameraComponent, floorReflectionCamera);
+    EnvironmentUtils.spawnFloor(ecs, 400, 400);
+
+    const lightsEntity = ecs.createEntity();
+    lightsEntity.addComponent(
+      LightSettingsComponent, vec3.fromValues(0, -1, 0), vec3.fromValues(1, 1, 1), 0.3);
+
+    PathWallSpawnerSystem.createPathSpawner(
+      ecs, SceneNodeFactory, Vec3,
+      new PointToPointRepeatPath(vec2.fromValues(-26, 0), vec2.fromValues(26, 0), 3), 2.85);
+
+    //
+    // Initial game state
+    //
     EnvironmentUtils.spawnFloor(ecs, 400, 400);
   }
 
@@ -156,10 +209,6 @@ export class WallEditorAppService {
 
       this.ecs.update(msDt);
       requestAnimationFrame(frame);
-
-      const gl = this.gl;
-      gl.clearColor(0.85, 0.75, 1, 1);
-      gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
     };
     requestAnimationFrame(frame);
   }
