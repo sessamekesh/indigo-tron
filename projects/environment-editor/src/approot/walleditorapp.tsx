@@ -86,6 +86,8 @@ export class WallEditorApp extends React.Component<WallEditorProps, AppState> {
   private glCanvasStyle(): React.CSSProperties {
     return {
       flexGrow: 2,
+      width: '100%',
+      height: '100%',
     };
   }
 
