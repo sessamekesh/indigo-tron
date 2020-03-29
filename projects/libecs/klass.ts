@@ -6,5 +6,7 @@ export type Klass4<T extends Object, A, B, C, D> = new (a: A, b: B, c: C, d: D) 
 export type Klass5<T extends Object, A, B, C, D, E> = new (a: A, b: B, c: C, d: D, e: E) => T;
 export type Klass6<T extends Object, A, B, C, D, E, F> =
   new (a: A, b: B, c: C, d: D, e: E, f: F) => T;
+export type Klass7<T extends Object, A, B, C, D, E, F, G> =
+  new (a: A, b: B, c: C, d: D, e: E, f: F, g: G) => T;
 
 export type Klass<T extends Object> = new (...args: any[]) => T;

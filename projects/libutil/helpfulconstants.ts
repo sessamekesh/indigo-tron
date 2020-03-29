@@ -10,3 +10,5 @@ export const BlendSpaceModelRotation = {
 export const X_UNIT_DIR = vec3.fromValues(1, 0, 0);
 export const Y_UNIT_DIR = vec3.fromValues(0, 1, 0);
 export const Z_UNIT_DIR = vec3.fromValues(0, 0, 1);
+
+export const LIGHTCYCLE_SPEED = 38.5;

@@ -21,6 +21,7 @@ import { LightSettingsComponent } from "@libgamerender/components/lightsettings.
 import { PointToPointRepeatPath } from '@libutil/math/path';
 import { PathWallSpawnerSystem } from '@libgamemodel/wall/pathwallspawner.system';
 import { BasicWallLambertSystem } from '@libgamerender/systems/basicwall.lambertsystem';
+import { LIGHTCYCLE_SPEED } from "@libutil/helpfulconstants";
 
 /**
  * Engine Service for WALL EDITOR APP
@@ -124,6 +125,9 @@ export class WallEditorAppService {
         DepthEnabled: true,
       }));
 
+    // TODO (sessamekesh): Add in the animated texture / texture lookup for the sliding walls
+    // TODO (sessamekesh): Add in the sliding walls render generation system
+
     //
     // Shaders
     //
@@ -141,7 +145,6 @@ export class WallEditorAppService {
     ecs.iterateComponents([GeoRenderResourcesSingletonTag], (entity) => entity.destroy());
     const geoEntity = ecs.createEntity();
     geoEntity.addComponent(GeoRenderResourcesSingletonTag);
-    // TODO (sessamekesh): Add in geometry here! For the environment, mind you.
 
     //
     // Miscellaneous objects
@@ -190,9 +193,14 @@ export class WallEditorAppService {
     lightsEntity.addComponent(
       LightSettingsComponent, vec3.fromValues(0, -1, 0), vec3.fromValues(1, 1, 1), 0.3);
 
+    const GEN_LEN = 50;
+    const SPEED = LIGHTCYCLE_SPEED;
     PathWallSpawnerSystem.createPathSpawner(
       ecs, SceneNodeFactory, Vec3,
-      new PointToPointRepeatPath(vec2.fromValues(-26, 0), vec2.fromValues(26, 0), 3), 2.85);
+      new PointToPointRepeatPath(
+        vec2.fromValues(-GEN_LEN / 2, 0),
+        vec2.fromValues(GEN_LEN / 2, 0),
+        GEN_LEN / SPEED), (GEN_LEN / SPEED) * 1.65);
 
     //
     // Initial game state

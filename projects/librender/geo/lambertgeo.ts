@@ -15,7 +15,8 @@ export class LambertGeo {
     public readonly vao: WebGLVertexArrayObject,
     public readonly ib: WebGLBuffer,
     public readonly numIndices: number,
-    public readonly ibDesc: IBDesc) {}
+    public readonly ibDesc: IBDesc,
+    public readonly uvBuffer: WebGLBuffer) {}
 
   static create(gl: WebGL2RenderingContext, rawVertexData: LambertGeoRawVertexData, ibData: IBData): LambertGeo|null {
     const posVB = gl.createBuffer();
@@ -59,6 +60,6 @@ export class LambertGeo {
 
     // TODO (sessamekesh): Why is this necessary? The types should be compatible!
     const ibDesc = { BitWidth: ibData.BitWidth } as IBDesc;
-    return new LambertGeo(vao, ib, ibData.Data.length, ibDesc);
+    return new LambertGeo(vao, ib, ibData.Data.length, ibDesc, uvVB);
   }
 }

@@ -43,11 +43,11 @@ in vec3 fNormal;
 out vec4 color;
 
 void main() {
-  vec3 surfaceColor = texture(diffuseSampler, fUV).rgb;
+  vec4 surfaceColor = texture(diffuseSampler, fUV);
   float rawDiffuseCoefficient = -dot(fNormal, lightDirection);
   float colorPower = ambientCoefficient + (rawDiffuseCoefficient * (1.0 - ambientCoefficient));
 
-  color = vec4(colorPower * surfaceColor * lightColor, 1.0);
+  color = vec4(colorPower * surfaceColor.rgb * lightColor, surfaceColor.a);
 }`;
 
 type Attribs = {
