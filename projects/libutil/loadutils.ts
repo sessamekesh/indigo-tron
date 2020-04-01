@@ -20,3 +20,10 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject;
   });
 }
+
+export function assert<T>(name: string, t: T|null): T {
+  if (!t) {
+    throw new Error(`Failed to create element ${name}`);
+  }
+  return t;
+}

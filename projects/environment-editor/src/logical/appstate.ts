@@ -6,10 +6,15 @@ export interface CoreAppState {
 
 export enum AppMode {
   WALL_EDITOR,
+  ENVIRONMENT_EDITOR,
 }
 
 export interface WallEditorAppState extends CoreAppState {
   mode: AppMode.WALL_EDITOR,
 }
 
-export type AppState = WallEditorAppState;
+export interface EnvironmentEditorAppState {
+  mode: AppMode.ENVIRONMENT_EDITOR,
+}
+
+export type AppState = WallEditorAppState | EnvironmentEditorAppState;

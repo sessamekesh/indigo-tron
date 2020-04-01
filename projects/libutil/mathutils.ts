@@ -1,4 +1,4 @@
-import { vec3 } from "gl-matrix";
+import { vec3, quat } from "gl-matrix";
 import { TempGroupAllocator } from "./allocator";
 
 export type RandomNumberFn = ()=>number;
@@ -40,6 +40,21 @@ export class MathUtils {
 
       vec3.scale(newOffset, offset, distance / len);
       vec3.add(o, originPos, newOffset);
+    });
+  }
+
+  static getSphericalCoordinate(
+      o: vec3, upVector: vec3, forwardVector: vec3, spin: number, tilt: number,
+      vec3Allocator: TempGroupAllocator<vec3>, quatAllocator: TempGroupAllocator<quat>) {
+    vec3Allocator.get(2, (yRot, rightRot) => {
+      quatAllocator.get(2, (yQuat, xzQuat) => {
+        quat.setAxisAngle(yQuat, upVector, spin);
+        vec3.transformQuat(yRot, forwardVector, yQuat);
+        vec3.cross(rightRot, yRot, upVector);
+        quat.setAxisAngle(xzQuat, rightRot, tilt);
+        vec3.transformQuat(o, yRot, xzQuat);
+        vec3.normalize(o, o);
+      });
     });
   }
 }

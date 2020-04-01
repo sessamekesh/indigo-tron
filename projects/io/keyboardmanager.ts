@@ -39,6 +39,7 @@ export class KeyboardManager extends EventManager<KeyboardEvents> {
   destroy() {
     this.keyListenerElement.removeEventListener('keydown', this.keyDownListener);
     this.keyListenerElement.removeEventListener('keyup', this.keyUpListener);
+    super.destroy();
   }
 
   isKeyDown(key: string) {

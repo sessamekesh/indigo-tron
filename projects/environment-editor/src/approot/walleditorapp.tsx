@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { WallEditorAppState } from "../logical/appstate";
 import { WallEditorAppService } from '../logical/walleditorappservice';
-import { timingSafeEqual } from 'crypto';
 
 interface WallEditorProps {
   initialState: WallEditorAppState

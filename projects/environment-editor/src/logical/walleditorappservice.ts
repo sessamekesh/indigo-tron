@@ -187,7 +187,6 @@ export class WallEditorAppService {
     const cameraEntity = ecs.createEntity();
     cameraEntity.addComponent(CameraComponent, camera);
     cameraEntity.addComponent(ReflectionCameraComponent, floorReflectionCamera);
-    EnvironmentUtils.spawnFloor(ecs, 400, 400);
 
     const lightsEntity = ecs.createEntity();
     lightsEntity.addComponent(
