@@ -2,7 +2,7 @@ import { ECSSystem } from "@libecs/ecssystem";
 import { ECSManager } from "@libecs/ecsmanager";
 import { CameraComponent } from "@libgamemodel/components/gameappuicomponents";
 import { FreeMovementCameraComponent, RadialCameraComponent } from "./appcomponents";
-import { MouseDragEvent } from '@io/mousestatemanager';
+import { MouseDragEvent, MouseWheelEvent } from '@io/mousestatemanager';
 import { MouseEventsQueueComponent, KeyboardStateManagerComponent } from "@libgamemodel/utilities/ioeventsqueuecomponents";
 import { Key } from "ts-key-enum";
 
@@ -30,7 +30,9 @@ export class EnvironmentEditorAppIOSystem extends ECSSystem {
         case 'mousedrag':
           this.mouseDragCamera(ecs, evt.event);
           break;
-          // TODO (sessamekesh): Introduce the mouse wheel for the radial camera
+        case 'mousewheel':
+          this.mouseWheelCamera(ecs, evt.event);
+          break;
       }
     }
   }
@@ -50,6 +52,25 @@ export class EnvironmentEditorAppIOSystem extends ECSSystem {
         radialCameraComponent.RotSpeed * 2.5 * -evt.dx / evt.areaWidth);
       radialCameraComponent.Camera.tiltUp(
         radialCameraComponent.RotSpeed * 2.5 * evt.dy / evt.areaHeight);
+    }
+  }
+
+  private mouseWheelCamera(ecs: ECSManager, evt: MouseWheelEvent) {
+    const cameraComponent = ecs.getSingletonComponent(CameraComponent);
+    const radialCameraComponent = ecs.getSingletonComponent(RadialCameraComponent);
+
+    if (cameraComponent && cameraComponent.Camera === radialCameraComponent?.Camera) {
+      const keyboard = ecs.getSingletonComponent(KeyboardStateManagerComponent)?.Keyboard;
+
+      let speed = radialCameraComponent.Speed;
+      if (keyboard?.isKeyPressed(Key.Shift)) {
+        speed *= 0.1;
+      }
+      if (keyboard?.isKeyPressed(Key.Control)) {
+        speed *= 10;
+      }
+
+      radialCameraComponent.Camera.adjustRadius(evt.scrollAmount / 100 * speed);
     }
   }
 

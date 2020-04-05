@@ -25,6 +25,9 @@ export class MouseEventsQueueUtil {
     destructorGroup.addListener<MouseEvents, 'mousedrag'>(mouse, 'mousedrag', (event) => {
       component.MouseEvents.push({type: 'mousedrag', event});
     });
+    destructorGroup.addListener<MouseEvents, 'mousewheel'>(mouse, 'mousewheel', (event) => {
+      component.MouseEvents.push({type: 'mousewheel', event});
+    });
     mouseEventsEntity.addListener('destroy', () => {
       destructorGroup.destroyAll();
     });

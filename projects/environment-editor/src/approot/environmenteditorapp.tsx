@@ -56,6 +56,7 @@ export class EnvironmentEditorApp
           onMouseDown={this.onMouseDown}
           onMouseMove={this.onMouseMove}
           onMouseUp={this.onMouseUp}
+          onWheel={this.onMouseScroll}
         >Canvas not supported</canvas>
         <div style={this.settingsContainerStyle()}>
           <div style={this.settingsContainerInnerStyle()}>
@@ -67,7 +68,6 @@ export class EnvironmentEditorApp
                       onChange={(e) => this.onChangeCameraType(e.target.value as string)}>
                 <MenuItem value={'free'}>Free</MenuItem>
                 <MenuItem value={'centered'}>Centered</MenuItem>
-                <MenuItem value={'simulation'}>Simulation</MenuItem>
               </Select>
             </FormControl>
           </div>
@@ -110,6 +110,14 @@ export class EnvironmentEditorApp
       this.mouseStateManager_.onPrimaryButtonUp(
         e.clientX, e.clientY, this.canvas_.clientWidth, this.canvas_.clientHeight);
     }
+  };
+
+  private onMouseScroll = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    // Type safety: This should be impossible
+    if (!this.canvas_) return;
+
+    this.mouseStateManager_.onMouseWheel(
+      e.deltaY, e.clientX, e.clientY, this.canvas_.clientWidth, this.canvas_.clientHeight);
   };
 
   private containerStyle(): React.CSSProperties {

@@ -15,6 +15,11 @@ export type MouseMoveEvent = {
   dx: number, dy: number,
   areaWidth: number, areaHeight: number,
 };
+export type MouseWheelEvent = {
+  scrollAmount: number,
+  x: number, y: number,
+  areaWidth: number, areaHeight: number,
+};
 
 export interface MouseEvents {
   /** Fired when the primary mouse key (left for right handed person) is pressed */
@@ -25,6 +30,8 @@ export interface MouseEvents {
   'mousemove': MouseMoveEvent,
   /** Fired when the the mouse is moved with the primary key down */
   'mousedrag': MouseDragEvent,
+  /** Fired when the mouse wheel is scrolled */
+  'mousewheel': MouseWheelEvent,
 };
 
 export type MouseEvent = {
@@ -39,6 +46,9 @@ export type MouseEvent = {
 } | {
   type: 'mousedrag',
   event: MouseDragEvent,
+} | {
+  type: 'mousewheel',
+  event: MouseWheelEvent,
 };
 
 /**
@@ -89,6 +99,10 @@ export class MouseStateManager extends EventManager<MouseEvents> {
 
     this.primaryButtonDownAt_ = null;
     this.fireEvent('mouseup', {x, y, areaWidth, areaHeight});
+  }
+
+  onMouseWheel(scrollAmount: number, x: number, y: number, areaWidth: number, areaHeight: number) {
+    this.fireEvent('mousewheel', {scrollAmount, x, y, areaWidth, areaHeight});
   }
 
   getMousePosition(): {x: number, y: number, areaWidth: number, areaHeight: number}|null {
