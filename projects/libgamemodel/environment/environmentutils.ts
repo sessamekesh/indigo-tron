@@ -8,4 +8,7 @@ export class EnvironmentUtils {
     e.addComponent(FloorComponent, width, height);
     return e;
   }
+  static destroyFloor(ecs: ECSManager) {
+    ecs.iterateComponents([FloorComponent], (entity) => entity.destroy());
+  }
 }

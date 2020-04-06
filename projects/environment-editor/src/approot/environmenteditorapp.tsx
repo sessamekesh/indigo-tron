@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { EnvironmentEditorAppService } from 'src/logical/environmenteditorapp/environmenteditorappservice';
-import { FormControl, InputLabel, Select, MenuItem } from '@material-ui/core';
+import { FormControl, InputLabel, Select, MenuItem, TextField } from '@material-ui/core';
 import { assert } from '@libutil/loadutils';
 import { KeyboardStateManager } from '@io/keyboardstatemanager';
 import { MouseStateManager } from '@io/mousestatemanager';
+import { BoundedNumberInput } from './input/boundednumberinput';
 
 interface EnvironmentEditorAppProps {
 
@@ -11,6 +12,7 @@ interface EnvironmentEditorAppProps {
 
 interface EnvironmentEditorAppState {
   CameraType: 'free' | 'centered' | 'simulation',
+  ArenaWidth: number, ArenaHeight: number,
 }
 
 export class EnvironmentEditorApp
@@ -22,6 +24,8 @@ export class EnvironmentEditorApp
 
   state: EnvironmentEditorAppState = {
     CameraType: 'free',
+    ArenaWidth: 500,
+    ArenaHeight: 500,
   };
 
   async componentDidMount() {
@@ -69,6 +73,17 @@ export class EnvironmentEditorApp
                 <MenuItem value={'free'}>Free</MenuItem>
                 <MenuItem value={'centered'}>Centered</MenuItem>
               </Select>
+            </FormControl>
+            <FormControl style={{display: 'flex', flexDirection: 'row'}}>
+              <BoundedNumberInput label="Arena Width" value={this.state.ArenaWidth}
+                                  minValue={1} maxValue={Number.MAX_SAFE_INTEGER}
+                                  onUpdate={(e) => this.onChangeArenaDimensions(e, this.state.ArenaHeight)}
+                                  numberType={'float'} sign={'positive'}></BoundedNumberInput>
+              <div style={{width: '10px'}}></div>
+              <BoundedNumberInput label="Arena Height" value={this.state.ArenaHeight}
+                                  minValue={1} maxValue={Number.MAX_SAFE_INTEGER}
+                                  onUpdate={(e) => this.onChangeArenaDimensions(this.state.ArenaWidth, e)}
+                                  numberType={'float'} sign={'positive'}></BoundedNumberInput>
             </FormControl>
           </div>
         </div>
@@ -181,5 +196,10 @@ export class EnvironmentEditorApp
       default:
         console.error('Cannot set camera type to unknown value ' + cameraType);
     }
+  }
+
+  private onChangeArenaDimensions(width: number, height: number) {
+    this.getApp().setArenaDimensions(width, height);
+    this.setState({...this.state, ArenaWidth: width, ArenaHeight: height});
   }
 }

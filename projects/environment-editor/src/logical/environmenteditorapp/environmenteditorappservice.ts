@@ -47,10 +47,7 @@ import { RadialCamera } from "@libgamemodel/camera/radialcamera";
  */
 
 // TODO (sessamekesh):
-// - Make the "free" be a freely controlled camera, "centered" centered about a point in the world,
-//   and "simulation" start up a game simulation where you're on a lightcycle that respawns in the
-//   middle when killed and has very high health and regeneration rates
-// - Make the arena size configurable! When it is changed, re-generate the environment!
+// - Make the arena texture tiling adjust when the arena size itself tiles - tile in real coords
 // - Introduce the terrain logical object and rendering of it: flat quads, flat Lambert shading,
 //   generated from a configuration file that lists the (1) tile dimensions, (2) terrain dimensions,
 //   and (3) an array of the Y coordinates of each tile vertex in the entire terrain.
@@ -100,8 +97,13 @@ export class EnvironmentEditorAppService {
       case 'centered':
         EnvironmentEditorAppService.setupRadialCamera(this.ecs);
         break;
-      // TODO (sessamekesh): Support centered and simulation cameras as well!
+      // TODO (sessamekesh): Support simulation camera as well!
     }
+  }
+
+  setArenaDimensions(width: number, height: number) {
+    EnvironmentUtils.destroyFloor(this.ecs);
+    EnvironmentUtils.spawnFloor(this.ecs, width, height);
   }
 
   async start() {
@@ -135,7 +137,7 @@ export class EnvironmentEditorAppService {
     // Camera, light, floor
     //
     EnvironmentEditorAppService.setupFreeMovementCamera(ecs);
-    EnvironmentUtils.spawnFloor(ecs, 400, 400);
+    EnvironmentUtils.spawnFloor(ecs, 500, 500);
 
     const lightsEntity = ecs.createEntity();
     lightsEntity.addComponent(
