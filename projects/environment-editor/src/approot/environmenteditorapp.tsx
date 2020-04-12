@@ -5,6 +5,7 @@ import { assert } from '@libutil/loadutils';
 import { KeyboardStateManager } from '@io/keyboardstatemanager';
 import { MouseStateManager } from '@io/mousestatemanager';
 import { BoundedNumberInput } from './input/boundednumberinput';
+import { vec4 } from 'gl-matrix';
 
 interface EnvironmentEditorAppProps {
 
@@ -13,6 +14,9 @@ interface EnvironmentEditorAppProps {
 interface EnvironmentEditorAppState {
   CameraType: 'free' | 'centered' | 'simulation',
   ArenaWidth: number, ArenaHeight: number,
+  EnvironmentWidth: number, EnvironmentDepth: number,
+  EnvironmentNumRows: number, EnvironmentNumCols: number,
+  EnvironmentStartX: number, EnvironmentStartZ: number,
 }
 
 export class EnvironmentEditorApp
@@ -26,6 +30,12 @@ export class EnvironmentEditorApp
     CameraType: 'free',
     ArenaWidth: 500,
     ArenaHeight: 500,
+    EnvironmentWidth: 1000,
+    EnvironmentDepth: 1000,
+    EnvironmentNumRows: 500,
+    EnvironmentNumCols: 500,
+    EnvironmentStartX: -500,
+    EnvironmentStartZ: -500,
   };
 
   async componentDidMount() {
@@ -84,6 +94,58 @@ export class EnvironmentEditorApp
                                   minValue={1} maxValue={Number.MAX_SAFE_INTEGER}
                                   onUpdate={(e) => this.onChangeArenaDimensions(this.state.ArenaWidth, e)}
                                   numberType={'float'} sign={'positive'}></BoundedNumberInput>
+            </FormControl>
+            <div style={this.horizontalDividerStyle()}></div>
+            <FormControl style={{display: 'flex', flexDirection: 'row'}}>
+              <BoundedNumberInput label="Environment Width (x)" value={this.state.EnvironmentWidth}
+                                  minValue={50} maxValue={Number.MAX_SAFE_INTEGER}
+                                  onUpdate={(e) => this.onChangeEnvironmentDimensions(
+                                    e, this.state.EnvironmentDepth,
+                                    this.state.EnvironmentNumRows, this.state.EnvironmentNumCols,
+                                    this.state.EnvironmentStartX, this.state.EnvironmentStartZ)}
+                                  numberType={'float'} sign={'positive'}></BoundedNumberInput>
+              <div style={{width: '10px'}}></div>
+              <BoundedNumberInput label="Environment Depth (z)" value={this.state.EnvironmentDepth}
+                                  minValue={50} maxValue={Number.MAX_SAFE_INTEGER}
+                                  onUpdate={(e) => this.onChangeEnvironmentDimensions(
+                                    this.state.EnvironmentWidth, e,
+                                    this.state.EnvironmentNumRows, this.state.EnvironmentNumCols,
+                                    this.state.EnvironmentStartX, this.state.EnvironmentStartZ)}
+                                  numberType={'float'} sign={'positive'}></BoundedNumberInput>
+            </FormControl>
+            <FormControl style={{display: 'flex', flexDirection: 'row'}}>
+              <BoundedNumberInput label="Environment Num Rows" value={this.state.EnvironmentNumRows}
+                                  minValue={5} maxValue={5000}
+                                  onUpdate={(e) => this.onChangeEnvironmentDimensions(
+                                    this.state.EnvironmentWidth, this.state.EnvironmentDepth,
+                                    e, this.state.EnvironmentNumCols,
+                                    this.state.EnvironmentStartX, this.state.EnvironmentStartZ)}
+                                  numberType={'integer'} sign={'positive'}></BoundedNumberInput>
+              <div style={{width: '10px'}}></div>
+              <BoundedNumberInput label="Environment Num Cols" value={this.state.EnvironmentNumCols}
+                                  minValue={5} maxValue={5000}
+                                  onUpdate={(e) => this.onChangeEnvironmentDimensions(
+                                    this.state.EnvironmentWidth, this.state.EnvironmentDepth,
+                                    this.state.EnvironmentNumRows, e,
+                                    this.state.EnvironmentStartX, this.state.EnvironmentStartZ)}
+                                  numberType={'integer'} sign={'positive'}></BoundedNumberInput>
+            </FormControl>
+            <FormControl style={{display: 'flex', flexDirection: 'row'}}>
+              <BoundedNumberInput label="Environment X Offset" value={this.state.EnvironmentStartX}
+                                  minValue={Number.NEGATIVE_INFINITY} maxValue={Number.POSITIVE_INFINITY}
+                                  onUpdate={(e) => this.onChangeEnvironmentDimensions(
+                                    this.state.EnvironmentWidth, this.state.EnvironmentDepth,
+                                    this.state.EnvironmentNumRows, this.state.EnvironmentNumCols,
+                                    e, this.state.EnvironmentStartZ)}
+                                  numberType={'float'} sign={'any'}></BoundedNumberInput>
+              <div style={{width: '10px'}}></div>
+              <BoundedNumberInput label="Environment Z Offset" value={this.state.EnvironmentStartZ}
+                                  minValue={Number.NEGATIVE_INFINITY} maxValue={Number.POSITIVE_INFINITY}
+                                  onUpdate={(e) => this.onChangeEnvironmentDimensions(
+                                    this.state.EnvironmentWidth, this.state.EnvironmentDepth,
+                                    this.state.EnvironmentNumRows, this.state.EnvironmentNumCols,
+                                    this.state.EnvironmentStartX, e)}
+                                  numberType={'float'} sign={'any'}></BoundedNumberInput>
             </FormControl>
           </div>
         </div>
@@ -201,5 +263,24 @@ export class EnvironmentEditorApp
   private onChangeArenaDimensions(width: number, height: number) {
     this.getApp().setArenaDimensions(width, height);
     this.setState({...this.state, ArenaWidth: width, ArenaHeight: height});
+  }
+
+  private onChangeEnvironmentDimensions(
+      width: number, height: number,
+      numRows: number, numCols: number,
+      startX: number, startZ: number) {
+    this.getApp().setEnvironmentDimensions(
+      width, height, numRows, numCols,
+      -3, vec4.fromValues(0.3, 0.3, 0.3, 1.0),
+      startX, startZ);
+    this.setState({
+      ...this.state,
+      EnvironmentWidth: width,
+      EnvironmentDepth: height,
+      EnvironmentNumRows: numRows,
+      EnvironmentNumCols: numCols,
+      EnvironmentStartX: startX,
+      EnvironmentStartZ: startZ,
+    });
   }
 }

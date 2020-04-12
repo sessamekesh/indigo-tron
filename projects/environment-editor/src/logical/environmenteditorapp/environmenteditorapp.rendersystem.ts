@@ -3,13 +3,15 @@ import { ECSManager } from "@libecs/ecsmanager";
 import { GLContextComponent, ArenaFloorReflectionFramebufferComponent } from "@libgamerender/components/renderresourcecomponents";
 import { LightSettingsComponent } from "@libgamerender/components/lightsettings.component";
 import { CameraComponent, ReflectionCameraComponent } from "@libgamemodel/components/gameappuicomponents";
-import { LambertShaderComponent, ArenaFloorShaderComponent } from "@libgamerender/renderresourcesingletons/shadercomponents";
+import { LambertShaderComponent, ArenaFloorShaderComponent, FlatColorLambertShaderComponent } from "@libgamerender/renderresourcesingletons/shadercomponents";
 import { MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
 import { vec2, mat4, glMatrix } from "gl-matrix";
 import { LambertRenderableUtil } from "@libgamerender/utils/lambertrenderable.util";
+import { FlatColorRenderableUtil } from "@libgamerender/utils/flatcolorrenderable.util";
 import { WallComponent2 } from "@libgamemodel/wall/wallcomponent";
 import { FloorComponent } from "@libgamemodel/components/floor.component";
 import { ArenaFloorRenderableUtil } from "@libgamerender/utils/arenafloorrenderable.util";
+import { FlatColorGroundHeightMapComponent } from "@libgamemodel/environment/groundtileheightmap/flatcolorgroundheightmapcomponent";
 
 export class EnvironmentEditorAppRenderSystem extends ECSSystem {
   start() { return true; }
@@ -30,6 +32,9 @@ export class EnvironmentEditorAppRenderSystem extends ECSSystem {
     const {
       ArenaFloorShader: arenaFloorShader,
     } = ecs.getSingletonComponentOrThrow(ArenaFloorShaderComponent);
+    const {
+      FlatColorLambertShader: flatColorLambertShader,
+    } = ecs.getSingletonComponentOrThrow(FlatColorLambertShaderComponent);
     const {
       Vec2: vec2Allocator,
       Mat4: mat4Allocator,
@@ -88,6 +93,13 @@ export class EnvironmentEditorAppRenderSystem extends ECSSystem {
             FloorComponent,
           ],
           lightSettings, matView, matProj, viewportDimensions);
+
+        FlatColorRenderableUtil.renderEntitiesMatchingTags(
+          gl, ecs, flatColorLambertShader,
+          [
+            FlatColorGroundHeightMapComponent
+          ],
+          lightSettings, matView, matProj);
       });
     });
   }

@@ -8,13 +8,14 @@ import { RenderResourcesSingletonTag } from "@libgamerender/renderresourcesingle
 import { GLContextComponent, ArenaFloorReflectionTextureComponent, ArenaFloorReflectionFramebufferComponent } from "@libgamerender/components/renderresourcecomponents";
 import { CommonComponentUtils } from "@libgamemodel/components/commoncomponentutils";
 import { FreeMovementCamera } from '@libgamemodel/camera/freemovementcamera';
-import { vec3 } from "gl-matrix";
+import { vec3, vec4 } from "gl-matrix";
 import { ReflectionCamera } from "@libgamemodel/camera/reflectioncamera";
 import { CameraComponent, ReflectionCameraComponent } from "@libgamemodel/components/gameappuicomponents";
 import { EnvironmentUtils } from "@libgamemodel/environment/environmentutils";
 import { LightSettingsComponent } from "@libgamerender/components/lightsettings.component";
 import { EnvironmentArenaFloorSystem } from "@libgamerender/systems/environment.arenafloorsystem";
 import { EnvironmentEditorAppRenderSystem } from "./environmenteditorapp.rendersystem";
+import { FlatColorEnvironmentFloorRenderSystem } from '@libgamerender/systems/flatcolorenvironmentfloor.rendersystem';
 import { Camera } from "@libgamemodel/camera/camera";
 import { KeyboardStateManager } from '@io/keyboardstatemanager';
 import { MouseStateManager } from "@io/mousestatemanager";
@@ -23,6 +24,7 @@ import { MouseManagerComponent, KeyboardStateManagerComponent } from '@libgamemo
 import { MouseEventsQueueUtil } from '@libgamemodel/utilities/ioeventsqueueutils';
 import { EnvironmentEditorAppIOSystem } from "./environmenteditorapp.iosystem";
 import { RadialCamera } from "@libgamemodel/camera/radialcamera";
+import { FlatColorLambertShader } from "@librender/shader/flatcolorlambertshader";
 
 /**
  * Engine Service for ENVIRONMENT EDITOR APP
@@ -102,12 +104,24 @@ export class EnvironmentEditorAppService {
   }
 
   setArenaDimensions(width: number, height: number) {
-    EnvironmentUtils.destroyFloor(this.ecs);
-    EnvironmentUtils.spawnFloor(this.ecs, width, height);
+    EnvironmentUtils.destroyArenaFloor(this.ecs);
+    EnvironmentUtils.spawnArenaFloor(this.ecs, width, height);
+  }
+
+  setEnvironmentDimensions(
+      width: number, height: number,
+      numRows: number, numCols: number,
+      yPosition: number, color: vec4,
+      startX: number, startZ: number) {
+    EnvironmentUtils.destroyEnvironmentFloor(this.ecs);
+    EnvironmentUtils.spawnFlatEnvironmentFloor(
+      this.ecs, width, height, numRows, numCols, yPosition, color, startX, startZ);
   }
 
   async start() {
     console.log('Starting EnvironmentEditorAppService...');
+    this.setEnvironmentDimensions(
+      1000, 1000, 500, 500, -2, vec4.fromValues(0.3, 0.3, 0.3, 1.0), 500, 500);
     this.ecs.start();
     await this.startRendering();
   }
@@ -137,7 +151,7 @@ export class EnvironmentEditorAppService {
     // Camera, light, floor
     //
     EnvironmentEditorAppService.setupFreeMovementCamera(ecs);
-    EnvironmentUtils.spawnFloor(ecs, 500, 500);
+    EnvironmentUtils.spawnArenaFloor(ecs, 500, 500);
 
     const lightsEntity = ecs.createEntity();
     lightsEntity.addComponent(
@@ -208,7 +222,8 @@ export class EnvironmentEditorAppService {
     //
     // Shaders
     //
-    ShaderBuilderUtil.createShaders(ecs, gl, [LambertShader, ArenaFloorShader]);
+    ShaderBuilderUtil.createShaders(
+      ecs, gl, [LambertShader, ArenaFloorShader, FlatColorLambertShader]);
 
     //
     // Miscellaneous GL objects
@@ -238,6 +253,7 @@ export class EnvironmentEditorAppService {
     // Install render systems
     //
     ecs.addSystem2(EnvironmentArenaFloorSystem);
+    ecs.addSystem2(FlatColorEnvironmentFloorRenderSystem);
     ecs.addSystem2(EnvironmentEditorAppRenderSystem);
   }
 

@@ -204,7 +204,7 @@ export class WallEditorAppService {
     //
     // Initial game state
     //
-    EnvironmentUtils.spawnFloor(ecs, 400, 400);
+    EnvironmentUtils.spawnArenaFloor(ecs, 400, 400);
   }
 
   private startRendering() {
