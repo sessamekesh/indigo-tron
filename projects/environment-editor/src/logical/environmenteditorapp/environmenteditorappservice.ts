@@ -24,6 +24,7 @@ import { MouseManagerComponent, KeyboardStateManagerComponent } from '@libgamemo
 import { MouseEventsQueueUtil } from '@libgamemodel/utilities/ioeventsqueueutils';
 import { EnvironmentEditorAppIOSystem } from "./environmenteditorapp.iosystem";
 import { RadialCamera } from "@libgamemodel/camera/radialcamera";
+import { GameConfig, GameConfigUtil } from '@libgamemodel/config';
 import { FlatColorLambertShader } from "@librender/shader/flatcolorlambertshader";
 
 /**
@@ -49,10 +50,19 @@ import { FlatColorLambertShader } from "@librender/shader/flatcolorlambertshader
  */
 
 // TODO (sessamekesh):
+// - Floor generated in this app has additional tile props: {row, col}. These props are encoded into
+//   a color that is unique for each tile. This is drawn to a small separate buffer. Mouseover in
+//   the editor is looked up against this buffer to find what tile is being hovered. Draw a UI hint
+//   over the hovered tile (if any), using the color property. This will require a way to ask the
+//   heightmap for information about a specific tile, instead of the entire buffers all at once.
+// - On selecting a tile, the UI changes - set the drag brush and radius, and give a Y control to
+//   drag up/down on a tile, adjust the tilt in both X and Z axis, etc. Give a back button or press
+//   "escape" to exit this interaction mode and return to the main editor.
+// - Tile editor also needs a color editor.
+// - Many tiles can be selected at once, and have their properties collectively edited as well.
+// - Press "save" to save a configuration. Press "load" to load a configuration. Default to the
+//   configuration that the game itself uses.
 // - Make the arena texture tiling adjust when the arena size itself tiles - tile in real coords
-// - Introduce the terrain logical object and rendering of it: flat quads, flat Lambert shading,
-//   generated from a configuration file that lists the (1) tile dimensions, (2) terrain dimensions,
-//   and (3) an array of the Y coordinates of each tile vertex in the entire terrain.
 // - Continue with... everything else, there's so much work to do here!
 
 function assert<T>(name: string, t: T|null): T {
@@ -121,13 +131,31 @@ export class EnvironmentEditorAppService {
   async start() {
     console.log('Starting EnvironmentEditorAppService...');
     this.setEnvironmentDimensions(
-      1000, 1000, 500, 500, -2, vec4.fromValues(0.3, 0.3, 0.3, 1.0), 500, 500);
+      1000, 1000, 100, 100, -2, vec4.fromValues(0.3, 0.3, 0.3, 1.0), 0, 0);
     this.ecs.start();
     await this.startRendering();
   }
 
   destroy() {
     this.ecs.clearAllEntities();
+  }
+
+  getConfig(): GameConfig|null {
+    const arenaConfig = EnvironmentUtils.getArenaFloorConfig(this.ecs);
+    const environmentConfig = EnvironmentUtils.getEnvironmentConfig(this.ecs);
+    if (!arenaConfig || !environmentConfig) return null;
+    return {
+      Arena: arenaConfig,
+      Environment: environmentConfig,
+    };
+  }
+
+  setConfig(config: GameConfig) {
+    this.setArenaDimensions(config.Arena.Width, config.Arena.Height);
+    this.setEnvironmentDimensions(
+      config.Environment.Width, config.Environment.Height, config.Environment.NumRows,
+      config.Environment.NumCols, -2, vec4.fromValues(0.3, 0.3, 0.3, 1.0),
+      config.Environment.StartX, config.Environment.StartZ);
   }
 
   //

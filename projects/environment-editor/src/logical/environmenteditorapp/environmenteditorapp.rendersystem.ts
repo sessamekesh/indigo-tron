@@ -78,7 +78,7 @@ export class EnvironmentEditorAppRenderSystem extends ECSSystem {
         vec2.set(viewportDimensions, gl.canvas.width, gl.canvas.height);
         mainCamera.matView(matView);
         mat4.perspective(
-          matProj, glMatrix.toRadian(45), gl.canvas.width / gl.canvas.height, 0.1, 1000.0);
+          matProj, glMatrix.toRadian(45), gl.canvas.width / gl.canvas.height, 0.1, 10000.0);
 
         LambertRenderableUtil.renderEntitiesMatchingTags(
           gl, ecs, lambertShader,
