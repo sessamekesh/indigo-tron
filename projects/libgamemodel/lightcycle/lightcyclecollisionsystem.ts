@@ -91,11 +91,11 @@ export class LightcycleCollisionSystem extends ECSSystem {
         }
 
         if (lightcycle.Vitality <= 0) {
-          lightcycleEntity.destroy();
           playerDeath = true;
           if (lightcycleEntity.hasComponent(MainPlayerComponent)) {
             uiEventEmitter.fireEvent('player-death', true);
           }
+          lightcycleEntity.destroy();
         }
       });
     });

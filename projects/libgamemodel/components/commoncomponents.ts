@@ -25,3 +25,7 @@ export class SceneNodeFactoryComponent {
 export class FrameNumberComponent {
   constructor(public FrameNumber: number) {}
 }
+
+export class PauseStateComponent {
+  constructor(public IsPaused: boolean) {}
+}

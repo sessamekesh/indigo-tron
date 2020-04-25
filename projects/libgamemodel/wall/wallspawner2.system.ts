@@ -2,7 +2,7 @@ import { ECSSystem } from "@libecs/ecssystem";
 import { ECSManager } from "@libecs/ecsmanager";
 import { WallGeneratorComponent } from "./wallgenerator.component";
 import { vec2 } from "gl-matrix";
-import { MathAllocatorsComponent, OwnedMathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
+import { MathAllocatorsComponent, OwnedMathAllocatorsComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
 import { WallSpawnerUtil } from "./wallspawner.util";
 import { WallComponent2 } from "./wallcomponent";
 
@@ -16,6 +16,9 @@ export class WallSpawnerSystem2 extends ECSSystem {
     const {
       Vec2: ownedVec2Allocator,
     } = ecs.getSingletonComponentOrThrow(OwnedMathAllocatorsComponent);
+
+    const isPaused = ecs.getSingletonComponent(PauseStateComponent);
+    if (isPaused && isPaused.IsPaused) return;
 
     // Spawn new walls
     ecs.iterateComponents(

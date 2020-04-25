@@ -218,7 +218,12 @@ export class GroundTileHeightMap<VertexPropType, TilePropType> {
   }
 
   getVec4RenderPropBuffer(
-      transformer: (renderProp: VertexPropType, tileProp: TilePropType, o: vec4)=>void) {
+      transformer: (
+        vertId: number,
+        renderProp: VertexPropType,
+        tileId: number,
+        tileProp: TilePropType,
+        o: vec4)=>void) {
     const numTriangles = (this.numRows - 1) * (this.numCols - 1) * 2;
     const numVertices = numTriangles * 3;
     const tr = new Float32Array(numVertices * 4);
@@ -235,10 +240,13 @@ export class GroundTileHeightMap<VertexPropType, TilePropType> {
 
         const tp = this.tileProps[tileStartRow * (this.numCols - 1) + tileStartCol];
 
-        transformer(rpUL, tp, oUL);
-        transformer(rpUR, tp, oUR);
-        transformer(rpLL, tp, oLL);
-        transformer(rpLR, tp, oLR);
+        let startVertexId = tileStartRow * this.numCols + tileStartCol;
+        let tileId = tileStartRow * (this.numCols - 1) + tileStartCol;
+
+        transformer(startVertexId, rpUL, tileId, tp, oUL);
+        transformer(startVertexId + 1, rpUR, tileId, tp, oUR);
+        transformer(startVertexId + this.numCols, rpLL, tileId, tp, oLL);
+        transformer(startVertexId + this.numCols + 1, rpLR, tileId, tp, oLR);
 
         const idxStart = ((tileStartRow) * (this.numCols - 1) + tileStartCol) * 24;
         // Triangle 1 (UL, UR, LR)

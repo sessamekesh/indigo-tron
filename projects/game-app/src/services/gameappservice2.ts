@@ -15,7 +15,7 @@ import { Entity } from '@libecs/entity';
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { vec3, glMatrix } from 'gl-matrix';
 import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
-import { MathAllocatorsComponent, SceneNodeFactoryComponent, OwnedMathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
+import { MathAllocatorsComponent, SceneNodeFactoryComponent, PauseStateComponent, OwnedMathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
 import { LightcycleUpdateSystem2 } from '@libgamemodel/lightcycle/lightcycleupdate2.system';
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
@@ -33,6 +33,7 @@ import { GameAppRenderSystem } from '@libgamerender/systems/gameapp.rendersystem
 import { BasicWallLambertSystem } from '@libgamerender/systems/basicwall.lambertsystem';
 import { EnvironmentArenaFloorSystem } from '@libgamerender/systems/environment.arenafloorsystem';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
+import { Key } from 'ts-key-enum';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -73,7 +74,17 @@ export class GameAppService2 {
 
   async restart() {
     await this.setFreshEcsState_();
+    this.gameAppUiManager.fireEvent('player-death', false);
+    this.gameAppUiManager.fireEvent('playerhealth', {MaxHealth: 100, CurrentHealth: 100});
     this.ecs.restart();
+  }
+
+  pause() {
+    const pauseState = this.ecs.getSingletonComponent(PauseStateComponent);
+    if (pauseState) {
+      pauseState.IsPaused = !pauseState.IsPaused;
+      this.gameAppUiManager.fireEvent('apppaused', pauseState.IsPaused);
+    }
   }
 
   private static initializeSystems_(ecs: ECSManager) {
@@ -193,6 +204,9 @@ export class GameAppService2 {
     camerasEntity.addComponent(CameraComponent, camera);
     camerasEntity.addComponent(ReflectionCameraComponent, floorReflectionCamera);
 
+    const gamePlaybackStateEntity = ecs.createEntity();
+    gamePlaybackStateEntity.addComponent(PauseStateComponent, /* IsPaused */ false);
+
     const lightsEntity = ecs.createEntity();
     lightsEntity.addComponent(
       LightSettingsComponent, vec3.fromValues(0, -1, 0), vec3.fromValues(1, 1, 1), 0.3);
@@ -206,7 +220,7 @@ export class GameAppService2 {
     //
     // Initial game state
     //
-    EnvironmentUtils.spawnFloor(ecs, 400, 400);
+    EnvironmentUtils.spawnArenaFloor(ecs, 500, 500);
     const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
       Position: vec3.fromValues(5, 0, 0),
       Orientation: glMatrix.toRadian(180),
@@ -228,6 +242,15 @@ export class GameAppService2 {
       ioEntity, new TouchEventBikeInputController(canvas));
     inputManager.addController(keyboardInputController);
     inputManager.addController(touchInputController);
+
+    keyboardManager.addListener('keypress', (keyEvent) => {
+      if (keyEvent.key === Key.Escape) {
+        const pausedComponent = ecs.getSingletonComponent(PauseStateComponent);
+        if (pausedComponent) {
+          pausedComponent.IsPaused = !pausedComponent.IsPaused;
+        }
+      }
+    });
 
     if (GamepadBikeInputController.canUse(navigator)) {
       const gamepadInputController = registerDisposable(

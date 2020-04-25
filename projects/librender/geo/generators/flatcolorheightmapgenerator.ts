@@ -12,7 +12,7 @@ export class FlatColorHeightmapGenerator {
       : FlatColorLambertGeo|null {
     const positionData = heightmap.getPositionBuffer();
     const normalData = heightmap.getNormalBuffer();
-    const colorData = heightmap.getVec4RenderPropBuffer((renderProp, tileProp, o) => {
+    const colorData = heightmap.getVec4RenderPropBuffer((vertId, renderProp, tileId, tileProp, o) => {
       vec4.copy(o, tileProp.color);
     });
     const indexData = heightmap.getIndexBuffer();
@@ -29,5 +29,9 @@ export class FlatColorHeightmapGenerator {
         BitWidth: 32,
         Data: indexData,
       });
+  }
+
+  static generatePickerGeo(gl: WebGL2RenderingContext): null {
+    return null;
   }
 }

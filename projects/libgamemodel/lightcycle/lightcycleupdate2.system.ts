@@ -4,7 +4,7 @@ import { LightcycleComponent2 } from "./lightcycle.component";
 import { MathUtils } from "@libutil/mathutils";
 import { VelocityComponent } from "@libgamemodel/components/velocitycomponent";
 import { MovementUtils } from "@libgamemodel/utilities/movementutils";
-import { MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
+import { MathAllocatorsComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
 import { BACK_WHEEL_OFFSET } from "./lightcyclespawner.system";
 
 export class LightcycleUpdateRandomFnComponent {
@@ -21,6 +21,10 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
     const {
       Vec3: vec3Allocator,
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
+
+    // No-op if the game is paused
+    const isPaused = ecs.getSingletonComponent(PauseStateComponent);
+    if (isPaused && isPaused.IsPaused) return;
 
     // Update the position of all lightcycles
     ecs.iterateComponents(

@@ -73,5 +73,38 @@
 }
 
 .hidden {
-  opacity: 0;
+  display: none;
+}
+
+.pause-icon {
+  position: absolute;
+  left: 40px;
+  top: 40px;
+
+  background-color: #111;
+  fill: #eee;
+  width: 36px;
+  height: 36px;
+
+  &:hover {
+    background-color: #444;
+    fill: #eef;
+  }
+
+  &.paused {
+    animation:blinkingButton 1.2s infinite;
+
+    &:hover {
+      background-color: #111;
+      fill: #eee;
+    }
+  }
+}
+
+@keyframes blinkingButton{
+  0%{     fill: #fff;    }
+  49%{    fill: #fff; }
+  60%{    fill:  #333; }
+  99%{    fill: #333;  }
+  100%{   fill: #fff;    }
 }

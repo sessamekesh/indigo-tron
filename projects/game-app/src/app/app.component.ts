@@ -17,6 +17,7 @@ export class AppComponent implements OnInit, OnDestroy {
   gameAppUiEventManager = new CachingEventManager<GameAppUIEvents>();
   isLoaded = false;
   isDead = false;
+  isPaused = false;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -49,7 +50,18 @@ export class AppComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
     });
 
+    this.gameAppUiEventManager.addListener('apppaused', (paused) => {
+      this.isPaused = paused;
+      this.cdr.markForCheck();
+    });
+
     this.gameService_.start();
+  }
+
+  pause() {
+    if (this.gameService_) {
+      this.gameService_.pause();
+    }
   }
 
   ngOnDestroy() {

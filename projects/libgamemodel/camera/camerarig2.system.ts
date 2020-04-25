@@ -1,7 +1,7 @@
 import { ECSSystem } from "@libecs/ecssystem";
 import { ECSManager } from "@libecs/ecsmanager";
 import { CameraRigComponent } from "./camerarig.component";
-import { MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
+import { MathAllocatorsComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
 import { vec3 } from "gl-matrix";
 import { MathUtils } from "@libutil/mathutils";
 
@@ -18,6 +18,8 @@ export class CameraRigSystem2 extends ECSSystem {
   }
 
   update(ecs: ECSManager, msDt: number) {
+    const isPaused = ecs.getSingletonComponent(PauseStateComponent);
+    if (isPaused && isPaused.IsPaused) return;
     const {
       Vec3: vec3Allocator,
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
