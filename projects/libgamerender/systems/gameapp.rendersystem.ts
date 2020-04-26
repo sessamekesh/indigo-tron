@@ -3,7 +3,7 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { ArenaFloorReflectionFramebufferComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
 import { CameraComponent, ReflectionCameraComponent } from '@libgamemodel/components/gameappuicomponents';
-import { LambertShaderComponent, ArenaFloorShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { LambertShaderComponent, ArenaFloorShaderComponent, ArenaWallShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { LambertRenderableComponent } from '@libgamerender/components/lambertrenderable.component';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
@@ -13,6 +13,9 @@ import { LightcycleRenderableTag } from './lightcycle.lambertsystem';
 import { Framebuffer } from '@librender/texture/framebuffer';
 import { ArenaFloorRenderableUtil } from '@libgamerender/utils/arenafloorrenderable.util';
 import { FloorComponent } from '@libgamemodel/components/floor.component';
+import { ArenaWallTexturePackComponent, ArenaWallUnitGeoComponent } from '@libgamerender/components/arenawallrenderable.component';
+import { ArenaWallRenderableUtil } from '@libgamerender/utils/arenawallrenderable.util';
+import { ArenaWallComponent } from '@libgamemodel/arena/arenawall.component';
 
 // TODO (sessamekesh): Move all the framebuffer, render object, etc. creation here, eh?
 
@@ -38,9 +41,14 @@ export class GameAppRenderSystem extends ECSSystem {
       ArenaFloorShader: arenaFloorShader,
     } = ecs.getSingletonComponentOrThrow(ArenaFloorShaderComponent);
     const {
+      ArenaWallShader: arenaWallShader,
+    } = ecs.getSingletonComponentOrThrow(ArenaWallShaderComponent);
+    const {
       Vec2: vec2Allocator,
       Mat4: mat4Allocator,
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
+    const ArenaWallTexturePack = ecs.getSingletonComponentOrThrow(ArenaWallTexturePackComponent);
+    const ArenaWallUnitGeo = ecs.getSingletonComponentOrThrow(ArenaWallUnitGeoComponent);
 
     //
     // Generate floor reflection texture
@@ -62,6 +70,16 @@ export class GameAppRenderSystem extends ECSSystem {
           LightcycleRenderableTag,
         ],
         lightSettings, matView, matProj);
+
+      ArenaWallRenderableUtil.renderEntitiesMatchingTags(
+        gl, ecs, arenaWallShader,
+        [
+          ArenaWallComponent,
+        ],
+        ArenaWallUnitGeo.Geo,
+        ArenaWallTexturePack,
+        matView,
+        matProj);
     });
 
     //
@@ -97,6 +115,16 @@ export class GameAppRenderSystem extends ECSSystem {
             FloorComponent,
           ],
           lightSettings, matView, matProj, viewportDimensions);
+
+        ArenaWallRenderableUtil.renderEntitiesMatchingTags(
+          gl, ecs, arenaWallShader,
+          [
+            ArenaWallComponent,
+          ],
+          ArenaWallUnitGeo.Geo,
+          ArenaWallTexturePack,
+          matView,
+          matProj);
       });
     });
   }

@@ -1,5 +1,5 @@
 import { EventManager } from '@libutil/eventmanager';
-import { Klass, Klass0, Klass1, Klass2, Klass3, Klass4, Klass5, Klass6, Klass7 } from './klass';
+import { Klass, Klass0, Klass1, Klass2, Klass3, Klass4, Klass5, Klass6, Klass7, Klass8 } from './klass';
 import { ECSManager } from './ecsmanager';
 
 interface EntityEventMap {
@@ -29,6 +29,9 @@ export class Entity extends EventManager<EntityEventMap> {
   addComponent<T, A, B, C, D, E, F, G>(
     klass: Klass7<T, A, B, C, D, E, F, G>,
     a: A, b: B, c: C, d: D, e: E, f: F, g: G): T
+  addComponent<T, A, B, C, D, E, F, G, H>(
+    klass: Klass8<T, A, B, C, D, E, F, G, H>,
+    a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H): T
   addComponent<T>(klass: Klass<T>, ...args: any[]) {
     if (this.components_.has(klass)) {
       throw new Error(`Cannot add component ${klass.name}, one is already registered`);

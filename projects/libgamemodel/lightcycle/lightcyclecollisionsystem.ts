@@ -14,6 +14,7 @@ import { LightcycleUtils, CollisionAction } from "./lightcycleutils";
 import { MathUtils } from "@libutil/mathutils";
 import { UIEventEmitterComponent } from "@libgamemodel/components/gameui";
 import { MainPlayerComponent } from "./lightcyclesteeringsystem";
+import { ArenaWallComponent } from "@libgamemodel/arena/arenawall.component";
 
 export class LightcycleCollisionSystem extends ECSSystem {
   static setRandomFn(ecs: ECSManager, fn: ()=>number) {
@@ -31,6 +32,8 @@ export class LightcycleCollisionSystem extends ECSSystem {
     return true;
   }
 
+  private timeRemain = 5000;
+
   update(ecs: ECSManager, msDt: number) {
     const {
       EventEmitter: uiEventEmitter,
@@ -46,16 +49,83 @@ export class LightcycleCollisionSystem extends ECSSystem {
     } = ecs.getSingletonComponentOrThrow(LightcycleUpdateRandomFnComponent);
 
     // Collision checking
+    let n = true;
     ecs.iterateComponents([LightcycleComponent2], (lightcycleEntity, lightcycle) => {
+      if (n) {
+        n = false;
+        this.timeRemain -= msDt;
+        if (this.timeRemain < 0) {
+          this.timeRemain = 5000;
+          const pos = vec3.create();
+          lightcycle.BodySceneNode.getPos(pos);
+        }
+      }
       let playerDeath = false;
+
+      const [bikeLeftLine, bikeRightLine, bikeFrontLine] =
+        this.getLightcycleLines(sceneNodeFactory, vec3Allocator, lightcycleEntity, lightcycle);
+
+      ecs.iterateComponents([ArenaWallComponent], (_, arenaWall) => {
+        if (playerDeath) return;
+        const leftCollision = LineSegmentUtils.getCollision(bikeLeftLine, arenaWall.LineSegment);
+        const rightCollision = LineSegmentUtils.getCollision(bikeRightLine, arenaWall.LineSegment);
+
+        const actions: CollisionAction[] = [];
+        if (leftCollision) {
+          actions.push(LightcycleUtils.getArenaWallCollisionAction(leftCollision, -1));
+        }
+        if (rightCollision) {
+          actions.push(LightcycleUtils.getArenaWallCollisionAction(rightCollision, 1));
+        }
+
+        let angleAdjustment = 0;
+        const depthAdjustment = [0, 0];
+
+        let vitalityLost = 0;
+        actions.forEach(action => {
+          angleAdjustment += action.bikeSteeringAdjustment
+          vitalityLost += action.vitalityLost
+          depthAdjustment[0] += action.depth[0] * 1.1;
+          depthAdjustment[1] += action.depth[1] * 1.1;
+        });
+        vitalityLost *= 0.015;
+
+        if (actions.length > 0) {
+          depthAdjustment[0] /= actions.length;
+          depthAdjustment[1] /= actions.length;
+        }
+
+        const newOrientation = MathUtils.clampAngle(
+          lightcycle.FrontWheelSceneNode.getRotAngle() + angleAdjustment);
+        vec3Allocator.get(1, posAdjust => {
+          lightcycle.BodySceneNode.getPos(posAdjust);
+          posAdjust[0] -= depthAdjustment[0];
+          posAdjust[2] -= depthAdjustment[1];
+          lightcycle.BodySceneNode.update({pos: posAdjust});
+        });
+        lightcycle.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
+        lightcycle.Vitality -= vitalityLost;
+
+        if (vitalityLost > 0 && lightcycleEntity.hasComponent(MainPlayerComponent)) {
+          uiEventEmitter.fireEvent(
+            'playerhealth', { CurrentHealth: lightcycle.Vitality, MaxHealth: 100 });
+        }
+
+        if (lightcycle.Vitality <= 0) {
+          playerDeath = true;
+          if (lightcycleEntity.hasComponent(MainPlayerComponent)) {
+            uiEventEmitter.fireEvent('player-death', true);
+          }
+          lightcycleEntity.destroy();
+        }
+      });
+
       ecs.iterateComponents([WallComponent2], (wallEntity, wall) => {
         if (playerDeath) return;
         const wallLine = {
           x0: wall.Corner1.Value[0], y0: wall.Corner1.Value[1],
           x1: wall.Corner2.Value[0], y1: wall.Corner2.Value[1],
         };
-        const [bikeLeftLine, bikeRightLine, bikeFrontLine] =
-            this.getLightcycleLines(sceneNodeFactory, vec3Allocator, lightcycleEntity, lightcycle);
         const leftCollision = LineSegmentUtils.getCollision(bikeLeftLine, wallLine);
         const rightCollision = LineSegmentUtils.getCollision(bikeRightLine, wallLine);
         const frontCollision = LineSegmentUtils.getCollision(bikeFrontLine, wallLine);

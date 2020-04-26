@@ -5,11 +5,40 @@ import { GroundTileHeightMap } from "./groundtileheightmap/groundtileheightmap";
 import { FlatColorGroundHeightMapComponent, FlatColorTileRenderProp, FlatColorVertexRenderProp } from "./groundtileheightmap/flatcolorgroundheightmapcomponent";
 import { vec4 } from "gl-matrix";
 import { ArenaConfigObject, EnvironmentConfigObject } from '@libgamemodel/config';
+import { ArenaWallComponent } from "@libgamemodel/arena/arenawall.component";
 
 export class EnvironmentUtils {
   static spawnArenaFloor(ecs: ECSManager, width: number, height: number): Entity {
     const e = ecs.createEntity();
     e.addComponent(FloorComponent, width, height);
+
+    const wall1 = ecs.createEntity();
+    const wall2 = ecs.createEntity();
+    const wall3 = ecs.createEntity();
+    const wall4 = ecs.createEntity();
+    wall1.addComponent(ArenaWallComponent, {
+      x0: -width/2, y0: -height/2,
+      x1: width/2, y1: -height/2,
+    }, false);
+    wall2.addComponent(ArenaWallComponent, {
+      x0: -width/2, y1: height/2,
+      x1: -width/2, y0: -height/2,
+    }, true);
+    wall3.addComponent(ArenaWallComponent, {
+      x0: width/2, y0: -height/2,
+      x1: width/2, y1: height/2,
+    }, true);
+    wall4.addComponent(ArenaWallComponent, {
+      x0: -width/2, y0: height/2,
+      x1: width/2, y1: height/2,
+    }, false);
+    e.addListener('destroy', () => {
+      wall1.destroy();
+      wall2.destroy();
+      wall3.destroy();
+      wall4.destroy();
+    });
+
     return e;
   }
   static destroyArenaFloor(ecs: ECSManager) {

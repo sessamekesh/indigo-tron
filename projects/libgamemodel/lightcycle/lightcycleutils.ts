@@ -13,6 +13,7 @@ const FULL_COLLISION_DAMAGE = 75;
 export interface CollisionAction {
   vitalityLost: number,
   bikeSteeringAdjustment: number,
+  depth: [number, number],
 };
 
 export class LightcycleUtils {
@@ -31,14 +32,22 @@ export class LightcycleUtils {
       CollisionAction {
     // Special case: colinear collision, treat as glancing (should be very rare)
     if (collision.isColinear) {
-      return { vitalityLost: 0, bikeSteeringAdjustment: angleCoefficient * glMatrix.toRadian(1) };
+      return {
+        vitalityLost: 0,
+        bikeSteeringAdjustment: angleCoefficient * glMatrix.toRadian(1),
+        depth: [0, 0],
+      };
     }
 
     // Glancing collision
     if (collision.angle < glMatrix.toRadian(30)) {
       const damage = FULL_COLLISION_DAMAGE * 0.05 * (collision.angle / glMatrix.toRadian(30));
       const angle = collision.angle * angleCoefficient * 2;
-      return { vitalityLost: damage, bikeSteeringAdjustment: angle };
+      return {
+        vitalityLost: damage,
+        bikeSteeringAdjustment: angle,
+        depth: collision.depth,
+      };
     }
     // Hard collision
     if (collision.angle < glMatrix.toRadian(60)) {
@@ -50,12 +59,14 @@ export class LightcycleUtils {
         vitalityLost: damage,
         bikeSteeringAdjustment:
             angleCoefficient * randomFn() * glMatrix.toRadian(60) - glMatrix.toRadian(15),
+        depth: collision.depth,
       };
     }
     // Head-on collision
     return {
       vitalityLost: FULL_COLLISION_DAMAGE,
       bikeSteeringAdjustment: (randomFn() - 0.5) * glMatrix.toRadian(10),
+      depth: collision.depth,
     };
   }
 
@@ -70,8 +81,25 @@ export class LightcycleUtils {
     return {
       vitalityLost: FULL_COLLISION_DAMAGE,
       bikeSteeringAdjustment: (randomFn() - 0.5) * Math.PI / 8,
+      depth: [0, 0],
     }
   }
+
+  static getArenaWallCollisionAction(
+    collision: LineSegment2DCollision, angleCoefficient: 1|-1): CollisionAction {
+  if (collision.isColinear) {
+    return {
+      vitalityLost: 5,
+      bikeSteeringAdjustment: angleCoefficient * glMatrix.toRadian(5),
+      depth: [0.5, 0],
+    };
+  }
+  return {
+    vitalityLost: 25,
+    bikeSteeringAdjustment: angleCoefficient * collision.angle * 2,
+    depth: collision.depth,
+  };
+}
 
   static applyCollisionDamage(
       damage: number, wallComponent: WallComponent, lightcycleComponent: LightcycleComponent2) {

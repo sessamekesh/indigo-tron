@@ -1,6 +1,7 @@
 import { LambertShader } from '@librender/shader/lambertshader';
 import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
 import { FlatColorLambertShader } from '@librender/shader/flatcolorlambertshader';
+import { ArenaWallShader } from '@librender/shader/arenawallshader';
 
 export class ShaderSingletonTag {}
 
@@ -14,4 +15,8 @@ export class ArenaFloorShaderComponent {
 
 export class FlatColorLambertShaderComponent {
   constructor(public readonly FlatColorLambertShader: FlatColorLambertShader) {}
+}
+
+export class ArenaWallShaderComponent {
+  constructor(public readonly ArenaWallShader: ArenaWallShader) {}
 }

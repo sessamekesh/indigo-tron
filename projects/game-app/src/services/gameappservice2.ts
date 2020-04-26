@@ -2,7 +2,7 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { IEventManager } from '@libutil/eventmanager';
 import { GameAppUIEvents } from './gameappuieventmanager';
 import { DracoDecoderComponent } from '@libgamerender/renderresourcesingletons/dracodecodercomponent';
-import { LambertShaderComponent, ArenaFloorShaderComponent, ShaderSingletonTag } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { ArenaWallShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { GeoRenderResourcesSingletonTag } from '@libgamerender/renderresourcesingletons/georenderresourcessingletontag';
 import { RenderResourcesSingletonTag } from '@libgamerender/renderresourcesingletons/renderresourcessingletontag';
 import { KeyboardManager } from '@io/keyboardmanager';
@@ -13,7 +13,8 @@ import { TouchEventBikeInputController } from '@io/bikeinput/toucheventbikeinput
 import { GamepadBikeInputController } from '@io/bikeinput/gamepadbikeinputcontroller';
 import { Entity } from '@libecs/entity';
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
-import { vec3, glMatrix } from 'gl-matrix';
+import { vec3, glMatrix, vec2 } from 'gl-matrix';
+import { ArenaWallRenderingConfigComponent, ArenaWallUnitGeoComponent, ArenaWallTexturePackComponent } from '@libgamerender/components/arenawallrenderable.component';
 import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
 import { MathAllocatorsComponent, SceneNodeFactoryComponent, PauseStateComponent, OwnedMathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
@@ -34,6 +35,14 @@ import { BasicWallLambertSystem } from '@libgamerender/systems/basicwall.lambert
 import { EnvironmentArenaFloorSystem } from '@libgamerender/systems/environment.arenafloorsystem';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
 import { Key } from 'ts-key-enum';
+import { ShaderBuilderUtil } from '@libgamerender/utils/shaderbuilder.util';
+import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
+import { LambertShader } from '@librender/shader/lambertshader';
+import { ArenaWallShader } from '@librender/shader/arenawallshader';
+import { ArenaWallGeo } from '@librender/geo/arenawallgeo';
+import { assert } from '@libutil/loadutils';
+import { Texture } from '@librender/texture/texture';
+import { ArenaWallRenderSystem } from '@libgamerender/arena/arenawall.rendersystem';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -109,6 +118,7 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleLambertSystem);
     ecs.addSystem2(BasicWallLambertSystem);
     ecs.addSystem2(EnvironmentArenaFloorSystem);
+    ecs.addSystem2(ArenaWallRenderSystem);
 
     // Special case, the game frame render system (full frame generation code in there)
     ecs.addSystem2(GameAppRenderSystem);
@@ -119,11 +129,7 @@ export class GameAppService2 {
     //
     // Shaders
     //
-    ecs.iterateComponents([ShaderSingletonTag], (entity) => entity.destroy());
-    const shadersEntity = ecs.createEntity();
-    shadersEntity.addComponent(ShaderSingletonTag);
-    shadersEntity.addComponent(LambertShaderComponent, rp.LambertShader.getOrThrow(gl));
-    shadersEntity.addComponent(ArenaFloorShaderComponent, rp.ArenaFloorShader.getOrThrow(gl));
+    ShaderBuilderUtil.createShaders(ecs, gl, [LambertShader, ArenaFloorShader, ArenaWallShader]);
 
     //
     // Geometry
@@ -140,6 +146,13 @@ export class GameAppService2 {
       await rp.BikeBodyTexture.getOrThrow(gl),
       await rp.BikeWheelTexture.getOrThrow(gl),
       await rp.BikeBodyTexture.getOrThrow(gl));
+    geoEntity.addComponent(
+      ArenaWallUnitGeoComponent,
+      assert(
+        'ArenaWallUnitGeo',
+        ArenaWallGeo.createUnitWall(
+          gl,
+          ecs.getSingletonComponentOrThrow(ArenaWallShaderComponent).ArenaWallShader)));
 
     //
     // Miscelaneous Objects
@@ -156,6 +169,20 @@ export class GameAppService2 {
       ArenaFloorReflectionTextureComponent,
       rp.FloorReflectionTexture.getOrThrow(gl),
       await rp.RoughTileTexture.getOrThrow(gl));
+    texturesEntity.addComponent(
+      ArenaWallTexturePackComponent,
+      /* BaseColor */
+      await Texture.createFromURL(
+        gl, 'assets/textures/wall_basecolor.png', Texture.REPEAT_MIRRORED_LINEAR),
+      /* Distortion */
+      await Texture.createFromURL(
+        gl, 'assets/textures/perlin_distortion_1.png', Texture.REPEAT_MIRRORED_LINEAR),
+      /* Intensity */
+      await Texture.createFromURL(
+        gl, 'assets/textures/forcefield_intensity.png', Texture.REPEAT_LINEAR),
+      /* ForceField */
+      await Texture.createFromURL(
+        gl, 'assets/textures/forcefield_mask.png', Texture.REPEAT_LINEAR));
 
     const glGlobalsEntity = ecs.createEntity();
     glGlobalsEntity.addComponent(RenderResourcesSingletonTag);
@@ -210,6 +237,15 @@ export class GameAppService2 {
     const lightsEntity = ecs.createEntity();
     lightsEntity.addComponent(
       LightSettingsComponent, vec3.fromValues(0, -1, 0), vec3.fromValues(1, 1, 1), 0.3);
+
+    const renderSpawnConfigEntity = ecs.createEntity();
+    renderSpawnConfigEntity.addComponent(
+      ArenaWallRenderingConfigComponent,
+      /* BaseColorUVPerWorldUnit */ vec2.fromValues(0.125, 0.001),
+      /* IntensityUVPerWorldUnit */ vec2.fromValues(0.025, 0.0125),
+      /* ForceFieldUVPerWorldUnit */ vec2.fromValues(0.0725, 0.0725),
+      /* IntensityDisplacementUpdateRateInWorldUnits */ vec2.fromValues(0, -0.125),
+      /* DistortionOffsetUpdateRateInWorldUnits */ vec2.fromValues(0.035, 0.035));
 
     //
     // System run-time configuration

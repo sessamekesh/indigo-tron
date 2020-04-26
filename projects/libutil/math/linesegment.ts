@@ -33,7 +33,7 @@ export interface LineSegment2D {
 export type LineSegment2DCollision = {
   isColinear: false,
   angle: number,
-  depth: number,
+  depth: [number, number],
 }|{
   isColinear: true,
   collisionStartAlongA: number, // How far into A does the collision start?
@@ -209,11 +209,11 @@ export class LineSegmentUtils {
     const angle = Math.acos(Math.abs(dAdotdB / (alen * blen))); // per (23)
 
     if (clen < 1e-8) {
-      return { isColinear: false, angle, depth: 0 };
+      return { isColinear: false, angle, depth: [0, 0] };
     }
     const penetrationCoefficient = Math.sqrt(1 - Math.abs(cDotDb / (blen * clen)) ** 2);
     const depth = clen * penetrationCoefficient; // per (20) and (21)
-    return { isColinear: false, angle, depth };
+    return { isColinear: false, angle, depth: [CtoA1[0] * penetrationCoefficient, CtoA1[1] * penetrationCoefficient] };
   }
 
   private static cross(v: vec2, w: vec2): number {

@@ -1,6 +1,6 @@
 import { loadImage } from '@libutil/loadutils';
 
-type TextureWrapType = 'repeat'|'clamp-to-edge';
+type TextureWrapType = 'repeat'|'clamp-to-edge'|'repeat-mirrored';
 type FilterType = 'linear';
 export type SamplerState = {
   WrapU: TextureWrapType,
@@ -24,9 +24,24 @@ export class Texture {
     public readonly Height: number,
     private samplerState: SamplerState) {}
 
+  static REPEAT_MIRRORED_LINEAR: SamplerState = {
+    MagFilter: 'linear',
+    MinFilter: 'linear',
+    WrapU: 'repeat-mirrored',
+    WrapV: 'repeat-mirrored',
+  };
+
+  static REPEAT_LINEAR: SamplerState = {
+    MagFilter: 'linear',
+    MinFilter: 'linear',
+    WrapU: 'repeat',
+    WrapV: 'repeat',
+  };
+
   static getTextureWrapGL(type: TextureWrapType) {
     switch (type) {
       case 'repeat': return WebGL2RenderingContext.REPEAT;
+      case 'repeat-mirrored': return WebGL2RenderingContext.MIRRORED_REPEAT;
       case 'clamp-to-edge': return WebGL2RenderingContext.CLAMP_TO_EDGE;
       default: throw new Error('Not implemented');
     }
