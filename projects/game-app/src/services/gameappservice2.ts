@@ -43,6 +43,10 @@ import { ArenaWallGeo } from '@librender/geo/arenawallgeo';
 import { assert } from '@libutil/loadutils';
 import { Texture } from '@librender/texture/texture';
 import { ArenaWallRenderSystem } from '@libgamerender/arena/arenawall.rendersystem';
+import { AiSteeringSystem } from '@libgamemodel/ai/aisteering.system';
+import { GreenAiSystem } from '@libgamemodel/ai/greenai.system';
+import { GreenAiUtil } from '@libgamemodel/ai/greenai.util';
+import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -82,6 +86,7 @@ export class GameAppService2 {
   }
 
   async restart() {
+    // This is broken! Looks like one of the singletons isn't properly created
     await this.setFreshEcsState_();
     this.gameAppUiManager.fireEvent('player-death', false);
     this.gameAppUiManager.fireEvent('playerhealth', {MaxHealth: 100, CurrentHealth: 100});
@@ -109,8 +114,9 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleCollisionSystem);
     ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
-
     ecs.addSystem2(CameraRigSystem2);
+    ecs.addSystem2(GreenAiSystem);
+    ecs.addSystem2(AiSteeringSystem);
 
     //
     // Renderable Generation Systems
@@ -261,10 +267,14 @@ export class GameAppService2 {
       Position: vec3.fromValues(5, 0, 0),
       Orientation: glMatrix.toRadian(180),
     });
+    mainPlayerEntity.addComponent(LightcycleColorComponent, 'blue');
     mainPlayerEntity.addComponent(MainPlayerComponent);
     LightcycleUtils.attachCameraRigToLightcycle(
       mainPlayerEntity, vec3.fromValues(0, 7, -18), camera,
       this.renderProviders_.SceneNodeFactory.get());
+
+    GreenAiUtil.createAiPlayer(
+      ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', Math.random);
   }
 
   private static loadInputResources(ecs: ECSManager, canvas: HTMLCanvasElement) {

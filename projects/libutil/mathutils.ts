@@ -57,4 +57,30 @@ export class MathUtils {
       });
     });
   }
+
+  static getValueTowardsGoal(value: number, goal: number, change: number) {
+    if (Math.abs(value - goal) < change || value === goal) {
+      return goal;
+    }
+    if (value < goal) {
+      return value + change;
+    }
+    return value - change;
+  }
+
+  static getAngleTowardsGoal(angle: number, goal: number, change: number) {
+    const linearDistance = Math.abs(angle - goal);
+    const highGoalDistance = Math.abs(angle - (goal + Math.PI * 2));
+    const lowGoalDistance = Math.abs(angle - (goal - Math.PI * 2));
+
+    if (linearDistance < highGoalDistance && linearDistance < lowGoalDistance) {
+      return MathUtils.clampAngle(MathUtils.getValueTowardsGoal(angle, goal, change));
+    }
+
+    if (highGoalDistance < lowGoalDistance) {
+      return MathUtils.clampAngle(MathUtils.getValueTowardsGoal(angle, goal + Math.PI * 2, change));
+    }
+
+    return MathUtils.clampAngle(MathUtils.getValueTowardsGoal(angle, goal - Math.PI * 2, change));
+  }
 }

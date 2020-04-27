@@ -3,6 +3,7 @@ import { Entity } from "@libecs/entity";
 import { vec2 } from "gl-matrix";
 import { WallComponent2 } from "./wallcomponent";
 import { LifecycleOwnedAllocator, TempGroupAllocator } from "@libutil/allocator";
+import { LightcycleColor, LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 
 export class WallSpawnerUtil {
   static spawnWallsBetween(
@@ -13,7 +14,8 @@ export class WallSpawnerUtil {
       wallSegmentLength: number,
       destinationPoint: vec2,
       wallSpawnVitality: number,
-      o_lastSpawnPoint: vec2) {
+      o_lastSpawnPoint: vec2,
+      color: LightcycleColor) {
     vec2Allocator.get(4, (destinationFromSource, normal, lastSpawn, nextSpawn) => {
       vec2.copy(lastSpawn, lastSpawnPoint);
       vec2.sub(destinationFromSource, destinationPoint, lastSpawn);
@@ -25,7 +27,9 @@ export class WallSpawnerUtil {
 
       while (remainingLength > wallSegmentLength) {
         vec2.scaleAndAdd(nextSpawn, lastSpawn, normal, wallSegmentLength);
-        WallSpawnerUtil.spawnWall(ecs, lastSpawn, nextSpawn, wallSpawnVitality, vec2OwnedAllocator);
+        const wall = WallSpawnerUtil.spawnWall(
+          ecs, lastSpawn, nextSpawn, wallSpawnVitality, vec2OwnedAllocator);
+        wall.addComponent(LightcycleColorComponent, color);
         vec2.copy(lastSpawn, nextSpawn);
         remainingLength -= wallSegmentLength;
       }

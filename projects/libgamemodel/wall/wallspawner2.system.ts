@@ -5,6 +5,7 @@ import { vec2 } from "gl-matrix";
 import { MathAllocatorsComponent, OwnedMathAllocatorsComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
 import { WallSpawnerUtil } from "./wallspawner.util";
 import { WallComponent2 } from "./wallcomponent";
+import { LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 
 export class WallSpawnerSystem2 extends ECSSystem {
   start(ecs: ECSManager) { return true; }
@@ -22,8 +23,8 @@ export class WallSpawnerSystem2 extends ECSSystem {
 
     // Spawn new walls
     ecs.iterateComponents(
-      [WallGeneratorComponent],
-      (entity, wallGenerator) => {
+      [WallGeneratorComponent, LightcycleColorComponent],
+      (entity, wallGenerator, colorComponent) => {
         vec3Allocator.get(1, pos3 => {
           vec2Allocator.get(1, pos2 => {
             wallGenerator.PositionSceneNode.getPos(pos3);
@@ -36,7 +37,8 @@ export class WallSpawnerSystem2 extends ECSSystem {
               wallGenerator.DistanceBetweenSpawns,
               pos2,
               wallGenerator.VitalityAtSpawn,
-              wallGenerator.LastSpawnPoint);
+              wallGenerator.LastSpawnPoint,
+              colorComponent.Color);
           });
         });
       });

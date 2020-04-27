@@ -15,9 +15,10 @@ import { MathAllocatorsComponent, SceneNodeFactoryComponent } from '@libgamemode
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { Y_UNIT_DIR } from '@libutil/helpfulconstants';
 import { OverrideAmbientCoefficientComponent } from '@libgamerender/components/lightsettings.component';
+import { LightcycleColorComponent, LightcycleColor } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 
 export class WallGeometryComponent {
-  constructor(public Geo: LambertGeo, public Texture: Texture) {}
+  constructor(public Geo: LambertGeo, public BlueTexture: Texture, public GreenTexture: Texture) {}
 }
 
 export class BasicWallLambertSystem extends ECSSystem {
@@ -25,19 +26,18 @@ export class BasicWallLambertSystem extends ECSSystem {
     const { gl } = ecs.getSingletonComponentOrThrow(GLContextComponent);
     const { LambertShader } = ecs.getSingletonComponentOrThrow(LambertShaderComponent);
     const wallGeo = WallRenderUtils.generateWallGeo(gl, LambertShader, 1, 1);
-    const wallTexture = FloorTileTexture.create(
+    const blueWallTexture = FloorTileTexture.create(
       gl, vec4.fromValues(0.1, 0.1, 0.98, 1), vec4.fromValues(0, 0, 1, 1), 32, 32, 8, 8, 8, 8);
+    const greenWallTexture = FloorTileTexture.create(
+      gl, vec4.fromValues(0.1, 0.98, 0.1, 1), vec4.fromValues(0, 1, 0, 1), 32, 32, 8, 8, 8, 8);
 
     const geoEntity = ecs.createEntity();
-    geoEntity.addComponent(WallGeometryComponent, wallGeo, wallTexture);
+    geoEntity.addComponent(WallGeometryComponent, wallGeo, blueWallTexture, greenWallTexture);
     return true;
   }
 
   update(ecs: ECSManager) {
-    const {
-      Geo: wallGeo,
-      Texture: wallTexture,
-    } = ecs.getSingletonComponentOrThrow(WallGeometryComponent);
+    const wallGeoComponent = ecs.getSingletonComponentOrThrow(WallGeometryComponent);
     const {
       Vec3: vec3Allocator
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
@@ -45,10 +45,12 @@ export class BasicWallLambertSystem extends ECSSystem {
       SceneNodeFactory: sceneNodeFactory,
     } = ecs.getSingletonComponentOrThrow(SceneNodeFactoryComponent);
 
-    ecs.iterateComponents([WallComponent2], (entity, wallComponent) => {
-      this.createRenderComponentIfMissing(
-        vec3Allocator, sceneNodeFactory, entity, wallComponent, wallTexture, wallGeo);
-    });
+    ecs.iterateComponents(
+      [WallComponent2, LightcycleColorComponent],
+      (entity, wallComponent, color) => {
+        this.createRenderComponentIfMissing(
+          vec3Allocator, sceneNodeFactory, entity, wallComponent, wallGeoComponent, color.Color);
+      });
   }
 
   private createRenderComponentIfMissing(
@@ -56,8 +58,8 @@ export class BasicWallLambertSystem extends ECSSystem {
       sceneNodeFactory: SceneNodeFactory,
       entity: Entity,
       wallComponent: WallComponent2,
-      wallTexture: Texture,
-      wallGeo: LambertGeo): LambertRenderableComponent {
+      wallGeoComponent: WallGeometryComponent,
+      color: LightcycleColor): LambertRenderableComponent {
     let component = entity.getComponent(LambertRenderableComponent);
     if (!component) {
       const matWorld = mat4.create();
@@ -89,8 +91,15 @@ export class BasicWallLambertSystem extends ECSSystem {
         sceneNode.detach();
       });
 
+      let texture: Texture;
+      if (color === 'blue') {
+        texture = wallGeoComponent.BlueTexture;
+      } else {
+        texture = wallGeoComponent.GreenTexture;
+      }
+
       component = entity.addComponent(
-        LambertRenderableComponent, matWorld, wallGeo, wallTexture);
+        LambertRenderableComponent, matWorld, wallGeoComponent.Geo, texture);
       entity.addComponent(OverrideAmbientCoefficientComponent, 0.9);
     }
     return component;

@@ -5,6 +5,7 @@ import { BACK_WHEEL_OFFSET } from "./lightcyclespawner.system";
 import { LightcycleComponent2 } from "./lightcycle.component";
 import { VelocityComponent } from "@libgamemodel/components/velocitycomponent";
 import { WallGeneratorComponent } from "@libgamemodel/wall/wallgenerator.component";
+import { Entity } from "@libecs/entity";
 
 type LightcycleInitialSpawnConfig = {
   Position: vec3,
@@ -12,8 +13,7 @@ type LightcycleInitialSpawnConfig = {
 }
 
 export class LightcycleSpawner {
-  static spawnLightcycle(ecs: ECSManager, config: LightcycleInitialSpawnConfig) {
-    const entity = ecs.createEntity();
+  static attachLightcycle(ecs: ECSManager, entity: Entity, config: LightcycleInitialSpawnConfig) {
     const {SceneNodeFactory} = ecs.getSingletonComponentOrThrow(SceneNodeFactoryComponent);
 
     const pos = vec3.create();
@@ -51,6 +51,12 @@ export class LightcycleSpawner {
       WallGeneratorComponent, backWheelSceneNode, 10, 1,
       vec2.fromValues(backWheelPos[0], backWheelPos[2]));
 
+    return entity;
+  }
+
+  static spawnLightcycle(ecs: ECSManager, config: LightcycleInitialSpawnConfig) {
+    const entity = ecs.createEntity();
+    LightcycleSpawner.attachLightcycle(ecs, entity, config);
     return entity;
   }
 }
