@@ -3,9 +3,9 @@ import { ECSManager } from "@libecs/ecsmanager";
 import { LightcycleComponent2 } from "./lightcycle.component";
 import { VelocityComponent } from "@libgamemodel/components/velocitycomponent";
 import { UIEventEmitterComponent } from "@libgamemodel/components/gameui";
-import { MainPlayerComponent } from "./lightcyclesteeringsystem";
 import { MathUtils } from "@libutil/mathutils";
-import { PauseStateComponent } from "@libgamemodel/components/commoncomponents";
+import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
+import { MainPlayerComponent } from "@libgamemodel/components/commoncomponents";
 
 export class LightcycleHealthSystem extends ECSSystem {
   start() {
@@ -16,8 +16,7 @@ export class LightcycleHealthSystem extends ECSSystem {
     const {
       EventEmitter: uiEventEmitter,
     } = ecs.getSingletonComponentOrThrow(UIEventEmitterComponent);
-    const isPaused = ecs.getSingletonComponent(PauseStateComponent);
-    if (isPaused && isPaused.IsPaused) return;
+    if (!SceneModeUtil.isPlaying(ecs)) return;
 
     const dt = msDt / 1000;
 

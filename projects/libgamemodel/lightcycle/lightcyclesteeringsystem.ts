@@ -4,11 +4,10 @@ import { ECSManager } from "@libecs/ecsmanager";
 import { LightcycleComponent2 } from "./lightcycle.component";
 import { BikeInputManagerComponent } from "@libgamemodel/components/gameappuicomponents";
 import { MathUtils } from "@libutil/mathutils";
-import { PauseStateComponent } from "@libgamemodel/components/commoncomponents";
+import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
+import { MainPlayerComponent } from "@libgamemodel/components/commoncomponents";
 
 const LIGHTCYCLE_ANGULAR_VELOCITY = -1.85;
-
-export class MainPlayerComponent {}
 
 export class LightcycleSteeringSystem extends ECSSystem {
   static setMainPlayer(ecs: ECSManager, newMainPlayer: Entity) {
@@ -26,8 +25,7 @@ export class LightcycleSteeringSystem extends ECSSystem {
       BikeInputManager: bikeInputManager
     } = ecs.getSingletonComponentOrThrow(BikeInputManagerComponent);
 
-    const isPaused = ecs.getSingletonComponent(PauseStateComponent);
-    if (isPaused && isPaused.IsPaused) return;
+    if (!SceneModeUtil.isPlaying(ecs)) return;
 
     // Update main player based on game input
     ecs.iterateComponents([MainPlayerComponent, LightcycleComponent2], (entity, _, lightcycle) => {

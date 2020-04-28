@@ -2,10 +2,11 @@ import { ECSSystem } from "@libecs/ecssystem";
 import { ECSManager } from "@libecs/ecsmanager";
 import { WallGeneratorComponent } from "./wallgenerator.component";
 import { vec2 } from "gl-matrix";
-import { MathAllocatorsComponent, OwnedMathAllocatorsComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
+import { MathAllocatorsComponent, OwnedMathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
 import { WallSpawnerUtil } from "./wallspawner.util";
 import { WallComponent2 } from "./wallcomponent";
 import { LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
+import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 
 export class WallSpawnerSystem2 extends ECSSystem {
   start(ecs: ECSManager) { return true; }
@@ -18,8 +19,7 @@ export class WallSpawnerSystem2 extends ECSSystem {
       Vec2: ownedVec2Allocator,
     } = ecs.getSingletonComponentOrThrow(OwnedMathAllocatorsComponent);
 
-    const isPaused = ecs.getSingletonComponent(PauseStateComponent);
-    if (isPaused && isPaused.IsPaused) return;
+    if (!SceneModeUtil.isPlaying(ecs)) return;
 
     // Spawn new walls
     ecs.iterateComponents(

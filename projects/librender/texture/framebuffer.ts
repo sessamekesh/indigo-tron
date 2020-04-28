@@ -32,10 +32,20 @@ export class Framebuffer {
     if (state.DepthEnabled) {
       depthTexture = Texture.createEmptyTexture(
         gl, state.AttachedTexture.Width, state.AttachedTexture.Height, 'depth24');
+      // const depthRenderBuffer = gl.createRenderbuffer();
       if (!depthTexture) {
         console.error('Failed to create depth texture for framebuffer');
         return null;
       }
+      // gl.bindRenderbuffer(gl.RENDERBUFFER, depthRenderBuffer);
+      // gl.renderbufferStorage(
+      //   gl.RENDERBUFFER,
+      //   gl.DEPTH_COMPONENT,
+      //   state.AttachedTexture.Width,
+      //   state.AttachedTexture.Height);
+      // gl.framebufferRenderbuffer(
+      //   gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthRenderBuffer);
+      // gl.bindRenderbuffer(gl.RENDERBUFFER, null);
     }
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
@@ -45,6 +55,9 @@ export class Framebuffer {
       gl.TEXTURE_2D /* target */,
       state.AttachedTexture.tex,
       0 /* level */);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTexture && depthTexture.tex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     return new Framebuffer(
       fbo,
       state,

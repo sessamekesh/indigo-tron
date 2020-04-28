@@ -1,9 +1,10 @@
 import { ECSSystem } from "@libecs/ecssystem";
 import { ECSManager } from "@libecs/ecsmanager";
 import { CameraRigComponent } from "./camerarig.component";
-import { MathAllocatorsComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
+import { MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
 import { vec3 } from "gl-matrix";
 import { MathUtils } from "@libutil/mathutils";
+import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 
 export class CameraRigSystemConfigurationComponent {
   constructor(
@@ -18,8 +19,8 @@ export class CameraRigSystem2 extends ECSSystem {
   }
 
   update(ecs: ECSManager, msDt: number) {
-    const isPaused = ecs.getSingletonComponent(PauseStateComponent);
-    if (isPaused && isPaused.IsPaused) return;
+    if (!SceneModeUtil.isPlaying(ecs)) return;
+
     const {
       Vec3: vec3Allocator,
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);

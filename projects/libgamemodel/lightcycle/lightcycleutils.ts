@@ -136,4 +136,30 @@ export class LightcycleUtils {
       }
     });
   }
+
+  static moveCameraRigToLightcycle(oldEntity: Entity, newEntity: Entity) {
+    const recipient = newEntity.getComponent(LightcycleComponent2);
+    const existingRig = oldEntity.getComponent(CameraRigComponent);
+    if (!recipient || !existingRig) {
+      return;
+    }
+
+    const riggingSceneNode = existingRig.PositionSceneNode;
+    riggingSceneNode.detach();
+    riggingSceneNode.attachToParent(recipient.BodySceneNode);
+    oldEntity.removeComponent(CameraRigComponent);
+
+    newEntity.addComponent(
+      CameraRigComponent,
+      existingRig.Camera,
+      recipient.BodySceneNode,
+      riggingSceneNode);
+
+    newEntity.addListener('destroy', (e) => {
+      const rigComponent = e.getComponent(CameraRigComponent);
+      if (rigComponent) {
+        rigComponent.PositionSceneNode.detach();
+      }
+    });
+  }
 }

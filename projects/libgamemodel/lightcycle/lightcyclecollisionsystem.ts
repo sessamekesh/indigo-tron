@@ -9,12 +9,12 @@ import { vec3 } from "gl-matrix";
 import { LineSegment2D, LineSegmentUtils } from "@libutil/math/linesegment";
 import { Entity } from "@libecs/entity";
 import { LightcycleCollisionBoundsComponent } from "./lightcyclecollisionbounds.component";
-import { SceneNodeFactoryComponent, MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
+import { SceneNodeFactoryComponent, MathAllocatorsComponent, PlayerDeadTag, MainPlayerComponent } from "@libgamemodel/components/commoncomponents";
 import { LightcycleUtils, CollisionAction } from "./lightcycleutils";
 import { MathUtils } from "@libutil/mathutils";
 import { UIEventEmitterComponent } from "@libgamemodel/components/gameui";
-import { MainPlayerComponent } from "./lightcyclesteeringsystem";
 import { ArenaWallComponent } from "@libgamemodel/arena/arenawall.component";
+import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 
 export class LightcycleCollisionSystem extends ECSSystem {
   static setRandomFn(ecs: ECSManager, fn: ()=>number) {
@@ -165,7 +165,7 @@ export class LightcycleCollisionSystem extends ECSSystem {
           if (lightcycleEntity.hasComponent(MainPlayerComponent)) {
             uiEventEmitter.fireEvent('player-death', true);
           }
-          lightcycleEntity.destroy();
+          SceneModeUtil.killPlayer(ecs, lightcycleEntity);
         }
       });
     });

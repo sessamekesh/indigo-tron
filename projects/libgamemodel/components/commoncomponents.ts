@@ -1,6 +1,8 @@
 import { SceneNodeFactory } from "@libutil/scene/scenenodefactory";
 import { TempGroupAllocator, LifecycleOwnedAllocator } from "@libutil/allocator";
 import { quat, mat4, vec3, vec2 } from "gl-matrix";
+import { LightcycleColor } from "@libgamemodel/lightcycle/lightcyclecolor.component";
+import { Entity } from "@libecs/entity";
 
 export class MathAllocatorsComponent {
   constructor(
@@ -29,3 +31,11 @@ export class FrameNumberComponent {
 export class PauseStateComponent {
   constructor(public IsPaused: boolean) {}
 }
+
+export class PlayerDeadTag {}
+
+export class GameEndStateComponent {
+  constructor(public Winner: LightcycleColor, public PlayerEntity: Entity) {}
+}
+
+export class MainPlayerComponent {}
