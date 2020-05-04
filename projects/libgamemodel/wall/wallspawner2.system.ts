@@ -11,6 +11,8 @@ import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 export class WallSpawnerSystem2 extends ECSSystem {
   start(ecs: ECSManager) { return true; }
   update(ecs: ECSManager, msDt: number) {
+    if (SceneModeUtil.isPaused(ecs)) return;
+
     const {
       Vec2: vec2Allocator,
       Vec3: vec3Allocator,
@@ -18,8 +20,6 @@ export class WallSpawnerSystem2 extends ECSSystem {
     const {
       Vec2: ownedVec2Allocator,
     } = ecs.getSingletonComponentOrThrow(OwnedMathAllocatorsComponent);
-
-    if (!SceneModeUtil.isPlaying(ecs)) return;
 
     // Spawn new walls
     ecs.iterateComponents(

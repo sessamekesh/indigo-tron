@@ -105,6 +105,8 @@ export class ECSManager {
     return out;
   }
 
+  // TODO (sessamekesh): This should be only accessible at the system level, and requires passing
+  //  assertions at initialization time that an entity exists that contains this object.
   getSingletonComponentOrThrow<A>(klass: Klass<A>): A {
     const component = this.getSingletonComponent(klass);
     if (!component) {

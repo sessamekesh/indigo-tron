@@ -13,13 +13,33 @@ export class CameraRigSystemConfigurationComponent {
     public MaxSpeed: number) {}
 }
 
+/**
+ * TODO (sessamekesh): Adjust the camera rig system to follow this logic:
+ *
+ * - Camera goal focal point: In front of the targeted bike by some distance
+ * - Camera goal position: Behind and above the focal point by some distance
+ * - Camera actual focal point and positions: May be same as goal
+ * - Focal point / position spring force: Force, scaled to distance, that draws camera
+ *   focal point and position (actual) values towards the goal locations.
+ * - Wall avoidance radius: Focal point / position _cannot_ be within distance of arena edge
+ * - Wall resistance radius: Spring force that repels the focal point / position from wall. Hard
+ *   constraint at the avoidance radius, no impact further than the resistance radius.
+ * - Each frame:
+ *   (1) Calculate the updated goal position of the focal point and camera position based on bike.
+ *       This can be done just by attaching the focal point / position as child scene nodes to bike.
+ *   (2) Calculate the force from all sources on the actual camera locations.
+ *   (3) Apply the force to update the velocity.
+ *   (4) Find any constraints and update the velocity and position accordingly (i.e., avoid walls)
+ *   (5) Apply the velocity to update the position
+ */
+
 export class CameraRigSystem2 extends ECSSystem {
   start(ecs: ECSManager): boolean {
     return true;
   }
 
   update(ecs: ECSManager, msDt: number) {
-    if (!SceneModeUtil.isPlaying(ecs)) return;
+    if (SceneModeUtil.isPaused(ecs)) return;
 
     const {
       Vec3: vec3Allocator,

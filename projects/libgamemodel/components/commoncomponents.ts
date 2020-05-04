@@ -3,6 +3,7 @@ import { TempGroupAllocator, LifecycleOwnedAllocator } from "@libutil/allocator"
 import { quat, mat4, vec3, vec2 } from "gl-matrix";
 import { LightcycleColor } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 import { Entity } from "@libecs/entity";
+import { Plane } from "@libgamemodel/physics/plane";
 
 export class MathAllocatorsComponent {
   constructor(
@@ -17,7 +18,8 @@ export class OwnedMathAllocatorsComponent {
     public readonly Vec2: LifecycleOwnedAllocator<vec2>,
     public readonly Vec3: LifecycleOwnedAllocator<vec3>,
     public readonly Mat4: LifecycleOwnedAllocator<mat4>,
-    public readonly Quat: LifecycleOwnedAllocator<quat>) {}
+    public readonly Quat: LifecycleOwnedAllocator<quat>,
+    public readonly Plane: LifecycleOwnedAllocator<Plane>) {}
 }
 
 export class SceneNodeFactoryComponent {

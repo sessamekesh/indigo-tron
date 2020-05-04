@@ -3,15 +3,20 @@ import { Entity } from "@libecs/entity";
 import { FloorComponent } from "@libgamemodel/components/floor.component";
 import { GroundTileHeightMap } from "./groundtileheightmap/groundtileheightmap";
 import { FlatColorGroundHeightMapComponent, FlatColorTileRenderProp, FlatColorVertexRenderProp } from "./groundtileheightmap/flatcolorgroundheightmapcomponent";
-import { vec4 } from "gl-matrix";
+import { vec4, vec3 } from "gl-matrix";
 import { ArenaConfigObject, EnvironmentConfigObject } from '@libgamemodel/config';
 import { ArenaWallComponent } from "@libgamemodel/arena/arenawall.component";
+import { OwnedMathAllocatorsComponent, MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
+import { PlaneAbsoluteConstraintComponent } from "@libgamemodel/physics/planeabsoluteconstraint.component";
 
 export class EnvironmentUtils {
-  static spawnArenaFloor(ecs: ECSManager, width: number, height: number): Entity {
+  static spawnArenaFloor(ecs: ECSManager, width: number, height: number): Entity|null {
     const e = ecs.createEntity();
+
+    // Floor configuration (super easy)
     e.addComponent(FloorComponent, width, height);
 
+    // Attach base wall components
     const wall1 = ecs.createEntity();
     const wall2 = ecs.createEntity();
     const wall3 = ecs.createEntity();
@@ -37,6 +42,39 @@ export class EnvironmentUtils {
       wall2.destroy();
       wall3.destroy();
       wall4.destroy();
+    });
+
+    // Attach physics planes
+    const {
+      Plane: planeAllocator,
+    } = ecs.getSingletonComponentOrThrow(OwnedMathAllocatorsComponent);
+    const {
+      Vec3: tempVec3,
+    } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
+    tempVec3.get(1, (normal) => {
+      const leftPlane = planeAllocator.get();
+      const rightPlane = planeAllocator.get();
+      const frontPlane = planeAllocator.get();
+      const rearPlane = planeAllocator.get();
+
+      vec3.set(normal, 1, 0, 0);
+      leftPlane.Value.setNormalAndDistance(normal, -width/2);
+      vec3.set(normal, -1, 0, 0);
+      rightPlane.Value.setNormalAndDistance(normal, -width/2);
+      vec3.set(normal, 0, 0, 1);
+      frontPlane.Value.setNormalAndDistance(normal, -height/2);
+      vec3.set(normal, 0, 0, -1);
+      rearPlane.Value.setNormalAndDistance(normal, -height/2);
+
+      // TODO (sessamekesh): Put these on the right walls (right now they are not)
+      wall1.addComponent(PlaneAbsoluteConstraintComponent, leftPlane);
+      wall2.addComponent(PlaneAbsoluteConstraintComponent, rightPlane);
+      wall3.addComponent(PlaneAbsoluteConstraintComponent, frontPlane);
+      wall4.addComponent(PlaneAbsoluteConstraintComponent, rearPlane);
+      PlaneAbsoluteConstraintComponent.setOwnership(wall1);
+      PlaneAbsoluteConstraintComponent.setOwnership(wall2);
+      PlaneAbsoluteConstraintComponent.setOwnership(wall3);
+      PlaneAbsoluteConstraintComponent.setOwnership(wall4);
     });
 
     return e;

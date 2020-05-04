@@ -47,6 +47,9 @@ import { AiSteeringSystem } from '@libgamemodel/ai/aisteering.system';
 import { GreenAiSystem } from '@libgamemodel/ai/greenai.system';
 import { GreenAiUtil } from '@libgamemodel/ai/greenai.util';
 import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecolor.component';
+import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
+import { CameraRig3Util } from '@libgamemodel/camera/camerarig3.util';
+import { CameraRig3System } from '@libgamemodel/camera/camerarig3.system';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -86,11 +89,12 @@ export class GameAppService2 {
   }
 
   async restart() {
-    // This is broken! Looks like one of the singletons isn't properly created
+    this.stopRendering();
     await this.setFreshEcsState_();
     this.gameAppUiManager.fireEvent('player-death', false);
     this.gameAppUiManager.fireEvent('playerhealth', {MaxHealth: 100, CurrentHealth: 100});
     this.ecs.restart();
+    this.beginRendering();
   }
 
   pause() {
@@ -114,9 +118,15 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleCollisionSystem);
     ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
-    ecs.addSystem2(CameraRigSystem2);
+    //ecs.addSystem2(CameraRigSystem2);
+    ecs.addSystem2(CameraRig3System);
     ecs.addSystem2(GreenAiSystem);
     ecs.addSystem2(AiSteeringSystem);
+
+    //
+    // Physics System... belongs on its own. Only one here, but really it could/should be many.
+    //
+    ecs.addSystem2(UpdatePhysicsSystem);
 
     //
     // Renderable Generation Systems
@@ -213,7 +223,8 @@ export class GameAppService2 {
       this.renderProviders_.OwnedVec2Allocator.get(),
       this.renderProviders_.OwnedVec3Allocator.get(),
       this.renderProviders_.OwnedMat4Allocator.get(),
-      this.renderProviders_.OwnedQuatAllocator.get());
+      this.renderProviders_.OwnedQuatAllocator.get(),
+      this.renderProviders_.PlaneAllocator.get());
     utilitiesEntity.addComponent(
       SceneNodeFactoryComponent, this.renderProviders_.SceneNodeFactory.get());
 
@@ -258,6 +269,13 @@ export class GameAppService2 {
     //
     const configurationEntity = ecs.createEntity();
     configurationEntity.addComponent(CameraRigSystemConfigurationComponent, 4.5, 12, 55);
+    configurationEntity.addComponent(
+      UpdatePhysicsSystemConfigComponent,
+      /* UpdateTick */ 1 / 180,
+      /* TimeSinceLastTick */ 0,
+      /* MaxCollisionResolutionIterations */ 10,
+      /* PositionErrorThreshold */ 0.0001, // 0.1 mm
+      /* VelocityErrorThreshold */ 0.01); // 1 cm/s
 
     //
     // Initial game state
@@ -269,9 +287,19 @@ export class GameAppService2 {
     });
     mainPlayerEntity.addComponent(LightcycleColorComponent, 'blue');
     mainPlayerEntity.addComponent(MainPlayerComponent);
-    LightcycleUtils.attachCameraRigToLightcycle(
-      mainPlayerEntity, vec3.fromValues(0, 7, -18), camera,
-      this.renderProviders_.SceneNodeFactory.get());
+    // LightcycleUtils.attachCameraRigToLightcycle(
+    //   mainPlayerEntity, vec3.fromValues(0, 7, -18), camera,
+    //   this.renderProviders_.SceneNodeFactory.get());
+    CameraRig3Util.attachCameraRigToLightcycle(
+      ecs,
+      mainPlayerEntity,
+      camera,
+      /* lookAtFront */ 50,
+      /* positionBehind */ 25,
+      /* Height */ 10, this.renderProviders_.SceneNodeFactory.get(),
+      this.renderProviders_.Vec3Allocator.get(),
+      this.renderProviders_.OwnedVec3Allocator.get(),
+      1.25);
 
     GreenAiUtil.createAiPlayer(
       ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', Math.random);
@@ -309,16 +337,24 @@ export class GameAppService2 {
     return ioEntity;
   }
 
+  private frameCapture: number|null = null;
   private beginRendering() {
     let lastFrame = performance.now();
     const frame = () => {
       const now = performance.now();
       const msDt = now - lastFrame;
+      if (msDt > (1000 / 45)) {
+        console.warn('Slow frame detected: ' + msDt + ' which is ' + (1000 / msDt) + ' fps');
+      }
       lastFrame = now;
 
       this.ecs.update(msDt);
-      requestAnimationFrame(frame);
+      this.frameCapture = requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
+    this.frameCapture = requestAnimationFrame(frame);
+  }
+
+  private stopRendering() {
+    if (this.frameCapture) cancelAnimationFrame(this.frameCapture);
   }
 }

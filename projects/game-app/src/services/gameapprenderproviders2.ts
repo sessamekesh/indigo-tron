@@ -11,6 +11,7 @@ import { TempGroupAllocator, LifecycleOwnedAllocator } from '@libutil/allocator'
 import { vec3, mat4, quat, vec2, vec4 } from 'gl-matrix';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { FloorTileTexture } from '@librender/texture/floortiletexture';
+import { Plane } from '@libgamemodel/physics/plane';
 
 //
 // Configuration Constants
@@ -82,6 +83,7 @@ export class GameAppRenderProviders2 {
   readonly OwnedVec3Allocator = new Provider(() => new LifecycleOwnedAllocator(vec3.create));
   readonly OwnedMat4Allocator = new Provider(() => new LifecycleOwnedAllocator(mat4.create));
   readonly OwnedQuatAllocator = new Provider(() => new LifecycleOwnedAllocator(quat.create));
+  readonly PlaneAllocator = new Provider(() => new LifecycleOwnedAllocator(Plane.defaultPlane));
   readonly SceneNodeFactory = new Provider(
     () => new SceneNodeFactory(this.Mat4Allocator.get(), this.QuatAllocator.get()));
 

@@ -110,10 +110,10 @@ export class LightcycleUtils {
 
   static applyCollisionDamage2(
     damage: number, wallComponent: WallComponent2, lightcycleComponent: LightcycleComponent2) {
-  const actualDamage = Math.min(damage, wallComponent.Vitality, lightcycleComponent.Vitality);
-  wallComponent.Vitality -= actualDamage;
-  lightcycleComponent.Vitality -= actualDamage;
-}
+    const actualDamage = Math.min(damage, wallComponent.Vitality, lightcycleComponent.Vitality);
+    wallComponent.Vitality -= actualDamage;
+    lightcycleComponent.Vitality -= actualDamage;
+  }
 
   static attachCameraRigToLightcycle(
       entity: Entity,

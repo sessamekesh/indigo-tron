@@ -16,6 +16,8 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
     return true;
   }
 
+  // TODO (sessamekesh): Move this to using the regular physics. Slow frames are really screwing with
+  //  the ability of the update system to keep up!
   update(ecs: ECSManager, msDt: number) {
     const dt = msDt / 1000;
     const {
