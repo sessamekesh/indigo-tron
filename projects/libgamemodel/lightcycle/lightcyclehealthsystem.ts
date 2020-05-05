@@ -1,7 +1,6 @@
 import { ECSSystem } from "@libecs/ecssystem";
 import { ECSManager } from "@libecs/ecsmanager";
 import { LightcycleComponent2 } from "./lightcycle.component";
-import { VelocityComponent } from "@libgamemodel/components/velocitycomponent";
 import { UIEventEmitterComponent } from "@libgamemodel/components/gameui";
 import { MathUtils } from "@libutil/mathutils";
 import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
@@ -21,8 +20,8 @@ export class LightcycleHealthSystem extends ECSSystem {
     const dt = msDt / 1000;
 
     ecs.iterateComponents(
-      [LightcycleComponent2, VelocityComponent],
-      (entity, lightcycle, velocity) => {
+      [LightcycleComponent2],
+      (entity, lightcycle) => {
         const oldVitality = lightcycle.Vitality;
         lightcycle.Vitality = MathUtils.clamp(lightcycle.Vitality + 0.5 * dt, 0, 100);
         if (entity.hasComponent(MainPlayerComponent)

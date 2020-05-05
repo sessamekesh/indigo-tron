@@ -25,6 +25,8 @@ export class GreenAiUtil {
       ecs, entity, {
         Position: vec3.fromValues(startLocation[0], 0, startLocation[1]),
         Orientation: startAngle,
+        Velocity: 38.5,
+        AngularVelocity: 1.85,
       });
 
     const goalLocation = vec2.create();

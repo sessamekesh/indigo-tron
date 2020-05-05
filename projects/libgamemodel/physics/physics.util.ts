@@ -21,7 +21,7 @@ export class PhysicsUtil {
     entity.addComponent(PositionComponent, position);
     entity.addComponent(VelocityComponent, velocity);
     entity.addComponent(MassComponent, invMass);
-    entity.addComponent(ForceDampingComponent, 0.125);
+    entity.addComponent(ForceDampingComponent, 0.05);
 
     PositionComponent.attachLifecycle(entity);
     VelocityComponent.attachLifecycle(entity);

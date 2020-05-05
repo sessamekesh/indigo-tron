@@ -73,11 +73,11 @@ export class UpdatePhysicsSystem extends ECSSystem {
       config.TimeSinceLastTick -= config.UpdateTick;
 
       this.clearOutForces(ecs);
-      this.applyDampingForce(ecs, vec3Allocator, dt);
+      this.applyDampingForce(ecs, vec3Allocator, config.UpdateTick);
       this.applySceneNodeSpringForces(ecs, vec3Allocator, tempVec3);
       this.applyPlaneMinDistanceSpringForces(ecs, vec3Allocator, tempVec3);
-      this.integrateForces(ecs, dt);
-      this.integratePositions(ecs, dt);
+      this.integrateForces(ecs, config.UpdateTick);
+      this.integratePositions(ecs, config.UpdateTick);
 
       // Apply impulses. Those impulses may cause other impulses, so resolve in a loop until either
       //  some pre-determined maximum number of passes has elapsed, or until the error generated

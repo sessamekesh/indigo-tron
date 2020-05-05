@@ -1,15 +1,16 @@
 import { ECSManager } from "@libecs/ecsmanager";
 import { vec3, vec2 } from "gl-matrix";
 import { SceneNodeFactoryComponent } from "@libgamemodel/components/commoncomponents";
-import { BACK_WHEEL_OFFSET } from "./lightcyclespawner.system";
 import { LightcycleComponent2 } from "./lightcycle.component";
-import { VelocityComponent } from "@libgamemodel/components/velocitycomponent";
 import { WallGeneratorComponent } from "@libgamemodel/wall/wallgenerator.component";
 import { Entity } from "@libecs/entity";
+import { LightcycleSteeringStateComponent } from "./lightcyclesteeringstate.component";
 
 type LightcycleInitialSpawnConfig = {
   Position: vec3,
   Orientation: number,
+  AngularVelocity: number,
+  Velocity: number,
 }
 
 export class LightcycleSpawner {
@@ -35,14 +36,21 @@ export class LightcycleSpawner {
       pos,
     });
 
+    const BACK_WHEEL_OFFSET = 3.385;
     const backWheelSceneNode = SceneNodeFactory.createSceneNode({
       pos: vec3.fromValues(0, 0, -BACK_WHEEL_OFFSET),
     });
     backWheelSceneNode.attachToParent(bodySceneNode);
 
     entity.addComponent(
-      LightcycleComponent2, frontWheelSceneNode, backWheelSceneNode, bodySceneNode, 100);
-    entity.addComponent(VelocityComponent, 38.5);
+      LightcycleComponent2,
+      frontWheelSceneNode,
+      backWheelSceneNode,
+      bodySceneNode,
+      /* vitality */ 100,
+      /* velocity */ config.Velocity,
+      /* angular velocity */ config.AngularVelocity);
+    entity.addComponent(LightcycleSteeringStateComponent, 0);
 
     // TODO (sessamekesh): Use temp allocator instead (not urgent, this is infrequently used)
     const backWheelPos = vec3.create();

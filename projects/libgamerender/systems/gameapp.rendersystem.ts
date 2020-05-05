@@ -16,6 +16,7 @@ import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { ArenaWallTexturePackComponent, ArenaWallUnitGeoComponent } from '@libgamerender/components/arenawallrenderable.component';
 import { ArenaWallRenderableUtil } from '@libgamerender/utils/arenawallrenderable.util';
 import { ArenaWallComponent } from '@libgamemodel/arena/arenawall.component';
+import { DebugRenderTag } from '@libgamemodel/debug/debugrendertag';
 
 // TODO (sessamekesh): Move all the framebuffer, render object, etc. creation here, eh?
 
@@ -106,6 +107,7 @@ export class GameAppRenderSystem extends ECSSystem {
           [
             WallComponent2,
             LightcycleRenderableTag,
+            DebugRenderTag, // TODO (sessamekesh): Put this behind a build flag
           ],
           lightSettings, matView, matProj);
 

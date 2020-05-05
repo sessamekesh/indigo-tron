@@ -3,11 +3,9 @@ import { Entity } from "@libecs/entity";
 import { ECSManager } from "@libecs/ecsmanager";
 import { LightcycleComponent2 } from "./lightcycle.component";
 import { BikeInputManagerComponent } from "@libgamemodel/components/gameappuicomponents";
-import { MathUtils } from "@libutil/mathutils";
 import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 import { MainPlayerComponent } from "@libgamemodel/components/commoncomponents";
-
-const LIGHTCYCLE_ANGULAR_VELOCITY = -1.85;
+import { LightcycleSteeringStateComponent } from "./lightcyclesteeringstate.component";
 
 export class LightcycleSteeringSystem extends ECSSystem {
   static setMainPlayer(ecs: ECSManager, newMainPlayer: Entity) {
@@ -28,11 +26,10 @@ export class LightcycleSteeringSystem extends ECSSystem {
     if (!SceneModeUtil.isPlaying(ecs)) return;
 
     // Update main player based on game input
-    ecs.iterateComponents([MainPlayerComponent, LightcycleComponent2], (entity, _, lightcycle) => {
-      const turnAmount = bikeInputManager.turnDirection() * LIGHTCYCLE_ANGULAR_VELOCITY * dt;
-      const newOrientation =
-        MathUtils.clampAngle(lightcycle.FrontWheelSceneNode.getRotAngle() + turnAmount);
-      lightcycle.FrontWheelSceneNode.update({ rot: { angle: newOrientation }});
+    ecs.iterateComponents(
+        [MainPlayerComponent, LightcycleComponent2, LightcycleSteeringStateComponent],
+        (entity, _, __, steeringState) => {
+      steeringState.SteeringStrength = -bikeInputManager.turnDirection();
     });
   }
 }

@@ -12,6 +12,7 @@ import { vec3, mat4, quat, vec2, vec4 } from 'gl-matrix';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { FloorTileTexture } from '@librender/texture/floortiletexture';
 import { Plane } from '@libgamemodel/physics/plane';
+import { Circle3 } from '@libutil/math/circle3';
 
 //
 // Configuration Constants
@@ -79,6 +80,8 @@ export class GameAppRenderProviders2 {
   readonly Vec3Allocator = new Provider(() => new TempGroupAllocator(vec3.create));
   readonly Mat4Allocator = new Provider(() => new TempGroupAllocator(mat4.create));
   readonly QuatAllocator = new Provider(() => new TempGroupAllocator(quat.create));
+  readonly CircleAllocator = new Provider(() => new TempGroupAllocator(
+    () => new Circle3(vec3.create(), vec3.create(), 0)));
   readonly OwnedVec2Allocator = new Provider(() => new LifecycleOwnedAllocator(vec2.create));
   readonly OwnedVec3Allocator = new Provider(() => new LifecycleOwnedAllocator(vec3.create));
   readonly OwnedMat4Allocator = new Provider(() => new LifecycleOwnedAllocator(mat4.create));

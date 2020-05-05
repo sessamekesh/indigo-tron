@@ -67,12 +67,12 @@ export class CameraRig3Util {
     positionEntity.addComponent(
       SceneNodeSpringForceComponent,
       /* length */ 0,
-      /* k */ 80,
+      /* k */ 300,
       /* target */ goalPositionSceneNode);
     lookAtEntity.addComponent(
       SceneNodeSpringForceComponent,
       /* length */ 0,
-      /* k */ 160,
+      /* k */ 300,
       /* target */ goalLookAtSceneNode);
 
     // TODO (sessamekesh): Get the wall planes, and attach PlaneMinDistanceSpringComponents to them

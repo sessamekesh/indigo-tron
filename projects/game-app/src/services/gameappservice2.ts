@@ -23,7 +23,6 @@ import { GameAppRenderProviders2 } from './gameapprenderproviders2';
 import { LightcycleLambertRenderResourcesComponent, ArenaFloorReflectionFramebufferComponent, ArenaFloorReflectionTextureComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
 import { CameraRigSystem2, CameraRigSystemConfigurationComponent } from '@libgamemodel/camera/camerarig2.system';
-import { LightcycleUtils } from '@libgamemodel/lightcycle/lightcycleutils';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
 import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
@@ -48,8 +47,9 @@ import { GreenAiSystem } from '@libgamemodel/ai/greenai.system';
 import { GreenAiUtil } from '@libgamemodel/ai/greenai.util';
 import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
-import { CameraRig3Util } from '@libgamemodel/camera/camerarig3.util';
 import { CameraRig3System } from '@libgamemodel/camera/camerarig3.system';
+import { CameraRig4System } from '@libgamemodel/camera/camerarig4.system';
+import { CameraRig4Util } from '@libgamemodel/camera/camerarig4.util';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -120,6 +120,7 @@ export class GameAppService2 {
     ecs.addSystem2(WallSpawnerSystem2);
     //ecs.addSystem2(CameraRigSystem2);
     ecs.addSystem2(CameraRig3System);
+    ecs.addSystem2(CameraRig4System);
     ecs.addSystem2(GreenAiSystem);
     ecs.addSystem2(AiSteeringSystem);
 
@@ -135,6 +136,12 @@ export class GameAppService2 {
     ecs.addSystem2(BasicWallLambertSystem);
     ecs.addSystem2(EnvironmentArenaFloorSystem);
     ecs.addSystem2(ArenaWallRenderSystem);
+
+    //
+    // Debug systems (and debug renderable generation)
+    //
+    // ecs.addSystem2(DebugFutureLightcyclePositionSystem);
+    // ecs.addSystem2(DrawFutureLightcyclePositionSystem);
 
     // Special case, the game frame render system (full frame generation code in there)
     ecs.addSystem2(GameAppRenderSystem);
@@ -217,7 +224,8 @@ export class GameAppService2 {
       this.renderProviders_.Vec2Allocator.get(),
       this.renderProviders_.Vec3Allocator.get(),
       this.renderProviders_.Mat4Allocator.get(),
-      this.renderProviders_.QuatAllocator.get());
+      this.renderProviders_.QuatAllocator.get(),
+      this.renderProviders_.CircleAllocator.get());
     utilitiesEntity.addComponent(
       OwnedMathAllocatorsComponent,
       this.renderProviders_.OwnedVec2Allocator.get(),
@@ -284,22 +292,39 @@ export class GameAppService2 {
     const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
       Position: vec3.fromValues(5, 0, 0),
       Orientation: glMatrix.toRadian(180),
+      Velocity: 38.5,
+      AngularVelocity: 1.85,
     });
     mainPlayerEntity.addComponent(LightcycleColorComponent, 'blue');
     mainPlayerEntity.addComponent(MainPlayerComponent);
     // LightcycleUtils.attachCameraRigToLightcycle(
     //   mainPlayerEntity, vec3.fromValues(0, 7, -18), camera,
     //   this.renderProviders_.SceneNodeFactory.get());
-    CameraRig3Util.attachCameraRigToLightcycle(
-      ecs,
-      mainPlayerEntity,
+    // CameraRig3Util.attachCameraRigToLightcycle(
+    //   ecs,
+    //   mainPlayerEntity,
+    //   camera,
+    //   /* lookAtFront */ 10,
+    //   /* positionBehind */ 56,
+    //   /* Height */ 15, this.renderProviders_.SceneNodeFactory.get(),
+    //   this.renderProviders_.Vec3Allocator.get(),
+    //   this.renderProviders_.OwnedVec3Allocator.get(),
+    //   /* bounding sphere size */ 1.25);
+
+    // TODO (sessamekesh): The lightcycle seems to move in a really jittery way after this, why?
+    const cameraRig = CameraRig4Util.attachCameraRigToLightcycle(
+      ecs, mainPlayerEntity,
       camera,
-      /* lookAtFront */ 50,
-      /* positionBehind */ 25,
-      /* Height */ 10, this.renderProviders_.SceneNodeFactory.get(),
-      this.renderProviders_.Vec3Allocator.get(),
+      /* leadDistance */ 20,
+      /* followDistance */ 2,
+      /* leadScale */ 25,
+      /* followScale */ 35,
+      /* height */ 15,
+      /* bounding sphere size */ 1.25,
       this.renderProviders_.OwnedVec3Allocator.get(),
-      1.25);
+      this.renderProviders_.Vec3Allocator.get(),
+      this.renderProviders_.CircleAllocator.get(),
+      this.renderProviders_.SceneNodeFactory.get());
 
     GreenAiUtil.createAiPlayer(
       ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', Math.random);

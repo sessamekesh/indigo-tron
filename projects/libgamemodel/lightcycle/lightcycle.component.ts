@@ -5,5 +5,7 @@ export class LightcycleComponent2 {
     public FrontWheelSceneNode: SceneNode,
     public RearWheelSceneNode: SceneNode,
     public BodySceneNode: SceneNode,
-    public Vitality: number) {}
+    public Vitality: number,
+    public Velocity: number,
+    public AngularVelocity: number) {}
 }
