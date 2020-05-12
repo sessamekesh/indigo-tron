@@ -50,6 +50,8 @@ import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgam
 import { CameraRig3System } from '@libgamemodel/camera/camerarig3.system';
 import { CameraRig4System } from '@libgamemodel/camera/camerarig4.system';
 import { CameraRig4Util } from '@libgamemodel/camera/camerarig4.util';
+import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
+import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -119,8 +121,7 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
     //ecs.addSystem2(CameraRigSystem2);
-    ecs.addSystem2(CameraRig3System);
-    ecs.addSystem2(CameraRig4System);
+    ecs.addSystem2(CameraRig5System);
     ecs.addSystem2(GreenAiSystem);
     ecs.addSystem2(AiSteeringSystem);
 
@@ -312,19 +313,22 @@ export class GameAppService2 {
     //   /* bounding sphere size */ 1.25);
 
     // TODO (sessamekesh): The lightcycle seems to move in a really jittery way after this, why?
-    const cameraRig = CameraRig4Util.attachCameraRigToLightcycle(
-      ecs, mainPlayerEntity,
-      camera,
-      /* leadDistance */ 20,
-      /* followDistance */ 2,
-      /* leadScale */ 25,
-      /* followScale */ 35,
-      /* height */ 15,
-      /* bounding sphere size */ 1.25,
-      this.renderProviders_.OwnedVec3Allocator.get(),
-      this.renderProviders_.Vec3Allocator.get(),
-      this.renderProviders_.CircleAllocator.get(),
-      this.renderProviders_.SceneNodeFactory.get());
+    const cameraRigEntity = ecs.createEntity();
+    cameraRigEntity.addComponent(
+      CameraRig5Component,
+      /* Camera */ camera,
+      /* CameraHeight */ 12.5,
+      /* LookAtHeight */ 2,
+      /* WallCollisionRadius */ 0.5,
+      /* FollowDistance */ 50,
+      /* LeadDistance */ 165,
+      /* FollowCurveTime */ 0.1,
+      /* LeadCurvetime */ 0.35,
+      /* CarEntity */ mainPlayerEntity,
+      /* GoalApproachMinVelocity */ 50,
+      /* GoalApproachMaxVelocity */ 350,
+      /* GoalApproachMaxDistance */ 70);
+    window['camera'] = cameraRigEntity.getComponent(CameraRig5Component);
 
     GreenAiUtil.createAiPlayer(
       ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', Math.random);

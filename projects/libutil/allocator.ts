@@ -12,6 +12,11 @@ export class TempGroupAllocator<T extends Object> {
   get<R>(ct: 6, cb: (_1: T, _2: T, _3: T, _4: T, _5: T, _6: T)=>R): R;
   get<R>(ct: 7, cb: (_1: T, _2: T, _3: T, _4: T, _5: T, _6: T, _7: T)=>R): R;
   get<R>(ct: 8, cb: (_1: T, _2: T, _3: T, _4: T, _5: T, _6: T, _7: T, _8: T)=>R): R;
+  get<R>(ct: 9, cb: (_1: T, _2: T, _3: T, _4: T, _5: T, _6: T, _7: T, _8: T, _9: T)=>R): R;
+  get<R>(ct: 10, cb: (_1: T, _2: T, _3: T, _4: T, _5: T, _6: T, _7: T, _8: T, _9: T, _10: T)=>R): R;
+  get<R>(
+    ct: 11,
+    cb: (_1: T, _2: T, _3: T, _4: T, _5: T, _6: T, _7: T, _8: T, _9: T, _10: T, _11: T)=>R): R;
   get<R>(ct: number, cb: (...vals: T[])=>R): R {
     const allocation: T[] = [];
     for (let i = 0; i < ct; i++) {

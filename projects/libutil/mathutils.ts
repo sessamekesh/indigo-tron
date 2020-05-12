@@ -83,4 +83,8 @@ export class MathUtils {
 
     return MathUtils.clampAngle(MathUtils.getValueTowardsGoal(angle, goal - Math.PI * 2, change));
   }
+
+  static lerp(min: number, max: number, t: number) {
+    return (max - min) * MathUtils.clamp(t, 0, 1) + min;
+  }
 }

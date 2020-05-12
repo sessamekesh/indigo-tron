@@ -16,5 +16,7 @@ export type Klass10<T extends Object, A, B, C, D, E, F, G, H, I, J> =
   new (a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I, j: J) => T;
 export type Klass11<T extends Object, A, B, C, D, E, F, G, H, I, J, K> =
   new (a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I, j: J, k: K) => T;
+export type Klass12<T extends Object, A, B, C, D, E, F, G, H, I, J, K, L> =
+  new (a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I, j: J, k: K, l: L) => T;
 
 export type Klass<T extends Object> = new (...args: any[]) => T;
