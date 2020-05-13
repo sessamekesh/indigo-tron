@@ -7,6 +7,7 @@ import { FloorComponent } from "@libgamemodel/components/floor.component";
 import { AiControlComponent } from "./aicontrol.component";
 import { MathUtils } from "@libutil/mathutils";
 import { LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
+import { LifecycleOwnedAllocator } from "@libutil/allocator";
 
 type GREEN_AI_DIFFICULTY = 'easy'|'medium'|'hard';
 
@@ -38,7 +39,7 @@ export class GreenAiUtil {
       GreenAiUtil.reactionTimeDelay(difficulty),
       GreenAiUtil.scanRadius(difficulty),
       { action: 'COAST' },
-      /* NextStrategy */ undefined,
+      /* NextStrategies */ null,
       randFn);
 
     entity.addComponent(AiControlComponent, 1.85, startAngle);
@@ -48,14 +49,56 @@ export class GreenAiUtil {
   }
 
   static getNextGoalLocation(o: vec2, randFn: ()=>number, arenaDimensions: FloorComponent) {
-    vec2.set(o, randFn() * arenaDimensions.Width, randFn() * arenaDimensions.Height);
+    const x = randFn() - 0.5;
+    const z = randFn() - 0.5;
+    vec2.set(o, x * arenaDimensions.Width, z * arenaDimensions.Height);
   }
 
-  static getStrategyRecommendation(ecs: ECSManager, component: GreenAiComponent): GreenAiStrategy {
-    // TODO (sessamekesh): Fill this in
-    return {
-      action: 'COAST',
-    };
+  static getStrategyRecommendation(
+      ecs: ECSManager, component: GreenAiComponent, lightcyclePos: vec2,
+      vec2Allocator: LifecycleOwnedAllocator<vec2>, randFn: ()=>number,
+      arenaDimensions: FloorComponent): GreenAiStrategy {
+    // TODO (sessamekesh): If there is an imminent collision, avoid it
+
+    // TODO (sessamekesh): If there is a nearby player, extrapolate their path 2/3 seconds, and...
+    //  + Avoid any imminent collision
+    //   ~ Pick the non-colliding path closest to straight forward
+    //   ~ If all paths are colliding, pick the one with the longest distance travelled to collision
+    //  + Try to create an imminent collision for them
+    //  + If neither case is relevant (e.g., no collision paths, ignore the player)
+
+    // If we are within 85 units of the goal location, pick a new goal location
+    const sqDist = vec2.squaredDistance(lightcyclePos, component.CurrentGoalLocation);
+    if (sqDist < (55 * 55)
+        && (component.NextStrategy == null
+              || component.NextStrategy.nextStrategy.action !== 'APPROACH_LOCATION')) {
+      const newGoalLocation = vec2Allocator.get();
+      GreenAiUtil.getNextGoalLocation(newGoalLocation.Value, randFn, arenaDimensions);
+      return {
+        action: 'APPROACH_LOCATION',
+        location: newGoalLocation,
+      };
+    }
+
+    // If we are not currently headed towards the goal but want to be, start heading there.
+    if (component.CurrentAction.action !== 'APPROACH_LOCATION') {
+      return {
+        action: 'APPROACH_LOCATION',
+        location: {
+          ReleaseFn: ()=>{},
+          Value: component.CurrentGoalLocation,
+        },
+      };
+    }
+
+    // Otherwise, keep our current strategy
+    return component.CurrentAction;
+  }
+
+  static cleanupStrategy(strategy: GreenAiStrategy) {
+    if (strategy.action === 'APPROACH_LOCATION') {
+      strategy.location.ReleaseFn();
+    }
   }
 
   static strategyIsEqual(a: GreenAiStrategy, b: GreenAiStrategy) {
@@ -90,9 +133,23 @@ export class GreenAiUtil {
     return a === b;
   }
 
-  static applyStrategyRecommendation(strategy: GreenAiStrategy, control: AiControlComponent) {
+  static applyStrategyRecommendation(
+      strategy: GreenAiStrategy, control: AiControlComponent, currentPos: vec2) {
     // TODO (sessamekesh): Fill in this method
-    control.GoalOrientation = MathUtils.clampAngle(control.GoalOrientation - 0.01);
+    switch (strategy.action) {
+      case 'COAST':
+        // no-op: continue along current path
+        break;
+      case 'APPROACH_LOCATION':
+        // Find the angle required to get from self to there, and use it!
+        const toGoalX = strategy.location.Value[0] - currentPos[0];
+        const toGoalZ = strategy.location.Value[1] - currentPos[1];
+        control.GoalOrientation = MathUtils.clampAngle(Math.atan2(toGoalX, toGoalZ));
+        break;
+      default:
+        control.GoalOrientation = MathUtils.clampAngle(control.GoalOrientation - 0.01);
+        break;
+    }
   }
 
   private static reactionTimeDelay(difficulty: GREEN_AI_DIFFICULTY) {

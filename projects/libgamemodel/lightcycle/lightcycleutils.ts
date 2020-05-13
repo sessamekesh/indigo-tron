@@ -5,7 +5,6 @@ import { LightcycleComponent2 } from './lightcycle.component';
 import { glMatrix, vec3 } from 'gl-matrix';
 import { Entity } from '@libecs/entity';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
-import { CameraRigComponent } from '@libgamemodel/camera/camerarig.component';
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { TempGroupAllocator } from '@libutil/allocator';
 import { Circle3 } from '@libutil/math/circle3';
@@ -132,54 +131,6 @@ export class LightcycleUtils {
     const actualDamage = Math.min(damage, wallComponent.Vitality, lightcycleComponent.Vitality);
     wallComponent.Vitality -= actualDamage;
     lightcycleComponent.Vitality -= actualDamage;
-  }
-
-  static attachCameraRigToLightcycle(
-      entity: Entity,
-      offset: vec3,
-      camera: BasicCamera,
-      sceneNodeFactory: SceneNodeFactory) {
-    const lightcycleComponent = entity.getComponent(LightcycleComponent2);
-    if (!lightcycleComponent) {
-      throw new Error('Could not attach camera rig to non-lightcycle entity');
-    }
-    const riggingSceneNode = sceneNodeFactory.createSceneNode({ pos: offset });
-    riggingSceneNode.attachToParent(lightcycleComponent.BodySceneNode);
-
-    entity.addComponent(
-      CameraRigComponent, camera, lightcycleComponent.BodySceneNode, riggingSceneNode);
-    entity.addListener('destroy', (e) => {
-      const rigComponent = e.getComponent(CameraRigComponent);
-      if (rigComponent) {
-        rigComponent.PositionSceneNode.detach();
-      }
-    });
-  }
-
-  static moveCameraRigToLightcycle(oldEntity: Entity, newEntity: Entity) {
-    const recipient = newEntity.getComponent(LightcycleComponent2);
-    const existingRig = oldEntity.getComponent(CameraRigComponent);
-    if (!recipient || !existingRig) {
-      return;
-    }
-
-    const riggingSceneNode = existingRig.PositionSceneNode;
-    riggingSceneNode.detach();
-    riggingSceneNode.attachToParent(recipient.BodySceneNode);
-    oldEntity.removeComponent(CameraRigComponent);
-
-    newEntity.addComponent(
-      CameraRigComponent,
-      existingRig.Camera,
-      recipient.BodySceneNode,
-      riggingSceneNode);
-
-    newEntity.addListener('destroy', (e) => {
-      const rigComponent = e.getComponent(CameraRigComponent);
-      if (rigComponent) {
-        rigComponent.PositionSceneNode.detach();
-      }
-    });
   }
 
   static getApproximatePositionInFuture(

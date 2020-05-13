@@ -16,6 +16,7 @@ import { LambertShader } from '@librender/shader/lambertshader';
 import { LambertShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { LambertGeo } from '@librender/geo/lambertgeo';
 import { DebugRenderTag } from '@libgamemodel/debug/debugrendertag';
+import { DebugMarkerUtil } from './debugmarker.util';
 
 export class DrawFutureLightcyclePositionSystem extends ECSSystem {
   start() { return true; }
@@ -62,24 +63,14 @@ export class DrawFutureLightcyclePositionSystem extends ECSSystem {
       entity: Entity,
       color: LightcycleColorComponent): LambertRenderableComponent|null {
     let component = entity.getComponent(LambertRenderableComponent);
-    if (!component) {
-      const c = vec4.create();
-      switch (color.Color) {
-        case 'blue': vec4.set(c, 0.1, 0.1, 1, 1); break;
-        case 'green': vec4.set(c, 0.1, 1, 0.1, 1); break;
-        default: vec4.set(c, 0.5, 0.5, 0.5, 1); break;
-      }
-      const texture = FloorTileTexture.create(gl, c, c, 32, 32, 10, 10, 0, 0);
-      const geoData =
-        CubeGeoGenerator.generateLambertCubeGeo(gl, lambertShader, vec3.fromValues(0.5, 0.5, 0.5));
-      const geo = LambertGeo.create(gl, geoData.vertexData, {BitWidth: 8, Data: geoData.indices});
-      if (!texture || !geo) {
-        return null;
-      }
+    if (component) return component;
 
-      component = entity.addComponent(LambertRenderableComponent, mat4.create(), geo, texture);
-      entity.addComponent(DebugRenderTag);
+    const c = vec4.create();
+    switch (color.Color) {
+      case 'blue': vec4.set(c, 0.1, 0.1, 1, 1); break;
+      case 'green': vec4.set(c, 0.1, 1, 0.1, 1); break;
+      default: vec4.set(c, 0.5, 0.5, 0.5, 1); break;
     }
-    return component;
+    return DebugMarkerUtil.attachDebugMarker(entity, gl, lambertShader, c);
   }
 }

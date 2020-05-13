@@ -8,7 +8,7 @@ export class GreenAiComponent {
     public ReactionTimeDelay: number,
     public ScanRadius: number,
     public CurrentAction: GreenAiStrategy,
-    public NextStrategy: GreenAiStrategyTransition|undefined,
+    public NextStrategy: GreenAiStrategyTransition|null,
     public RandFn: ()=>number) {}
 }
 

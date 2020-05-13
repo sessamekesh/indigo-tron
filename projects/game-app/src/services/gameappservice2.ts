@@ -22,7 +22,6 @@ import { LightcycleUpdateSystem2 } from '@libgamemodel/lightcycle/lightcycleupda
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
 import { LightcycleLambertRenderResourcesComponent, ArenaFloorReflectionFramebufferComponent, ArenaFloorReflectionTextureComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
-import { CameraRigSystem2, CameraRigSystemConfigurationComponent } from '@libgamemodel/camera/camerarig2.system';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
 import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
@@ -47,11 +46,10 @@ import { GreenAiSystem } from '@libgamemodel/ai/greenai.system';
 import { GreenAiUtil } from '@libgamemodel/ai/greenai.util';
 import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
-import { CameraRig3System } from '@libgamemodel/camera/camerarig3.system';
-import { CameraRig4System } from '@libgamemodel/camera/camerarig4.system';
-import { CameraRig4Util } from '@libgamemodel/camera/camerarig4.util';
 import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
 import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
+import { GreenAiGoalDebugSystem } from '@libgamemodel/debug/greenaigoal.debugsystem';
+import { DrawGreenAiGoalDebugSystem } from '@libgamerender/debug/drawgreenaigoal.debugsystem';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -72,6 +70,7 @@ export class GameAppService2 {
   static async create(
       gl: WebGL2RenderingContext, gameAppUiEventManager: IEventManager<GameAppUIEvents>) {
     const ecs = new ECSManager();
+    window['ecs'] = ecs;
 
     const gameAppService = new GameAppService2(gl, ecs, gameAppUiEventManager);
     // Bootstrap GL resources for initial play before finishing "create"
@@ -120,7 +119,6 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleCollisionSystem);
     ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
-    //ecs.addSystem2(CameraRigSystem2);
     ecs.addSystem2(CameraRig5System);
     ecs.addSystem2(GreenAiSystem);
     ecs.addSystem2(AiSteeringSystem);
@@ -141,6 +139,8 @@ export class GameAppService2 {
     //
     // Debug systems (and debug renderable generation)
     //
+    ecs.addSystem2(GreenAiGoalDebugSystem);
+    ecs.addSystem2(DrawGreenAiGoalDebugSystem);
     // ecs.addSystem2(DebugFutureLightcyclePositionSystem);
     // ecs.addSystem2(DrawFutureLightcyclePositionSystem);
 
@@ -277,7 +277,6 @@ export class GameAppService2 {
     // System run-time configuration
     //
     const configurationEntity = ecs.createEntity();
-    configurationEntity.addComponent(CameraRigSystemConfigurationComponent, 4.5, 12, 55);
     configurationEntity.addComponent(
       UpdatePhysicsSystemConfigComponent,
       /* UpdateTick */ 1 / 180,
@@ -298,37 +297,22 @@ export class GameAppService2 {
     });
     mainPlayerEntity.addComponent(LightcycleColorComponent, 'blue');
     mainPlayerEntity.addComponent(MainPlayerComponent);
-    // LightcycleUtils.attachCameraRigToLightcycle(
-    //   mainPlayerEntity, vec3.fromValues(0, 7, -18), camera,
-    //   this.renderProviders_.SceneNodeFactory.get());
-    // CameraRig3Util.attachCameraRigToLightcycle(
-    //   ecs,
-    //   mainPlayerEntity,
-    //   camera,
-    //   /* lookAtFront */ 10,
-    //   /* positionBehind */ 56,
-    //   /* Height */ 15, this.renderProviders_.SceneNodeFactory.get(),
-    //   this.renderProviders_.Vec3Allocator.get(),
-    //   this.renderProviders_.OwnedVec3Allocator.get(),
-    //   /* bounding sphere size */ 1.25);
 
-    // TODO (sessamekesh): The lightcycle seems to move in a really jittery way after this, why?
     const cameraRigEntity = ecs.createEntity();
     cameraRigEntity.addComponent(
       CameraRig5Component,
       /* Camera */ camera,
-      /* CameraHeight */ 12.5,
-      /* LookAtHeight */ 2,
+      /* CameraHeight */ 8.5,
+      /* LookAtHeight */ 2.5,
       /* WallCollisionRadius */ 0.5,
-      /* FollowDistance */ 50,
-      /* LeadDistance */ 165,
+      /* FollowDistance */ 40,
+      /* LeadDistance */ 1,
       /* FollowCurveTime */ 0.1,
       /* LeadCurvetime */ 0.35,
       /* CarEntity */ mainPlayerEntity,
       /* GoalApproachMinVelocity */ 50,
-      /* GoalApproachMaxVelocity */ 350,
+      /* GoalApproachMaxVelocity */ 250,
       /* GoalApproachMaxDistance */ 70);
-    window['camera'] = cameraRigEntity.getComponent(CameraRig5Component);
 
     GreenAiUtil.createAiPlayer(
       ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', Math.random);
@@ -372,9 +356,6 @@ export class GameAppService2 {
     const frame = () => {
       const now = performance.now();
       const msDt = now - lastFrame;
-      if (msDt > (1000 / 45)) {
-        console.warn('Slow frame detected: ' + msDt + ' which is ' + (1000 / msDt) + ' fps');
-      }
       lastFrame = now;
 
       this.ecs.update(msDt);

@@ -5,6 +5,7 @@ import { LightcycleComponent2 } from "@libgamemodel/lightcycle/lightcycle.compon
 import { Entity } from "@libecs/entity";
 import { LightcycleUtils } from "@libgamemodel/lightcycle/lightcycleutils";
 import { WallComponent2 } from "@libgamemodel/wall/wallcomponent";
+import { CameraRig5Util } from "@libgamemodel/camera/camerarig5.util";
 
 /**
  * Scene Mode Utility
@@ -72,7 +73,7 @@ export class SceneModeUtil {
       const nextPlayer = remainingPlayers[Math.floor(Math.random() * remainingPlayers.length)];
 
       if (nextPlayer) {
-        LightcycleUtils.moveCameraRigToLightcycle(player, nextPlayer);
+        CameraRig5Util.moveCameraRig(ecs, player, nextPlayer);
       }
     }
 

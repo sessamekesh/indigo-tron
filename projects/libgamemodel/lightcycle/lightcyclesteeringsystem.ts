@@ -18,6 +18,10 @@ export class LightcycleSteeringSystem extends ECSSystem {
   start() { return true; }
 
   update(ecs: ECSManager, msDt: number) {
+    if (SceneModeUtil.isPaused(ecs)) {
+      return;
+    }
+
     const dt = msDt / 1000;
     const {
       BikeInputManager: bikeInputManager
