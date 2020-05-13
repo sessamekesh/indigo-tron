@@ -48,8 +48,6 @@ import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecol
 import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
 import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
 import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
-import { GreenAiGoalDebugSystem } from '@libgamemodel/debug/greenaigoal.debugsystem';
-import { DrawGreenAiGoalDebugSystem } from '@libgamerender/debug/drawgreenaigoal.debugsystem';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -139,8 +137,8 @@ export class GameAppService2 {
     //
     // Debug systems (and debug renderable generation)
     //
-    ecs.addSystem2(GreenAiGoalDebugSystem);
-    ecs.addSystem2(DrawGreenAiGoalDebugSystem);
+    // ecs.addSystem2(GreenAiGoalDebugSystem);
+    // ecs.addSystem2(DrawGreenAiGoalDebugSystem);
     // ecs.addSystem2(DebugFutureLightcyclePositionSystem);
     // ecs.addSystem2(DrawFutureLightcyclePositionSystem);
 
