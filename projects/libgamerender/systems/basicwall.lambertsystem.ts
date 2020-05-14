@@ -18,7 +18,11 @@ import { OverrideAmbientCoefficientComponent } from '@libgamerender/components/l
 import { LightcycleColorComponent, LightcycleColor } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 
 export class WallGeometryComponent {
-  constructor(public Geo: LambertGeo, public BlueTexture: Texture, public GreenTexture: Texture) {}
+  constructor(
+    public Geo: LambertGeo,
+    public BlueTexture: Texture,
+    public GreenTexture: Texture,
+    public RedTexture: Texture) {}
 }
 
 export class BasicWallLambertSystem extends ECSSystem {
@@ -30,9 +34,12 @@ export class BasicWallLambertSystem extends ECSSystem {
       gl, vec4.fromValues(0.1, 0.1, 0.98, 1), vec4.fromValues(0, 0, 1, 1), 32, 32, 8, 8, 8, 8);
     const greenWallTexture = FloorTileTexture.create(
       gl, vec4.fromValues(0.1, 0.98, 0.1, 1), vec4.fromValues(0, 1, 0, 1), 32, 32, 8, 8, 8, 8);
+    const redWallTexture = FloorTileTexture.create(
+      gl, vec4.fromValues(0.98, 0.1, 0.1, 1), vec4.fromValues(1, 0, 0, 1), 32, 32, 8, 8, 4, 4);
 
     const geoEntity = ecs.createEntity();
-    geoEntity.addComponent(WallGeometryComponent, wallGeo, blueWallTexture, greenWallTexture);
+    geoEntity.addComponent(
+      WallGeometryComponent, wallGeo, blueWallTexture, greenWallTexture, redWallTexture);
     return true;
   }
 
@@ -94,6 +101,8 @@ export class BasicWallLambertSystem extends ECSSystem {
       let texture: Texture;
       if (color === 'blue') {
         texture = wallGeoComponent.BlueTexture;
+      } else if (color === 'red') {
+        texture = wallGeoComponent.RedTexture;
       } else {
         texture = wallGeoComponent.GreenTexture;
       }

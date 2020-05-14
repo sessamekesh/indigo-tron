@@ -6,7 +6,7 @@ import { GreenAiComponent, GreenAiStrategy } from "./greenai.component";
 import { FloorComponent } from "@libgamemodel/components/floor.component";
 import { AiControlComponent } from "./aicontrol.component";
 import { MathUtils } from "@libutil/mathutils";
-import { LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
+import { LightcycleColorComponent, LightcycleColor } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 import { LifecycleOwnedAllocator } from "@libutil/allocator";
 import { ArenaCollisionUtil } from "@libgamemodel/arena/arenacollisionutil";
 
@@ -18,6 +18,7 @@ export class GreenAiUtil {
       startLocation: vec2,
       startAngle: number,
       difficulty: GREEN_AI_DIFFICULTY,
+      color: LightcycleColor,
       randFn: ()=>number): Entity {
     const entity = ecs.createEntity();
 
@@ -44,7 +45,7 @@ export class GreenAiUtil {
       randFn);
 
     entity.addComponent(AiControlComponent, 1.85, startAngle);
-    entity.addComponent(LightcycleColorComponent, 'green');
+    entity.addComponent(LightcycleColorComponent, color);
 
     return entity;
   }
@@ -153,8 +154,11 @@ export class GreenAiUtil {
         // no-op: continue along current path
         break;
       case 'AVOID_WALL':
-        const toWallCornerX = strategy.wall.x1 - currentPos[0];
-        const toWallCornerZ = strategy.wall.y1 - currentPos[1];
+        // TODO (sessamekesh): Normalize these, and extend by some specific distance
+        const extendedWallCornerX = strategy.wall.x1 + (strategy.wall.x1 - strategy.wall.x0) * 2;
+        const extendedWallCornerZ = strategy.wall.y1 + (strategy.wall.y1 - strategy.wall.y0) * 2;
+        const toWallCornerX = extendedWallCornerX - currentPos[0];
+        const toWallCornerZ = extendedWallCornerZ - currentPos[1];
         const goalOrientation = MathUtils.clampAngle(Math.atan2(toWallCornerX, toWallCornerZ));
         // Hack to adjust the angle to avoid collision - may require more thought.
         const dir = MathUtils.getAngleTowardsGoal(currentOrientation, goalOrientation, 0.001);

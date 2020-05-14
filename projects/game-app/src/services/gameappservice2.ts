@@ -313,9 +313,9 @@ export class GameAppService2 {
       /* GoalApproachMaxDistance */ 70);
 
     GreenAiUtil.createAiPlayer(
-      ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', Math.random);
+      ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', 'green', Math.random);
     GreenAiUtil.createAiPlayer(
-      ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'easy', Math.random);
+      ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'easy', 'red', Math.random);
   }
 
   private static loadInputResources(ecs: ECSManager, canvas: HTMLCanvasElement) {
