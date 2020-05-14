@@ -1,6 +1,7 @@
 import { vec2 } from "gl-matrix";
 import { Entity } from "@libecs/entity";
 import { OwnedResource } from "@libutil/allocator";
+import { LineSegment2D } from "@libutil/math/linesegment";
 
 export class GreenAiComponent {
   constructor(
@@ -14,7 +15,7 @@ export class GreenAiComponent {
 
 export type GreenAiStrategy = {
   action: 'AVOID_WALL',
-  wallEntity: Entity,
+  wall: LineSegment2D,
 } | {
   action: 'AVOID_PLAYER',
   playerEntity: Entity,

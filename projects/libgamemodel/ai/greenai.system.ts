@@ -13,25 +13,11 @@ import { FloorComponent } from "@libgamemodel/components/floor.component";
  * Green AI system. Aggressive when confronted, but otherwise just sorta wanders about randomly.
  * Intended to be a machine that must be actively sought out and destroyed.
  *
- * TODO (sessamekesh): Also write a "pink" which actively seeks out a random bike to cut them off.
- * TODO (sessamekesh): Also write a "orange" is like green, but avoids players without engaging.
+ * TODO (sessamekesh): Use a state machine instead, this is getting unweildly.
  */
 export class GreenAiSystem extends ECSSystem {
   start() { return true; }
 
-  // TODO (sessamekesh): Write the AI system!
-  // - Avoid imminent collisions (turn in direction that is furthest from wall)
-  // - If there is a nearby player, extrapolate their path 2/3 seconds, and...
-  //   + Avoid any imminent collision
-  //   + Try to create an imminent collision for them
-  //   + If both are impossible, ignore it.
-  // - If there is no destination spot, pick one
-  // - Travel in the direction towards the destination spot
-  //   + Pick seven lines in a cone in the direction towards the destination.
-  //   + Pick the closest line that does not collide with any existing walls, or the line with the
-  //     longest distance until it collides if none are available.
-  // Difficulty level adjustment: Delay response to actions for a time before performing them,
-  //  and adjust the distance it scans for danger / players
   update(ecs: ECSManager, msDt: number) {
     if (SceneModeUtil.isPaused(ecs)) {
       return;
@@ -52,7 +38,10 @@ export class GreenAiSystem extends ECSSystem {
       if (greenAi.NextStrategy) {
         greenAi.NextStrategy.reactionTimeRemaining -= dt;
       }
-      if (greenAi.NextStrategy && greenAi.NextStrategy.reactionTimeRemaining <= 0) {
+      if (greenAi.NextStrategy
+          && (greenAi.NextStrategy.reactionTimeRemaining <= 0
+              || (greenAi.CurrentAction.action === 'AVOID_WALL'
+                  && greenAi.NextStrategy.nextStrategy.action === 'AVOID_WALL'))) {
         greenAi.CurrentAction = greenAi.NextStrategy.nextStrategy;
         GreenAiUtil.cleanupStrategy(greenAi.NextStrategy.nextStrategy);
         greenAi.NextStrategy = null;
@@ -63,18 +52,21 @@ export class GreenAiSystem extends ECSSystem {
       }
 
       const action = tempVec3.get(1, (lightcyclePos) => {
-        return tempVec2.get(1, (lightcyclePos2) => {
+        return tempVec2.get(2, (lightcyclePos2, lightcycleDir2) => {
           lightcycle.BodySceneNode.getPos(lightcyclePos);
           vec2.set(lightcyclePos2, lightcyclePos[0], lightcyclePos[2]);
-          // TODO (sessamekesh): Inject in the randFn()
+          lightcycleDir2[0] = Math.sin(lightcycle.BodySceneNode.getRotAngle());
+          lightcycleDir2[1] = Math.cos(lightcycle.BodySceneNode.getRotAngle());
           return GreenAiUtil.getStrategyRecommendation(
-            ecs, greenAi, lightcyclePos2, vec2Allocator, Math.random, arenaFloorComponent);
+            ecs, greenAi, lightcyclePos2, lightcycleDir2, vec2Allocator, greenAi.RandFn,
+            arenaFloorComponent);
         });
       });
 
       if (!GreenAiUtil.strategyIsEqual(action, greenAi.CurrentAction)) {
         if (!greenAi.NextStrategy
             || !GreenAiUtil.strategyIsEqual(action, greenAi.NextStrategy.nextStrategy)) {
+          if (greenAi.NextStrategy) GreenAiUtil.cleanupStrategy(greenAi.NextStrategy.nextStrategy);
           greenAi.NextStrategy = {
             nextStrategy: action,
             reactionTimeRemaining: greenAi.ReactionTimeDelay,
@@ -86,7 +78,9 @@ export class GreenAiSystem extends ECSSystem {
         return tempVec2.get(1, (lightcyclePos2) => {
           lightcycle.BodySceneNode.getPos(lightcyclePos);
           vec2.set(lightcyclePos2, lightcyclePos[0], lightcyclePos[2]);
-          GreenAiUtil.applyStrategyRecommendation(greenAi.CurrentAction, aiControl, lightcyclePos2);
+          GreenAiUtil.applyStrategyRecommendation(
+            greenAi.CurrentAction, aiControl, lightcyclePos2,
+            lightcycle.BodySceneNode.getRotAngle());
         });
       });
     });

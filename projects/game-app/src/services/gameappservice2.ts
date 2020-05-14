@@ -286,7 +286,7 @@ export class GameAppService2 {
     //
     // Initial game state
     //
-    EnvironmentUtils.spawnArenaFloor(ecs, 500, 500);
+    EnvironmentUtils.spawnArenaFloor(ecs, 250, 250);
     const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
       Position: vec3.fromValues(5, 0, 0),
       Orientation: glMatrix.toRadian(180),
@@ -314,6 +314,8 @@ export class GameAppService2 {
 
     GreenAiUtil.createAiPlayer(
       ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', Math.random);
+    GreenAiUtil.createAiPlayer(
+      ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'easy', Math.random);
   }
 
   private static loadInputResources(ecs: ECSManager, canvas: HTMLCanvasElement) {
@@ -356,7 +358,11 @@ export class GameAppService2 {
       const msDt = now - lastFrame;
       lastFrame = now;
 
-      this.ecs.update(msDt);
+      // For debugging: Skip absurdly long frames
+      if (msDt < 600) {
+        this.ecs.update(msDt);
+      }
+
       this.frameCapture = requestAnimationFrame(frame);
     }
     this.frameCapture = requestAnimationFrame(frame);

@@ -1,4 +1,4 @@
-import { vec3, quat } from "gl-matrix";
+import { vec3, quat, vec2 } from "gl-matrix";
 import { TempGroupAllocator } from "./allocator";
 
 export type RandomNumberFn = ()=>number;
@@ -86,5 +86,10 @@ export class MathUtils {
 
   static lerp(min: number, max: number, t: number) {
     return (max - min) * MathUtils.clamp(t, 0, 1) + min;
+  }
+
+  // Not really a cross product, but useful in collision detection of lines.
+  static crossVec2(a: vec2, b: vec2): number {
+    return a[0] * b[1] - a[1] * b[0];
   }
 }

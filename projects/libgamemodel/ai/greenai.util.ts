@@ -8,6 +8,7 @@ import { AiControlComponent } from "./aicontrol.component";
 import { MathUtils } from "@libutil/mathutils";
 import { LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 import { LifecycleOwnedAllocator } from "@libutil/allocator";
+import { ArenaCollisionUtil } from "@libgamemodel/arena/arenacollisionutil";
 
 type GREEN_AI_DIFFICULTY = 'easy'|'medium'|'hard';
 
@@ -55,17 +56,26 @@ export class GreenAiUtil {
   }
 
   static getStrategyRecommendation(
-      ecs: ECSManager, component: GreenAiComponent, lightcyclePos: vec2,
+      ecs: ECSManager, component: GreenAiComponent, lightcyclePos: vec2, lightcycleDir: vec2,
       vec2Allocator: LifecycleOwnedAllocator<vec2>, randFn: ()=>number,
       arenaDimensions: FloorComponent): GreenAiStrategy {
-    // TODO (sessamekesh): If there is an imminent collision, avoid it
-
     // TODO (sessamekesh): If there is a nearby player, extrapolate their path 2/3 seconds, and...
     //  + Avoid any imminent collision
     //   ~ Pick the non-colliding path closest to straight forward
     //   ~ If all paths are colliding, pick the one with the longest distance travelled to collision
     //  + Try to create an imminent collision for them
     //  + If neither case is relevant (e.g., no collision paths, ignore the player)
+
+    // Avoid any imminent wall collision
+    // TODO (sessamekesh): Use the right and left collision bounds instead of the lightcycle!
+    const imminentCollision = ArenaCollisionUtil.getClosestWallInPath(
+      ecs, lightcyclePos, lightcycleDir, component.ScanRadius);
+    if (imminentCollision) {
+      return {
+        action: 'AVOID_WALL',
+        wall: imminentCollision,
+      };
+    }
 
     // If we are within 85 units of the goal location, pick a new goal location
     const sqDist = vec2.squaredDistance(lightcyclePos, component.CurrentGoalLocation);
@@ -121,7 +131,8 @@ export class GreenAiUtil {
     if (a.action === 'AVOID_WALL') {
       if (b.action !== 'AVOID_WALL') return false;
 
-      return a.wallEntity === b.wallEntity;
+      return a.wall.x0 === b.wall.x0 && a.wall.x1 === b.wall.x1
+        && a.wall.y0 === b.wall.y0 && a.wall.y1 === b.wall.y1;
     }
 
     if (a.action === 'CUT_OFF_PLAYER') {
@@ -134,11 +145,24 @@ export class GreenAiUtil {
   }
 
   static applyStrategyRecommendation(
-      strategy: GreenAiStrategy, control: AiControlComponent, currentPos: vec2) {
+      strategy: GreenAiStrategy, control: AiControlComponent, currentPos: vec2,
+      currentOrientation: number) {
     // TODO (sessamekesh): Fill in this method
     switch (strategy.action) {
       case 'COAST':
         // no-op: continue along current path
+        break;
+      case 'AVOID_WALL':
+        const toWallCornerX = strategy.wall.x1 - currentPos[0];
+        const toWallCornerZ = strategy.wall.y1 - currentPos[1];
+        const goalOrientation = MathUtils.clampAngle(Math.atan2(toWallCornerX, toWallCornerZ));
+        // Hack to adjust the angle to avoid collision - may require more thought.
+        const dir = MathUtils.getAngleTowardsGoal(currentOrientation, goalOrientation, 0.001);
+        if (dir > currentOrientation) {
+          control.GoalOrientation = goalOrientation + 0.5;
+        } else {
+          control.GoalOrientation = goalOrientation - 0.5;
+        }
         break;
       case 'APPROACH_LOCATION':
         // Find the angle required to get from self to there, and use it!
@@ -154,17 +178,17 @@ export class GreenAiUtil {
 
   private static reactionTimeDelay(difficulty: GREEN_AI_DIFFICULTY) {
     switch (difficulty) {
-      case 'easy': return 0.75;
-      case 'medium': return 0.35;
-      case 'hard': return 0.125;
+      case 'easy': return 0.25;
+      case 'medium': return 0.2;
+      case 'hard': return 0.175;
     }
   }
 
   private static scanRadius(difficulty: GREEN_AI_DIFFICULTY) {
     switch (difficulty) {
-      case 'easy': return 8;
-      case 'medium': return 15;
-      case 'hard': return 30;
+      case 'easy': return 30;
+      case 'medium': return 50;
+      case 'hard': return 100;
     }
   }
 }
