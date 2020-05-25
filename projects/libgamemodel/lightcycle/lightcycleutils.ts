@@ -2,13 +2,15 @@ import { RandomNumberFn, MathUtils } from '@libutil/mathutils';
 import { LineSegment2DCollision } from '@libutil/math/linesegment';
 import { WallComponent, WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { LightcycleComponent2 } from './lightcycle.component';
-import { glMatrix, vec3 } from 'gl-matrix';
+import { glMatrix, vec3, vec2 } from 'gl-matrix';
 import { Entity } from '@libecs/entity';
 import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { TempGroupAllocator } from '@libutil/allocator';
 import { Circle3 } from '@libutil/math/circle3';
 import { LightcycleSteeringStateComponent } from './lightcyclesteeringstate.component';
+import { ECSManager } from '@libecs/ecsmanager';
+import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 
 const FULL_COLLISION_DAMAGE = 75;
 
@@ -70,6 +72,19 @@ export class LightcycleUtils {
       bikeSteeringAdjustment: (randomFn() - 0.5) * glMatrix.toRadian(10),
       depth: collision.depth,
     };
+  }
+
+  static currentPosition2(o: vec2, entity: Entity, ecs: ECSManager): boolean {
+    const vec3Allocator = ecs.getSingletonComponent(MathAllocatorsComponent)!.Vec3;
+    const lightcycle = entity.getComponent(LightcycleComponent2);
+    if (!vec3Allocator || !lightcycle) return false;
+
+    vec3Allocator.get(1, (pos3) => {
+      lightcycle.BodySceneNode.getPos(pos3);
+      vec2.set(o, pos3[0], pos3[2]);
+    });
+
+    return true;
   }
 
   /** Find the approximate position of the lightcycle at some time in the future (maybe negative) */
