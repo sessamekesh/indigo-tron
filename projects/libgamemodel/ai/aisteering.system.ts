@@ -1,4 +1,4 @@
-import { ECSSystem } from "@libecs/ecssystem";
+  import { ECSSystem } from "@libecs/ecssystem";
 import { ECSManager } from "@libecs/ecsmanager";
 import { LightcycleComponent2 } from "@libgamemodel/lightcycle/lightcycle.component";
 import { AiControlComponent } from "./aicontrol.component";

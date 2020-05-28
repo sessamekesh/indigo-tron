@@ -37,6 +37,6 @@ module.exports = {
   },
   watch: true,
   devServer: {
-    contentBase: ['./', path.join(__dirname, '../game-app/src')],
+    contentBase: ['./', path.join(__dirname, '../')],
   }
 };

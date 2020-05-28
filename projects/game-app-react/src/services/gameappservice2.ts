@@ -29,6 +29,8 @@ import { LightcycleSteeringSystem } from '@libgamemodel/lightcycle/lightcycleste
 import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
 import { LightcycleLambertSystem } from '@libgamerender/systems/lightcycle.lambertsystem';
 import { GameAppRenderSystem } from '@libgamerender/systems/gameapp.rendersystem';
+import { GreenAiUtil2 } from '@libgamemodel/ai2/greenai/greenai2.util';
+import { AIStateManagerSystem } from '@libgamemodel/ai2/aistatemanager.system';
 import { BasicWallLambertSystem } from '@libgamerender/systems/basicwall.lambertsystem';
 import { EnvironmentArenaFloorSystem } from '@libgamerender/systems/environment.arenafloorsystem';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
@@ -42,8 +44,6 @@ import { assert } from '@libutil/loadutils';
 import { Texture } from '@librender/texture/texture';
 import { ArenaWallRenderSystem } from '@libgamerender/arena/arenawall.rendersystem';
 import { AiSteeringSystem } from '@libgamemodel/ai/aisteering.system';
-import { GreenAiSystem } from '@libgamemodel/ai/greenai.system';
-import { GreenAiUtil } from '@libgamemodel/ai/greenai.util';
 import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
 import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
@@ -118,7 +118,7 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
     ecs.addSystem2(CameraRig5System);
-    ecs.addSystem2(GreenAiSystem);
+    ecs.addSystem2(AIStateManagerSystem);
     ecs.addSystem2(AiSteeringSystem);
 
     //
@@ -286,7 +286,7 @@ export class GameAppService2 {
     //
     // Initial game state
     //
-    EnvironmentUtils.spawnArenaFloor(ecs, 250, 250);
+    EnvironmentUtils.spawnArenaFloor(ecs, 500, 500);
     const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
       Position: vec3.fromValues(5, 0, 0),
       Orientation: glMatrix.toRadian(180),
@@ -312,10 +312,10 @@ export class GameAppService2 {
       /* GoalApproachMaxVelocity */ 250,
       /* GoalApproachMaxDistance */ 70);
 
-    GreenAiUtil.createAiPlayer(
-      ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'easy', 'green', Math.random);
-    GreenAiUtil.createAiPlayer(
-      ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'easy', 'red', Math.random);
+    GreenAiUtil2.createAiPlayer(
+      ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'green', 25, Math.random);
+    GreenAiUtil2.createAiPlayer(
+      ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'red', 75, Math.random);
   }
 
   private static loadInputResources(ecs: ECSManager, canvas: HTMLCanvasElement) {

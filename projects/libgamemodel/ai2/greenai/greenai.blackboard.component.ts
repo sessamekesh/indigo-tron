@@ -5,7 +5,11 @@ import { Entity } from "@libecs/entity";
 
 export interface GreenAiBlackboardTypes {
   'WanderGoal': OwnedResource<vec2>,
-  'WanderBounds': { minX: number, maxX: number, minZ: number, maxZ: number, }
+  'WallScanDistance': number,
+  'WanderBounds': { minX: number, maxX: number, minZ: number, maxZ: number, },
+  'OversteerTimeRemaining': number,
+  'OversteerTimeTotal': number,
+  'OversteerDirection': 'right'|'left',
 }
 
 export type GreenAiBlackboard = Blackboard<GreenAiBlackboardTypes>;
@@ -19,6 +23,8 @@ export class GreenAiBlackboardComponent {
       blackboard = entity.addComponent(
         GreenAiBlackboardComponent, new Blackboard<GreenAiBlackboardTypes>());
       entity.addListener('destroy', () => {
+        blackboard?.Blackboard.get('WanderGoal')?.ReleaseFn();
+
         blackboard?.Blackboard.clear();
       });
     }

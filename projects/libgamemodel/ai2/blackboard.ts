@@ -9,6 +9,10 @@ export class Blackboard<TypeMap> {
     return this.map.get(key);
   }
 
+  delete<KeyType extends keyof TypeMap>(key: KeyType) {
+    this.map.delete(key);
+  }
+
   forceGet<KeyType extends keyof TypeMap>(key: KeyType): TypeMap[KeyType] {
     const result = this.map.get(key);
     if (result == undefined) {

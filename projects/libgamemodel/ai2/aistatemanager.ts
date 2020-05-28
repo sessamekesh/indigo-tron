@@ -4,6 +4,8 @@ import { Entity } from "@libecs/entity";
 
 const MAX_ITERATIONS = 100;
 
+export type AIStateManagerMap = Map<AIStateKlass, AIState>;
+
 export class AIStateManager {
   private state: AIState;
 
@@ -13,12 +15,15 @@ export class AIStateManager {
 
   tick(ecs: ECSManager, entity: Entity, dt: number) {
     let iterations = 0;
-    let nextState = this.installedStates.get(this.state.transition(ecs, entity, dt));
+    let nextStateKey = this.state.transition(ecs, entity, dt);
+    let nextState = nextStateKey && this.installedStates.get(nextStateKey);
     while (nextState && nextState !== this.state) {
       this.state.onExitState(ecs, entity);
       nextState.onBeginState(ecs, entity);
       this.state = nextState;
-      nextState = this.installedStates.get(this.state.transition(ecs, entity, dt));
+      nextStateKey = this.state.transition(ecs, entity, dt);
+      if (!nextStateKey) break;
+      nextState = this.installedStates.get(nextStateKey);
       iterations++;
 
       if (iterations >= MAX_ITERATIONS) {
