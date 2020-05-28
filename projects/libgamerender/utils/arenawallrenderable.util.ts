@@ -5,7 +5,7 @@ import { ArenaWallShader } from '@librender/shader/arenawallshader';
 import { Klass } from '@libecs/klass';
 import { ECSManager } from '@libecs/ecsmanager';
 
-const dummy_color = vec3.fromValues(0.2, 0.2, 1);
+const dummy_color = vec3.fromValues(1, 1, 1);
 
 export class ArenaWallRenderableUtil {
   static render(
@@ -21,7 +21,8 @@ export class ArenaWallRenderableUtil {
       BaseColorTexture: textures.BaseColor,
       BaseColorTilingScale: renderable.BaseColorTilingScale,
       DistortionOffset: renderable.DistortionOffset,
-      ForceFieldColor: dummy_color,
+      ForceFieldColor: renderable.ForceFieldColor,
+      BaseColorRatio: renderable.BaseColorRatio,
       ForceFieldIntensityDisplacement: renderable.IntensityDisplacement,
       ForceFieldIntensityTexture: textures.Intensity,
       ForceFieldPatternTexture: textures.ForceField,

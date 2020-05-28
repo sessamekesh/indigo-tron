@@ -27,6 +27,8 @@ precision mediump float;
 
 in vec2 fUV;
 
+uniform float baseColorRatio;
+
 uniform vec3 forceFieldColor;
 uniform vec2 forceFieldIntensityDisplacement;
 uniform vec2 distortionOffset;
@@ -43,7 +45,7 @@ uniform sampler2D forceFieldPatternTexture;
 out vec4 color;
 
 void main() {
-  vec2 baseColorUV = fUV + texture(baseColorDistortionTexture, fUV + distortionOffset).rg;
+  vec2 baseColorUV = fUV + texture(baseColorDistortionTexture, fUV + distortionOffset).rg * 0.15;
   vec4 baseColor = texture(baseColorTexture, baseColorUV * baseColorTilingScale);
 
   float forceFieldIntensity =
@@ -56,7 +58,8 @@ void main() {
   float baseColorIntensity = 1.0 - forceFieldPatternColor.a;
   float forceFieldColorIntensity = forceFieldPatternColor.a;
 
-  color = (baseColor * 4.0 + vec4(forceFieldColor, 1.0)) * baseColorIntensity / 5.0
+  color = (baseColor * baseColorRatio
+            + vec4(forceFieldColor, 1.0) * (1.0 - baseColorRatio)) * baseColorIntensity
           + forceFieldPatternColor * forceFieldColorIntensity;
 }`;
 
@@ -80,6 +83,7 @@ type Uniforms = {
 
   BaseColorTexture: WebGLUniformLocation,
   BaseColorDistortionTexture: WebGLUniformLocation,
+  BaseColorRatio: WebGLUniformLocation,
   ForceFieldIntensityTexture: WebGLUniformLocation,
   ForceFieldPatternTexture: WebGLUniformLocation,
 };
@@ -93,6 +97,7 @@ export type ArenaWallRenderCall = {
   ForceFieldIntensityDisplacement: vec2,
   DistortionOffset: vec2,
 
+  BaseColorRatio: number,
   BaseColorTilingScale: vec2,
   IntensityTilingScale: vec2,
   ForceFieldTilingScale: vec2,
@@ -130,9 +135,10 @@ export class ArenaWallShader {
     const BaseColorDistortionTexture = gl.getUniformLocation(program, 'baseColorDistortionTexture');
     const ForceFieldIntensityTexture = gl.getUniformLocation(program, 'forceFieldIntensityTexture');
     const ForceFieldPatternTexture = gl.getUniformLocation(program, 'forceFieldPatternTexture');
+    const BaseColorRatio = gl.getUniformLocation(program, 'baseColorRatio');
     if (!matWorld || !matView || !matProj || !ForceFieldColor || !DistortionOffset
         || !ForceFieldIntensityDisplacement || !BaseColorTexture || !BaseColorDistortionTexture
-        || !ForceFieldIntensityTexture || !ForceFieldPatternTexture
+        || !ForceFieldIntensityTexture || !ForceFieldPatternTexture || !BaseColorRatio
         || !BaseColorTilingScale || !IntensityTilingScale || !ForceFieldTilingScale) {
       console.error(`Failed to get all uniform locations for arena wall shader: {
         MatWorld: ${matWorld},
@@ -148,6 +154,7 @@ export class ArenaWallShader {
         BaseColorTilingScale: ${BaseColorTilingScale},
         IntensityTilingScale: ${IntensityTilingScale},
         ForceFieldTilingScale: ${ForceFieldTilingScale},
+        BaseColorRatio: ${BaseColorRatio}
       }`);
       return null;
     }
@@ -171,7 +178,7 @@ export class ArenaWallShader {
       MatProj: matProj,
       BaseColorDistortionTexture, BaseColorTexture, DistortionOffset, ForceFieldColor,
       ForceFieldIntensityDisplacement, ForceFieldIntensityTexture, ForceFieldPatternTexture,
-      BaseColorTilingScale, ForceFieldTilingScale, IntensityTilingScale,
+      BaseColorTilingScale, ForceFieldTilingScale, IntensityTilingScale, BaseColorRatio,
     });
   }
 
@@ -192,6 +199,7 @@ export class ArenaWallShader {
     gl.uniform2fv(this.uniforms.ForceFieldIntensityDisplacement, call.ForceFieldIntensityDisplacement);
     gl.uniform2fv(this.uniforms.DistortionOffset, call.DistortionOffset);
 
+    gl.uniform1f(this.uniforms.BaseColorRatio, call.BaseColorRatio);
     gl.uniform2fv(this.uniforms.BaseColorTilingScale, call.BaseColorTilingScale);
     gl.uniform2fv(this.uniforms.IntensityTilingScale, call.IntensityTilingScale);
     gl.uniform2fv(this.uniforms.ForceFieldTilingScale, call.ForceFieldTilingScale);

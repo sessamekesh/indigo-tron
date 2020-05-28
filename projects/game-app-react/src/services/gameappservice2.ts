@@ -265,10 +265,10 @@ export class GameAppService2 {
     const renderSpawnConfigEntity = ecs.createEntity();
     renderSpawnConfigEntity.addComponent(
       ArenaWallRenderingConfigComponent,
-      /* BaseColorUVPerWorldUnit */ vec2.fromValues(0.125, 0.001),
+      /* BaseColorUVPerWorldUnit */ vec2.fromValues(0.025, 0.05),
       /* IntensityUVPerWorldUnit */ vec2.fromValues(0.025, 0.0125),
       /* ForceFieldUVPerWorldUnit */ vec2.fromValues(0.0725, 0.0725),
-      /* IntensityDisplacementUpdateRateInWorldUnits */ vec2.fromValues(0, -0.125),
+      /* IntensityDisplacementUpdateRateInWorldUnits */ vec2.fromValues(0, -0.325),
       /* DistortionOffsetUpdateRateInWorldUnits */ vec2.fromValues(0.035, 0.035));
 
     //
@@ -286,7 +286,7 @@ export class GameAppService2 {
     //
     // Initial game state
     //
-    EnvironmentUtils.spawnArenaFloor(ecs, 500, 500);
+    EnvironmentUtils.spawnArenaFloor(ecs, 250, 250);
     const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
       Position: vec3.fromValues(5, 0, 0),
       Orientation: glMatrix.toRadian(180),

@@ -8,4 +8,14 @@ Inspired by [RevoTRON](http://revotron.tripod.com/screens.htm), which is what in
 ## Building
 TODO (sessamekesh): Put in better notes here, this is all for you right now!
 
+## General TODO
+Here's a list of things I still need to do before launching this:
+- [ ] Minimap rendering
+- [ ] Game start state (button to begin game, start screen with AI wanderin around no collisions)
+- [ ] Game victory state (victory - stop bike, show fireworks)
+- [ ] Game loss state (follow another lightcycle, "restart game" button)
+- [ ] Music
+- [ ] Wall collision particle effect
+- [ ] Revamp collision physics (constraints based, physics update cycle)
+
 ng build --prod --base-href /game-app/

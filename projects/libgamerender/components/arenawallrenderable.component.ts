@@ -1,4 +1,4 @@
-import { mat4, vec2 } from 'gl-matrix';
+import { mat4, vec2, vec3 } from 'gl-matrix';
 import { ArenaWallGeo } from '@librender/geo/arenawallgeo';
 import { Texture } from '@librender/texture/texture';
 
@@ -11,7 +11,9 @@ export class ArenaWallRenderableComponent {
     public IntensityDisplacement: vec2,
     public IntensityDisplacementUpdateRate: vec2,
     public DistortionOffset: vec2,
-    public DistortionOffsetUpdateRate: vec2) {}
+    public DistortionOffsetUpdateRate: vec2,
+    public ForceFieldColor: vec3,
+    public BaseColorRatio: number) {}
 }
 
 export class ArenaWallRenderingConfigComponent {

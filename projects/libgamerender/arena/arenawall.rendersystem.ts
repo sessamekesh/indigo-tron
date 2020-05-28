@@ -6,6 +6,10 @@ import { ArenaWallRenderableComponent, ArenaWallRenderingConfigComponent } from 
 import { GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { mat4, quat, vec3, vec2 } from 'gl-matrix';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
+import { ArenaWallOscillation } from './arenawalloscillation.component';
+import { ArenaWallColorMapComponent } from './arenawallcolormap.component';
+import { LightcycleColor } from '@libgamemodel/lightcycle/lightcyclecolor.component';
+import { SceneModeUtil } from '@libgamemodel/scenemode/scenemodeutil';
 
 export class ArenaWallRenderSystem extends ECSSystem {
   start(ecs: ECSManager) {
@@ -21,12 +25,31 @@ export class ArenaWallRenderSystem extends ECSSystem {
     ecs.iterateComponents([ArenaWallComponent], (entity, logicalComponent) => {
       const renderComponent = this.createRenderComponentIfMissing(
         ecs, entity, logicalComponent, gl);
+      const min = 0.885;
+      const oscillation = this.getOscillationComponent(entity);
+      oscillation.RemainingOscillationTime -= dt;
+      if (oscillation.RemainingOscillationTime >= 0) {
+        const t = oscillation.RemainingOscillationTime / oscillation.OscillationTime - 0.5
+        const str = Math.cos(t * Math.PI);
+        renderComponent.BaseColorRatio = (1.0 - str) * (1.0 - min) + min;
+      } else {
+        oscillation.DelayTimeRemaining -= dt;
+        if (oscillation.DelayTimeRemaining <= 0) {
+          // Switch to oscillating
+          oscillation.RemainingOscillationTime = oscillation.OscillationTime;
+          oscillation.DelayTimeRemaining = oscillation.DelayTime;
+          renderComponent.BaseColorRatio = 1.0;
+        }
+      }
+
       renderComponent.DistortionOffset[0] += renderComponent.DistortionOffsetUpdateRate[0] * dt;
       renderComponent.DistortionOffset[1] += renderComponent.DistortionOffsetUpdateRate[1] * dt;
       renderComponent.IntensityDisplacement[0] +=
         renderComponent.IntensityDisplacementUpdateRate[0] * dt;
       renderComponent.IntensityDisplacement[1] +=
         renderComponent.IntensityDisplacementUpdateRate[1] * dt;
+      renderComponent.ForceFieldColor = this.getWallColor(
+        entity, SceneModeUtil.getWinningPlayerColor(ecs));
     });
   }
 
@@ -43,7 +66,7 @@ export class ArenaWallRenderSystem extends ECSSystem {
       const wallLength = Math.sqrt(
         (wallComponent.LineSegment.x1 - wallComponent.LineSegment.x0) ** 2
           + (wallComponent.LineSegment.y1 - wallComponent.LineSegment.y0) ** 2);
-      const wallHeight = 50;
+      const wallHeight = 22.5;
       Quat.get(1, (rot) => {
         Vec3.get(3, (pos, scl, axis) => {
           vec3.set(axis, 0, wallComponent.FuckIt ? -1 : 1, 0);
@@ -78,6 +101,8 @@ export class ArenaWallRenderSystem extends ECSSystem {
       const DistortionOffset = vec2.fromValues(0, 0);
       const DistortionOffsetUpdateRate = vec2.create();
       vec2.copy(DistortionOffsetUpdateRate, config.DistortionOffsetUpdateRateInWorldUnits);
+      const ForceFieldColor = vec3.fromValues(1, 1, 1); // Neutral
+      const BaseColorRatio = 0.9;
       component = entity.addComponent(
         ArenaWallRenderableComponent,
         MatWorld,
@@ -87,8 +112,36 @@ export class ArenaWallRenderSystem extends ECSSystem {
         IntensityDisplacement,
         IntensityDisplacementUpdateRate,
         DistortionOffset,
-        DistortionOffsetUpdateRate);
+        DistortionOffsetUpdateRate,
+        ForceFieldColor,
+        BaseColorRatio);
     }
     return component;
+  }
+
+  private getOscillationComponent(entity: Entity) {
+    let component = entity.getComponent(ArenaWallOscillation);
+    if (!component) {
+      component = entity.addComponent(
+        ArenaWallOscillation,
+        /* OscillationTime */ 0.335,
+        /* RemainingOscillationTime */ 0,
+        /* DelayTime */ 1.25,
+        /* DelayTimeRemaining */ 0.65);
+    }
+    return component;
+  }
+
+  private getWallColor(entity: Entity, color: LightcycleColor): vec3 {
+    let component = entity.getComponent(ArenaWallColorMapComponent);
+    if (!component) {
+      component = entity.addComponent(
+        ArenaWallColorMapComponent, new Map(), vec3.fromValues(1, 1, 1));
+      component.ColorMap.set('blue', vec3.fromValues(0, 0, 1));
+      component.ColorMap.set('green', vec3.fromValues(0, 1, 0));
+      component.ColorMap.set('red', vec3.fromValues(1, 0, 0));
+    }
+
+    return component.ColorMap.get(color) || component.DefaultColor;
   }
 }

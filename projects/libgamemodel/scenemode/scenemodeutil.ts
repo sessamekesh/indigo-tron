@@ -1,6 +1,6 @@
 import { ECSManager } from "@libecs/ecsmanager";
 import { PauseStateComponent, GameEndStateComponent, MainPlayerComponent, PlayerDeadTag } from "@libgamemodel/components/commoncomponents";
-import { LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
+import { LightcycleColorComponent, LightcycleColor } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 import { LightcycleComponent2 } from "@libgamemodel/lightcycle/lightcycle.component";
 import { Entity } from "@libecs/entity";
 import { LightcycleUtils } from "@libgamemodel/lightcycle/lightcycleutils";
@@ -44,6 +44,18 @@ export class SceneModeUtil {
   static isPlayerAlive(ecs: ECSManager) {
     const player = ecs.getSingletonComponent(MainPlayerComponent);
     return !!player;
+  }
+
+  static getWinningPlayerColor(ecs: ECSManager) {
+    let highScore = 0;
+    let highColor: LightcycleColor = 'blue';
+    ecs.iterateComponents([LightcycleComponent2, LightcycleColorComponent], (_, lc, color) => {
+      if (lc.Vitality > highScore) {
+        highScore = lc.Vitality;
+        highColor = color.Color;
+      }
+    });
+    return highColor;
   }
 
   static killPlayer(ecs: ECSManager, player: Entity) {
