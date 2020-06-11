@@ -34,6 +34,9 @@ import { AIStateManagerSystem } from '@libgamemodel/ai2/aistatemanager.system';
 import { BasicWallLambertSystem } from '@libgamerender/systems/basicwall.lambertsystem';
 import { EnvironmentArenaFloorSystem } from '@libgamerender/systems/environment.arenafloorsystem';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
+import { MinimapComponent } from '@libgamerender/hud/minimap.component';
+import { HudConfigUpdateSystem } from '@libgamerender/hud/hudconfigupdate.system';
+import { MinimapRenderSystem } from '@libgamerender/hud/minimap.rendersystem';
 import { Key } from 'ts-key-enum';
 import { ShaderBuilderUtil } from '@libgamerender/utils/shaderbuilder.util';
 import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
@@ -48,6 +51,8 @@ import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecol
 import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
 import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
 import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
+import { Solid2DShader } from '@librender/shader/solid2dshader';
+import { HudViewportSingleton } from '@libgamerender/hud/hudviewport.singleton';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -135,6 +140,12 @@ export class GameAppService2 {
     ecs.addSystem2(ArenaWallRenderSystem);
 
     //
+    // HUD
+    //
+    ecs.addSystem2(HudConfigUpdateSystem);
+    ecs.addSystem2(MinimapRenderSystem);
+
+    //
     // Debug systems (and debug renderable generation)
     //
     // ecs.addSystem2(GreenAiGoalDebugSystem);
@@ -151,7 +162,10 @@ export class GameAppService2 {
     //
     // Shaders
     //
-    ShaderBuilderUtil.createShaders(ecs, gl, [LambertShader, ArenaFloorShader, ArenaWallShader]);
+    ShaderBuilderUtil.createShaders(
+      ecs,
+      gl,
+      [ LambertShader, ArenaFloorShader, ArenaWallShader, Solid2DShader ]);
 
     //
     // Geometry
@@ -229,6 +243,7 @@ export class GameAppService2 {
       OwnedMathAllocatorsComponent,
       this.renderProviders_.OwnedVec2Allocator.get(),
       this.renderProviders_.OwnedVec3Allocator.get(),
+      this.renderProviders_.OwnedVec4Allocator.get(),
       this.renderProviders_.OwnedMat4Allocator.get(),
       this.renderProviders_.OwnedQuatAllocator.get(),
       this.renderProviders_.PlaneAllocator.get());
@@ -316,6 +331,18 @@ export class GameAppService2 {
       ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'green', 25, Math.random);
     GreenAiUtil2.createAiPlayer(
       ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'red', 75, Math.random);
+
+    //
+    // HUD
+    //
+    HudViewportSingleton.attach(ecs);
+    const minimapEntity = ecs.createEntity();
+    minimapEntity.addComponent(
+      MinimapComponent,
+      /* MaxViewportWidth */ 0.25,
+      /* MaxViewportHeight */ 0.22,
+      /* TopPx */ 32,
+      /* RightPx */ 32);
   }
 
   private static loadInputResources(ecs: ECSManager, canvas: HTMLCanvasElement) {

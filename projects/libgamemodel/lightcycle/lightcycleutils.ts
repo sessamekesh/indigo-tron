@@ -2,15 +2,15 @@ import { RandomNumberFn, MathUtils } from '@libutil/mathutils';
 import { LineSegment2DCollision } from '@libutil/math/linesegment';
 import { WallComponent, WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { LightcycleComponent2 } from './lightcycle.component';
-import { glMatrix, vec3, vec2 } from 'gl-matrix';
+import { glMatrix, vec3, vec2, vec4 } from 'gl-matrix';
 import { Entity } from '@libecs/entity';
-import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
-import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { TempGroupAllocator } from '@libutil/allocator';
 import { Circle3 } from '@libutil/math/circle3';
 import { LightcycleSteeringStateComponent } from './lightcyclesteeringstate.component';
 import { ECSManager } from '@libecs/ecsmanager';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
+import { LightcycleColorComponent } from './lightcyclecolor.component';
+import { assert } from '@libutil/loadutils';
 
 const FULL_COLLISION_DAMAGE = 75;
 
@@ -247,6 +247,21 @@ export class LightcycleUtils {
       return MathUtils.clampAngle(lightcycle.BodySceneNode.getRotAngle() + glMatrix.toRadian(90));
     } else {
       return MathUtils.clampAngle(lightcycle.BodySceneNode.getRotAngle() - glMatrix.toRadian(90));
+    }
+  }
+
+  static getMinimapColor(entity: Entity) {
+    const lightcycleColor =
+      assert('LightcycleColorComponent', entity.getComponent(LightcycleColorComponent));
+    switch (lightcycleColor.Color) {
+      case 'blue':
+        return vec4.fromValues(0, 0, 1, 1);
+      case 'green':
+        return vec4.fromValues(0, 1, 0, 1);
+      case 'red':
+        return vec4.fromValues(1, 0, 0, 1);
+      default:
+        return vec4.fromValues(0.5, 0.5, 0.5, 1);
     }
   }
 }

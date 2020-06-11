@@ -17,5 +17,9 @@ Here's a list of things I still need to do before launching this:
 - [ ] Music
 - [ ] Wall collision particle effect
 - [ ] Revamp collision physics (constraints based, physics update cycle)
+- [ ] Asynchronously load all resources (right now it's serial, and takes awhile)
+- [ ] Examine if using an object pool is worthwhile at all - it looks like the answer is "NO!"
+- [ ] Create a joystick for mobile use (right hand side)
+- [ ] Make arena wall a more pretty thing to look at - moderate value, instead of dark
 
 ng build --prod --base-href /game-app/

@@ -38,6 +38,8 @@ export class TempGroupAllocator<T extends Object> {
 
   private release(ct: number) {
     this.nextIdx_ -= ct;
+    this.buffer_ = [];
+    this.nextIdx_ = 0;
   }
 
   clear(size: number = 4) {
@@ -66,8 +68,8 @@ export class LifecycleOwnedAllocator<T extends Object> {
     const idx = this.nextIdx_++;
     this.availability_[idx] = false;
     return {
-      Value: this.buffer_[idx],
-      ReleaseFn: () => this.release(idx),
+      Value: this.genFn(),//this.buffer_[idx],
+      ReleaseFn: ()=>{}//() => this.release(idx),
     };
   }
 

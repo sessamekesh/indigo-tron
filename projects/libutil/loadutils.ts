@@ -21,8 +21,8 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export function assert<T>(name: string, t: T|null): T {
-  if (!t) {
+export function assert<T>(name: string, t: T|null|undefined): T {
+  if (t == null) {
     throw new Error(`Failed to create element ${name}`);
   }
   return t;

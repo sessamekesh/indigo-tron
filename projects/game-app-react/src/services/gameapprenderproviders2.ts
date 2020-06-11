@@ -84,6 +84,7 @@ export class GameAppRenderProviders2 {
     () => new Circle3(vec3.create(), vec3.create(), 0)));
   readonly OwnedVec2Allocator = new Provider(() => new LifecycleOwnedAllocator(vec2.create));
   readonly OwnedVec3Allocator = new Provider(() => new LifecycleOwnedAllocator(vec3.create));
+  readonly OwnedVec4Allocator = new Provider(() => new LifecycleOwnedAllocator(vec4.create));
   readonly OwnedMat4Allocator = new Provider(() => new LifecycleOwnedAllocator(mat4.create));
   readonly OwnedQuatAllocator = new Provider(() => new LifecycleOwnedAllocator(quat.create));
   readonly PlaneAllocator = new Provider(() => new LifecycleOwnedAllocator(Plane.defaultPlane));

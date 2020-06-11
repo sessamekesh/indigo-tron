@@ -2,6 +2,39 @@ import { Entity } from './entity';
 import { Klass, Klass0 } from './klass';
 import { ECSSystem } from './ecssystem';
 
+// Helpers, for use in ECS query types later
+// Notice they use some ugly type transformations - this is, unfortunately, necessary for now.
+interface KlassObjBase {[name: string]: Klass<any>};
+function mapObject<A extends O[keyof O], B, O extends {[key: string]: any}>(o: O, f: (a: A)=>B) {
+  return Object.keys(o).reduce(((ret: {[key: string]: any}, key: string) => {
+    ret[key] = f(o[key]);
+    return ret;
+  }) as any, {} as any);
+}
+type MappedKlassObjType<T extends KlassObjBase> = {
+  [KlassKey in keyof T]: T[KlassKey] extends Klass<infer KlassT> ? KlassT : never;
+}
+function mapKlassObj<KlassObj extends KlassObjBase>(
+    e: Entity, klassObj: KlassObj): MappedKlassObjType<KlassObj>|null {
+  const klasses = Object.values(klassObj);
+  const hasAllKlasses = klasses.every(klass => e.hasComponent(klass));
+  if (!hasAllKlasses) return null;
+  // We do have to break things a little bit here, unfortunately... :-(
+  // A better type definition on mapObject method would help
+
+  return mapObject(klassObj, klass => e.getComponent(klass)!) as any as MappedKlassObjType<KlassObj>;
+}
+type Partial<T> = {
+  [K in keyof T]: T[K]|null;
+}
+function unwrapPartial<T>(partial: Partial<T>): T|null {
+  if (Object.values(partial).every(v => v != null)) {
+    return partial as unknown as T;
+  }
+  return null;
+}
+
+// Actual ECS manager implementation
 export class ECSManager {
   private nextId_ = 0;
   private entities_ = new Map<number, Entity>();
@@ -147,6 +180,41 @@ export class ECSManager {
       if (missingInstance) return;
 
       cb(entity, ...componentInstances);
+    });
+  }
+
+  iterateComponents2<KlassObj extends KlassObjBase, SingletonKlassObj extends KlassObjBase>(
+      singletonQuery: SingletonKlassObj,
+      query: KlassObj,
+      cb: (
+        entity: Entity,
+        singletons: MappedKlassObjType<SingletonKlassObj>,
+        components: MappedKlassObjType<KlassObj>
+      )=>void) {
+
+    // Gross type avoidance thing here
+    const partialSingletons =
+        mapObject(
+          singletonQuery,
+          klass => this.getSingletonComponent(klass)) as unknown as Partial<MappedKlassObjType<SingletonKlassObj>>;
+    const singletons = unwrapPartial(partialSingletons);
+    if (!singletons) return;
+
+    const klassList = Object.values(query);
+    const idSets = klassList.map(klass => this.getOrCreateIndex(klass)).sort((a, b)=>a.size - b.size);
+    idSets[0].forEach(id => {
+      // Skip this entity if it does not appear in all component indices
+      for (let i = 1; i < idSets.length; i++) {
+        if (!idSets[i].has(id)) return;
+      }
+
+      const entity = this.entities_.get(id);
+      if (!entity) return;
+
+      const componentInstances = mapKlassObj(entity, query);
+      if (!componentInstances) return;
+
+      cb(entity, singletons, componentInstances);
     });
   }
 
