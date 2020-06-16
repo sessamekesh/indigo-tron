@@ -4,6 +4,7 @@ import { LightSettingsComponent, OverrideAmbientCoefficientComponent } from '@li
 import { mat4 } from 'gl-matrix';
 import { ECSManager } from '@libecs/ecsmanager';
 import { Klass } from '@libecs/klass';
+import { LambertRenderableGroup } from '@librender/renderable/lambertrenderableutil';
 
 // May want to support complex tags in the future - e.g., [MainPlayerTag, LightcycleRenderable] etc
 type RenderTag = Klass<any>;
@@ -63,5 +64,34 @@ export class LambertRenderableUtil {
       LambertRenderableUtil.renderEntitiesMatchingTagsInternal(
         gl, lambertShader, ecs, tag, lightSettings, matView, matProj);
     }
+  }
+
+  static renderEntitiesMatchingTags2(
+      gl: WebGL2RenderingContext,
+      lambertGroup: LambertRenderableGroup,
+      lambertShader: LambertShader,
+      tags: RenderTag[][],
+      lightSettings: LightSettingsComponent,
+      matView: mat4,
+      matProj: mat4) {
+    tags.forEach(tagSet => {
+      const renderables = lambertGroup.query(tagSet);
+      if (renderables.length === 0) return;
+
+      lambertShader.activate(gl);
+      for (let i = 0; i < renderables.length; i++) {
+        const renderable = renderables[i];
+        lambertShader.render(gl, {
+          AmbientCoefficient: lightSettings.AmbientCoefficient,
+          DiffuseTexture: renderable.glResources.diffuseTexture,
+          Geo: renderable.glResources.geo,
+          LightColor: lightSettings.Color,
+          LightDirection: lightSettings.Direction,
+          MatProj: matProj,
+          MatView: matView,
+          MatWorld: renderable.perObjectData.matWorld.Value,
+        });
+      }
+    });
   }
 }

@@ -20,6 +20,7 @@ import { MathAllocatorsComponent, SceneNodeFactoryComponent, PauseStateComponent
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
 import { LightcycleUpdateSystem2 } from '@libgamemodel/lightcycle/lightcycleupdate2.system';
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
+import { LambertRenderGroupSingleton } from '@libgamerender/components/lambertrendergroup.singleton';
 import { LightcycleLambertRenderResourcesComponent, ArenaFloorReflectionFramebufferComponent, ArenaFloorReflectionTextureComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
@@ -27,7 +28,7 @@ import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
 import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
 import { LightcycleSteeringSystem } from '@libgamemodel/lightcycle/lightcyclesteeringsystem';
 import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
-import { LightcycleLambertSystem } from '@libgamerender/systems/lightcycle.lambertsystem';
+import { LightcycleLambertSystem2 } from '@libgamerender/systems/lightcycle.lambertsystem2';
 import { GameAppRenderSystem } from '@libgamerender/systems/gameapp.rendersystem';
 import { GreenAiUtil2 } from '@libgamemodel/ai2/greenai/greenai2.util';
 import { AIStateManagerSystem } from '@libgamemodel/ai2/aistatemanager.system';
@@ -53,6 +54,7 @@ import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
 import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
 import { Solid2DShader } from '@librender/shader/solid2dshader';
 import { HudViewportSingleton } from '@libgamerender/hud/hudviewport.singleton';
+import { LambertRenderableUtil2 } from '@librender/renderable/lambertrenderableutil';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -134,7 +136,8 @@ export class GameAppService2 {
     //
     // Renderable Generation Systems
     //
-    ecs.addSystem2(LightcycleLambertSystem);
+    //ecs.addSystem2(LightcycleLambertSystem);
+    ecs.addSystem2(LightcycleLambertSystem2);
     ecs.addSystem2(BasicWallLambertSystem);
     ecs.addSystem2(EnvironmentArenaFloorSystem);
     ecs.addSystem2(ArenaWallRenderSystem);
@@ -166,6 +169,10 @@ export class GameAppService2 {
       ecs,
       gl,
       [ LambertShader, ArenaFloorShader, ArenaWallShader, Solid2DShader ]);
+    const renderGroups = ecs.createEntity();
+    renderGroups.addComponent(
+      LambertRenderGroupSingleton,
+      LambertRenderableUtil2.createRenderGroup(rp.OwnedMat4Allocator.get()));
 
     //
     // Geometry

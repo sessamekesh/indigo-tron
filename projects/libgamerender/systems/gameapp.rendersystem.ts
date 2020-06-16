@@ -15,9 +15,10 @@ import { ArenaWallTexturePackComponent, ArenaWallUnitGeoComponent } from '@libga
 import { ArenaWallRenderableUtil } from '@libgamerender/utils/arenawallrenderable.util';
 import { ArenaWallComponent } from '@libgamemodel/arena/arenawall.component';
 import { DebugRenderTag } from '@libgamemodel/debug/debugrendertag';
-import { Solid2DRenderableComponent } from '@libgamerender/components/solid2drenderable.component';
 import { Solid2DRenderableUtil } from '@libgamerender/utils/solid2drenderable.util';
 import { MinimapComponent } from '@libgamerender/hud/minimap.component';
+import { LambertRenderGroupSingleton } from '@libgamerender/components/lambertrendergroup.singleton';
+import { LambertRenderableUtil2 } from '@librender/renderable/lambertrenderableutil';
 
 export class GameAppRenderSystem extends ECSSystem {
   start() { return true; }
@@ -49,6 +50,7 @@ export class GameAppRenderSystem extends ECSSystem {
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
     const ArenaWallTexturePack = ecs.getSingletonComponentOrThrow(ArenaWallTexturePackComponent);
     const ArenaWallUnitGeo = ecs.getSingletonComponentOrThrow(ArenaWallUnitGeoComponent);
+    const { LambertRenderGroup } = ecs.getSingletonComponentOrThrow(LambertRenderGroupSingleton);
 
     //
     // Generate floor reflection texture
@@ -69,6 +71,12 @@ export class GameAppRenderSystem extends ECSSystem {
           WallComponent2,
           LightcycleRenderableTag,
         ],
+        lightSettings, matView, matProj);
+      LambertRenderableUtil.renderEntitiesMatchingTags2(
+        gl,
+        LambertRenderGroup,
+        lambertShader,
+        [[LightcycleRenderableTag]],
         lightSettings, matView, matProj);
 
       ArenaWallRenderableUtil.renderEntitiesMatchingTags(
@@ -108,6 +116,12 @@ export class GameAppRenderSystem extends ECSSystem {
             LightcycleRenderableTag,
             DebugRenderTag, // TODO (sessamekesh): Put this behind a build flag
           ],
+          lightSettings, matView, matProj);
+        LambertRenderableUtil.renderEntitiesMatchingTags2(
+          gl,
+          LambertRenderGroup,
+          lambertShader,
+          [[LightcycleRenderableTag], [DebugRenderTag]],
           lightSettings, matView, matProj);
 
         ArenaFloorRenderableUtil.renderEntitiesMatchingTags(
