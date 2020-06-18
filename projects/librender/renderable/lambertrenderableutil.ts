@@ -7,6 +7,7 @@ import { LifecycleOwnedAllocator, OwnedResource } from '@libutil/allocator';
 
 export type LambertRenderablePerObjectData = {
   matWorld: OwnedResource<mat4>,
+  ambientOverride?: number,
 }
 
 export type LambertGLResources = {
@@ -32,6 +33,7 @@ export class LambertRenderableUtil2 {
     return () => {
       return {
         matWorld: mat4Allocator.get(),
+        ambientOverride: undefined,
       };
     };
   }

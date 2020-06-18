@@ -26,21 +26,22 @@ import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
 import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
+import { ArenaFloorRenderResourcesSingleton } from '@libgamerender/arena/arenafloorrenderresources.singleton';
+import { BasicWallGeometryGenerator } from '@libgamerender/wall/basicwallgeometry.generator';
 import { LightcycleSteeringSystem } from '@libgamemodel/lightcycle/lightcyclesteeringsystem';
 import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
-import { LightcycleLambertSystem2 } from '@libgamerender/systems/lightcycle.lambertsystem2';
+import { LightcycleLambertSystem2 } from '@libgamerender/lightcycle/lightcycle.lambertsystem2';
 import { GameAppRenderSystem } from '@libgamerender/systems/gameapp.rendersystem';
 import { GreenAiUtil2 } from '@libgamemodel/ai2/greenai/greenai2.util';
 import { AIStateManagerSystem } from '@libgamemodel/ai2/aistatemanager.system';
-import { BasicWallLambertSystem } from '@libgamerender/systems/basicwall.lambertsystem';
-import { EnvironmentArenaFloorSystem } from '@libgamerender/systems/environment.arenafloorsystem';
+import { BasicWallRenderSystem2 } from '@libgamerender/wall/basicwall.rendersystem';
+import { EnvironmentArenaFloorSystem as EAFS2 } from '@libgamerender/arena/arenafloor.rendersystem';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
 import { MinimapComponent } from '@libgamerender/hud/minimap.component';
 import { HudConfigUpdateSystem } from '@libgamerender/hud/hudconfigupdate.system';
 import { MinimapRenderSystem } from '@libgamerender/hud/minimap.rendersystem';
 import { Key } from 'ts-key-enum';
 import { ShaderBuilderUtil } from '@libgamerender/utils/shaderbuilder.util';
-import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
 import { LambertShader } from '@librender/shader/lambertshader';
 import { ArenaWallShader } from '@librender/shader/arenawallshader';
 import { ArenaWallGeo } from '@librender/geo/arenawallgeo';
@@ -55,6 +56,9 @@ import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
 import { Solid2DShader } from '@librender/shader/solid2dshader';
 import { HudViewportSingleton } from '@libgamerender/hud/hudviewport.singleton';
 import { LambertRenderableUtil2 } from '@librender/renderable/lambertrenderableutil';
+import { ArenaFloorShader2 } from '@librender/shader/arenafloorshader2';
+import { ArenaFloor2RenderGroupComponent } from '@libgamerender/arena/arenafloor2.rendergroupcomponent';
+import { ArenaFloor2RenderableUtil2 } from '@librender/renderable/arenafloor2renderableutil';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -136,10 +140,10 @@ export class GameAppService2 {
     //
     // Renderable Generation Systems
     //
-    //ecs.addSystem2(LightcycleLambertSystem);
     ecs.addSystem2(LightcycleLambertSystem2);
-    ecs.addSystem2(BasicWallLambertSystem);
-    ecs.addSystem2(EnvironmentArenaFloorSystem);
+    ecs.addSystem2(BasicWallRenderSystem2);
+    // ecs.addSystem2(EnvironmentArenaFloorSystem);
+    ecs.addSystem2(EAFS2);
     ecs.addSystem2(ArenaWallRenderSystem);
 
     //
@@ -162,17 +166,26 @@ export class GameAppService2 {
 
   private static async loadGlResources(
       gl: WebGL2RenderingContext, ecs: ECSManager, rp: GameAppRenderProviders2) {
+    // Global Resources
+    ecs.iterateComponents([RenderResourcesSingletonTag], (entity) => entity.destroy());
+    const glGlobalsEntity = ecs.createEntity();
+    glGlobalsEntity.addComponent(RenderResourcesSingletonTag);
+    glGlobalsEntity.addComponent(GLContextComponent, gl);
+
     //
     // Shaders
     //
     ShaderBuilderUtil.createShaders(
       ecs,
       gl,
-      [ LambertShader, ArenaFloorShader, ArenaWallShader, Solid2DShader ]);
+      [ LambertShader, ArenaWallShader, Solid2DShader, ArenaFloorShader2 ]);
     const renderGroups = ecs.createEntity();
     renderGroups.addComponent(
       LambertRenderGroupSingleton,
       LambertRenderableUtil2.createRenderGroup(rp.OwnedMat4Allocator.get()));
+    renderGroups.addComponent(
+      ArenaFloor2RenderGroupComponent,
+      ArenaFloor2RenderableUtil2.createRenderGroup(rp.OwnedMat4Allocator.get()));
 
     //
     // Geometry
@@ -196,11 +209,17 @@ export class GameAppService2 {
         ArenaWallGeo.createUnitWall(
           gl,
           ecs.getSingletonComponentOrThrow(ArenaWallShaderComponent).ArenaWallShader)));
+    BasicWallGeometryGenerator.attachGeoSingleton(ecs);
+
+    //
+    // Render Resources for various objects
+    //
+    await ArenaFloorRenderResourcesSingleton.load(
+      gl, ecs, rp.FloorReflectionTexture.getOrThrow(gl));
 
     //
     // Miscelaneous Objects
     //
-    ecs.iterateComponents([RenderResourcesSingletonTag], (entity) => entity.destroy());
     const framebuffersEntity = ecs.createEntity();
     framebuffersEntity.addComponent(RenderResourcesSingletonTag);
     framebuffersEntity.addComponent(
@@ -210,8 +229,7 @@ export class GameAppService2 {
     texturesEntity.addComponent(RenderResourcesSingletonTag);
     texturesEntity.addComponent(
       ArenaFloorReflectionTextureComponent,
-      rp.FloorReflectionTexture.getOrThrow(gl),
-      await rp.RoughTileTexture.getOrThrow(gl));
+      rp.FloorReflectionTexture.getOrThrow(gl));
     texturesEntity.addComponent(
       ArenaWallTexturePackComponent,
       /* BaseColor */
@@ -226,10 +244,6 @@ export class GameAppService2 {
       /* ForceField */
       await Texture.createFromURL(
         gl, 'assets/textures/forcefield_mask.png', Texture.REPEAT_LINEAR));
-
-    const glGlobalsEntity = ecs.createEntity();
-    glGlobalsEntity.addComponent(RenderResourcesSingletonTag);
-    glGlobalsEntity.addComponent(GLContextComponent, gl);
   }
 
   private async setFreshEcsState_() {
@@ -281,8 +295,10 @@ export class GameAppService2 {
     gamePlaybackStateEntity.addComponent(PauseStateComponent, /* IsPaused */ false);
 
     const lightsEntity = ecs.createEntity();
+    const lightDirection = vec3.fromValues(1, -8, 2);
+    vec3.normalize(lightDirection, lightDirection);
     lightsEntity.addComponent(
-      LightSettingsComponent, vec3.fromValues(0, -1, 0), vec3.fromValues(1, 1, 1), 0.3);
+      LightSettingsComponent, lightDirection, vec3.fromValues(1, 1, 1), 0.55);
 
     const renderSpawnConfigEntity = ecs.createEntity();
     renderSpawnConfigEntity.addComponent(

@@ -10,6 +10,7 @@ TODO (sessamekesh): Put in better notes here, this is all for you right now!
 
 ## General TODO
 Here's a list of things I still need to do before launching this:
+- [ ] Arena floor: Simplify the shader a lot (still use roughness etc., but change up calculations)
 - [ ] Finish migration to new renderable system (RenderGroup etc)
 - [ ] Minimap rendering
 - [ ] Game start state (button to begin game, start screen with AI wanderin around no collisions)

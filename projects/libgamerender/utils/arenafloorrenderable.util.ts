@@ -1,49 +1,43 @@
-import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
-import { ArenaFloorRenderableComponent } from '@libgamerender/components/arenafloorrenderable.component';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
-import { mat4, vec2 } from 'gl-matrix';
-import { ECSManager } from '@libecs/ecsmanager';
+import { mat4, vec2, vec3 } from 'gl-matrix';
 import { Klass } from '@libecs/klass';
+import { ArenaFloorShader2 } from '@librender/shader/arenafloorshader2';
+import { ArenaFloor2RenderableGroup } from '@librender/renderable/arenafloor2renderableutil';
 
 export class ArenaFloorRenderableUtil {
-  static render(
+  static renderEntitiesMatchingTags2(
       gl: WebGL2RenderingContext,
-      arenaFloorShader: ArenaFloorShader,
-      renderable: ArenaFloorRenderableComponent,
+      shader: ArenaFloorShader2,
+      renderGroup: ArenaFloor2RenderableGroup,
+      tags: Klass<any>[][],
       lightSettings: LightSettingsComponent,
       matView: mat4,
       matProj: mat4,
-      viewportDimensions: vec2) {
-    arenaFloorShader.render(gl, {
-      BumpMapTexture: renderable.BumpMapTexture,
-      Geo: renderable.Geo,
-      LightColor: lightSettings.Color,
-      MatProj: matProj,
-      MatView: matView,
-      MatWorld: renderable.MatWorld,
-      ReflectionTexture: renderable.ReflectionTexture,
-      ViewportSize: viewportDimensions,
-      FloorGlowColor: renderable.GlowColor,
-      LightDirection: lightSettings.Direction,
-    });
-  }
+      viewportDimensions: vec2,
+      eyePos: vec3) {
+    tags.forEach(tagSet => {
+      const renderables = renderGroup.query(tagSet);
+      if (renderables.length === 0) return;
 
-  static renderEntitiesMatchingTags(
-      gl: WebGL2RenderingContext,
-      ecs: ECSManager,
-      shader: ArenaFloorShader,
-      tags: Klass<any>[],
-      lightSettings: LightSettingsComponent,
-      matView: mat4,
-      matProj: mat4,
-      viewportDimensions: vec2) {
-    shader.activate(gl);
-    for (let i = 0; i < tags.length; i++) {
-      const tag = tags[i];
-      ecs.iterateComponents([ArenaFloorRenderableComponent, tag], (entity, renderable) => {
-        ArenaFloorRenderableUtil.render(
-          gl, shader, renderable, lightSettings, matView, matProj, viewportDimensions);
-      });
-    }
+      shader.activate(gl);
+      for (let i = 0; i < renderables.length; i++) {
+        const renderable = renderables[i];
+        shader.render(gl, {
+          albedoTexture: renderable.glResources.albedoTexture,
+          eyePosition: eyePos,
+          geo: renderable.glResources.geo,
+          lightColor: lightSettings.Color,
+          lightDirection: lightSettings.Direction,
+          ambientCoefficient: lightSettings.AmbientCoefficient,
+          matProj: matProj,
+          matView: matView,
+          matWorld: renderable.perObjectData.matWorld.Value,
+          normalTexture: renderable.glResources.normalTexture,
+          reflectionTexture: renderable.glResources.reflectionTexture,
+          roughnessTexture: renderable.glResources.roughnessTexture,
+          viewportSize: viewportDimensions,
+        });
+      }
+    });
   }
 }

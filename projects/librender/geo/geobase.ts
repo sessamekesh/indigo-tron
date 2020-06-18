@@ -1,6 +1,6 @@
 import { IBDesc, IBData } from './ibdesc';
 
-type AttribLocationsType<AttribNamesType extends BasicMapType> = {
+export type AttribLocationsType<AttribNamesType extends BasicMapType> = {
   [Key in keyof AttribNamesType]: number;
 };
 
@@ -12,7 +12,7 @@ type VertexInputType = {
 
 type BasicMapType = {[id: string]: any};
 
-type AttribBuffersType<AttribNamesType extends BasicMapType> = {
+export type AttribBuffersType<AttribNamesType extends BasicMapType> = {
   [Key in keyof AttribNamesType]: VertexInputType;
 };
 

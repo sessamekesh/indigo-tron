@@ -81,8 +81,11 @@ export class LambertRenderableUtil {
       lambertShader.activate(gl);
       for (let i = 0; i < renderables.length; i++) {
         const renderable = renderables[i];
+        const ambientValue = renderable.perObjectData.ambientOverride == null
+          ? lightSettings.AmbientCoefficient
+          : renderable.perObjectData.ambientOverride;
         lambertShader.render(gl, {
-          AmbientCoefficient: lightSettings.AmbientCoefficient,
+          AmbientCoefficient: ambientValue,
           DiffuseTexture: renderable.glResources.diffuseTexture,
           Geo: renderable.glResources.geo,
           LightColor: lightSettings.Color,

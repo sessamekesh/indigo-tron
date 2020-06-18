@@ -9,3 +9,9 @@ roughtiles_bump.jpg: Created by Keith333 on OpenGameArt.org [link](https://openg
 [TextureGenerator-Online](https://cpetry.github.io/TextureGenerator-Online/) was used to generate these textures, either in full or in part.
 * perlin_distortion_1.png
 * wall_basecolor.png
+
+## [CC0textures.com](https://cc0textures.com/)
+* [Metal029](https://cc0textures.com/view?id=Metal029)
+  * Metal029_2K_Color.jpg
+  * Metal029_2K_Roughness.jpg
+  * Metal029_2K_Normal.jpg

@@ -2,7 +2,6 @@ import { LambertShader } from '@librender/shader/lambertshader';
 import { DracoDecoderCreationOptions } from '@librender/geo/draco/decoderconfig';
 import { AsyncRenderProvider, RenderProvider, Provider } from '@librender/renderprovider';
 import { DracoDecoder } from '@librender/geo/draco/decoder';
-import { ArenaFloorShader } from '@librender/shader/arenafloorshader';
 import { loadRawBuffer } from '@libutil/loadutils';
 import { LambertConverter } from '@librender/geo/draco/lambertconverter';
 import { Texture } from '@librender/texture/texture';
@@ -32,7 +31,6 @@ export class GameAppRenderProviders2 {
   // Shaders
   //
   readonly LambertShader = LambertShader.getRenderProvider();
-  readonly ArenaFloorShader = ArenaFloorShader.getRenderProvider();
 
   //
   // Geometry
@@ -49,13 +47,6 @@ export class GameAppRenderProviders2 {
     (gl) => Texture.createFromURL(gl, 'assets/models/lightcycle_base_diffuse.png'));
   readonly BikeWheelTexture = new AsyncRenderProvider(
     (gl) => Texture.createFromURL(gl, 'assets/models/lightcycle_wheel_diffuse.png'));
-  readonly RoughTileTexture = new AsyncRenderProvider(
-    (gl) => Texture.createFromURL(gl, 'assets/textures/roughtiles_bump.jpg', {
-      MagFilter: 'linear',
-      MinFilter: 'linear',
-      WrapU: 'repeat',
-      WrapV: 'repeat',
-    }));
   readonly FlatBumpmapDebugTexture = new RenderProvider(
     (gl) => Texture.createFromData(gl, 1, 1, new Uint8Array([127, 127, 255, 255])));
 

@@ -20,7 +20,7 @@ export class ArenaFloorReflectionFramebufferComponent {
 }
 
 export class ArenaFloorReflectionTextureComponent {
-  constructor(public readonly Texture: Texture, public readonly BumpmapTexture: Texture) {}
+  constructor(public readonly Texture: Texture) {}
 }
 
 export class GLContextComponent {

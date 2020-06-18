@@ -3,12 +3,11 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { ArenaFloorReflectionFramebufferComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
 import { CameraComponent, ReflectionCameraComponent } from '@libgamemodel/components/gameappuicomponents';
-import { LambertShaderComponent, ArenaFloorShaderComponent, ArenaWallShaderComponent, Solid2DShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { LambertShaderComponent, ArenaWallShaderComponent, ArenaFloor2ShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { mat4, glMatrix, vec2 } from 'gl-matrix';
 import { LambertRenderableUtil } from '@libgamerender/utils/lambertrenderable.util';
-import { LightcycleRenderableTag } from './lightcycle.lambertsystem';
 import { ArenaFloorRenderableUtil } from '@libgamerender/utils/arenafloorrenderable.util';
 import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { ArenaWallTexturePackComponent, ArenaWallUnitGeoComponent } from '@libgamerender/components/arenawallrenderable.component';
@@ -18,7 +17,8 @@ import { DebugRenderTag } from '@libgamemodel/debug/debugrendertag';
 import { Solid2DRenderableUtil } from '@libgamerender/utils/solid2drenderable.util';
 import { MinimapComponent } from '@libgamerender/hud/minimap.component';
 import { LambertRenderGroupSingleton } from '@libgamerender/components/lambertrendergroup.singleton';
-import { LambertRenderableUtil2 } from '@librender/renderable/lambertrenderableutil';
+import { LightcycleRenderableTag } from '@libgamerender/lightcycle/lightcycle2.rendercomponent';
+import { ArenaFloor2RenderGroupComponent } from '@libgamerender/arena/arenafloor2.rendergroupcomponent';
 
 export class GameAppRenderSystem extends ECSSystem {
   start() { return true; }
@@ -39,18 +39,22 @@ export class GameAppRenderSystem extends ECSSystem {
       LambertShader: lambertShader
     } = ecs.getSingletonComponentOrThrow(LambertShaderComponent);
     const {
-      ArenaFloorShader: arenaFloorShader,
-    } = ecs.getSingletonComponentOrThrow(ArenaFloorShaderComponent);
+      ArenaFloor2Shader: arenaFloor2Shader,
+    } = ecs.getSingletonComponentOrThrow(ArenaFloor2ShaderComponent);
     const {
       ArenaWallShader: arenaWallShader,
     } = ecs.getSingletonComponentOrThrow(ArenaWallShaderComponent);
     const {
       Vec2: vec2Allocator,
       Mat4: mat4Allocator,
+      Vec3: vec3Allocator,
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
     const ArenaWallTexturePack = ecs.getSingletonComponentOrThrow(ArenaWallTexturePackComponent);
     const ArenaWallUnitGeo = ecs.getSingletonComponentOrThrow(ArenaWallUnitGeoComponent);
     const { LambertRenderGroup } = ecs.getSingletonComponentOrThrow(LambertRenderGroupSingleton);
+    const {
+      RenderGroup: arenaFloor2RenderGroup,
+    } = ecs.getSingletonComponentOrThrow(ArenaFloor2RenderGroupComponent);
 
     //
     // Generate floor reflection texture
@@ -65,18 +69,11 @@ export class GameAppRenderSystem extends ECSSystem {
       mat4.perspective(
         matProj, glMatrix.toRadian(45), gl.canvas.width / gl.canvas.height, 0.1, 1000.0);
 
-      LambertRenderableUtil.renderEntitiesMatchingTags(
-        gl, ecs, lambertShader,
-        [
-          WallComponent2,
-          LightcycleRenderableTag,
-        ],
-        lightSettings, matView, matProj);
       LambertRenderableUtil.renderEntitiesMatchingTags2(
         gl,
         LambertRenderGroup,
         lambertShader,
-        [[LightcycleRenderableTag]],
+        [[LightcycleRenderableTag], [WallComponent2]],
         lightSettings, matView, matProj);
 
       ArenaWallRenderableUtil.renderEntitiesMatchingTags(
@@ -103,43 +100,35 @@ export class GameAppRenderSystem extends ECSSystem {
     gl.enable(gl.DEPTH_TEST);
 
     mat4Allocator.get(2, (matView, matProj) => {
-      vec2Allocator.get(1, (viewportDimensions) => {
-        vec2.set(viewportDimensions, gl.canvas.width, gl.canvas.height);
-        mainCamera.matView(matView);
-        mat4.perspective(
-          matProj, glMatrix.toRadian(45), gl.canvas.width / gl.canvas.height, 0.1, 1000.0);
+      vec3Allocator.get(1, eyePos => {
+        vec2Allocator.get(1, (viewportDimensions) => {
+          vec2.set(viewportDimensions, gl.canvas.width, gl.canvas.height);
+          mainCamera.pos(eyePos);
+          mainCamera.matView(matView);
+          mat4.perspective(
+            matProj, glMatrix.toRadian(45), gl.canvas.width / gl.canvas.height, 0.1, 1000.0);
 
-        LambertRenderableUtil.renderEntitiesMatchingTags(
-          gl, ecs, lambertShader,
-          [
-            WallComponent2,
-            LightcycleRenderableTag,
-            DebugRenderTag, // TODO (sessamekesh): Put this behind a build flag
-          ],
-          lightSettings, matView, matProj);
-        LambertRenderableUtil.renderEntitiesMatchingTags2(
-          gl,
-          LambertRenderGroup,
-          lambertShader,
-          [[LightcycleRenderableTag], [DebugRenderTag]],
-          lightSettings, matView, matProj);
+          LambertRenderableUtil.renderEntitiesMatchingTags2(
+            gl,
+            LambertRenderGroup,
+            lambertShader,
+            [[LightcycleRenderableTag], [DebugRenderTag], [WallComponent2]],
+            lightSettings, matView, matProj);
 
-        ArenaFloorRenderableUtil.renderEntitiesMatchingTags(
-          gl, ecs, arenaFloorShader,
-          [
-            FloorComponent,
-          ],
-          lightSettings, matView, matProj, viewportDimensions);
+          ArenaFloorRenderableUtil.renderEntitiesMatchingTags2(
+            gl, arenaFloor2Shader, arenaFloor2RenderGroup,
+            [[FloorComponent]], lightSettings, matView, matProj, viewportDimensions, eyePos);
 
-        ArenaWallRenderableUtil.renderEntitiesMatchingTags(
-          gl, ecs, arenaWallShader,
-          [
-            ArenaWallComponent,
-          ],
-          ArenaWallUnitGeo.Geo,
-          ArenaWallTexturePack,
-          matView,
-          matProj);
+          ArenaWallRenderableUtil.renderEntitiesMatchingTags(
+            gl, ecs, arenaWallShader,
+            [
+              ArenaWallComponent,
+            ],
+            ArenaWallUnitGeo.Geo,
+            ArenaWallTexturePack,
+            matView,
+            matProj);
+        });
       });
     });
 
