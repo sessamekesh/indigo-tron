@@ -13,8 +13,7 @@ export class ArenaFloorRenderableUtil {
       lightSettings: LightSettingsComponent,
       matView: mat4,
       matProj: mat4,
-      viewportDimensions: vec2,
-      eyePos: vec3) {
+      viewportDimensions: vec2) {
     tags.forEach(tagSet => {
       const renderables = renderGroup.query(tagSet);
       if (renderables.length === 0) return;
@@ -24,7 +23,6 @@ export class ArenaFloorRenderableUtil {
         const renderable = renderables[i];
         shader.render(gl, {
           albedoTexture: renderable.glResources.albedoTexture,
-          eyePosition: eyePos,
           geo: renderable.glResources.geo,
           lightColor: lightSettings.Color,
           lightDirection: lightSettings.Direction,

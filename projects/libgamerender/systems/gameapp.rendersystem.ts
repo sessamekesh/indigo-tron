@@ -103,7 +103,6 @@ export class GameAppRenderSystem extends ECSSystem {
       vec3Allocator.get(1, eyePos => {
         vec2Allocator.get(1, (viewportDimensions) => {
           vec2.set(viewportDimensions, gl.canvas.width, gl.canvas.height);
-          mainCamera.pos(eyePos);
           mainCamera.matView(matView);
           mat4.perspective(
             matProj, glMatrix.toRadian(45), gl.canvas.width / gl.canvas.height, 0.1, 1000.0);
@@ -117,7 +116,7 @@ export class GameAppRenderSystem extends ECSSystem {
 
           ArenaFloorRenderableUtil.renderEntitiesMatchingTags2(
             gl, arenaFloor2Shader, arenaFloor2RenderGroup,
-            [[FloorComponent]], lightSettings, matView, matProj, viewportDimensions, eyePos);
+            [[FloorComponent]], lightSettings, matView, matProj, viewportDimensions);
 
           ArenaWallRenderableUtil.renderEntitiesMatchingTags(
             gl, ecs, arenaWallShader,
