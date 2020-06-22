@@ -1,7 +1,6 @@
 import { mat4, vec3, vec2 } from 'gl-matrix';
 import { Texture } from '@librender/texture/texture';
 import { ShaderUtils } from './shaderutils';
-import { LambertGeo } from '@librender/geo/lambertgeo';
 import { ArenaWallGeo } from '@librender/geo/arenawallgeo';
 import { IBDescBitWidthToType } from '@librender/geo/ibdesc';
 
@@ -44,6 +43,11 @@ uniform sampler2D forceFieldPatternTexture;
 
 out vec4 color;
 
+// TODO (sessamekesh): Revamp this shader completely
+// (1) Base is a wispy particle-y texture. Use the whole blend-add thing. Smokey, lazy.
+// (2) On top of that is a soft hexagon grid, that occasionally has a current of strength that
+//     goes up across it (similar to how it is done now).
+
 void main() {
   vec2 baseColorUV = fUV + texture(baseColorDistortionTexture, fUV + distortionOffset).rg * 0.15;
   vec4 baseColor = texture(baseColorTexture, baseColorUV * baseColorTilingScale);
@@ -52,15 +56,12 @@ void main() {
       texture(
         forceFieldIntensityTexture,
         (fUV + forceFieldIntensityDisplacement) * intensityTilingScale).r;
-  vec4 forceFieldPatternColor = forceFieldIntensity
-      * texture(forceFieldPatternTexture, fUV * forceFieldTilingScale);
+  vec4 forceFieldPatternColor = texture(forceFieldPatternTexture, fUV * forceFieldTilingScale);
 
-  float baseColorIntensity = 1.0 - forceFieldPatternColor.a;
-  float forceFieldColorIntensity = forceFieldPatternColor.a;
-
-  color = (baseColor * baseColorRatio
-            + vec4(forceFieldColor, 1.0) * (1.0 - baseColorRatio)) * baseColorIntensity
-          + forceFieldPatternColor * forceFieldColorIntensity;
+  color = baseColor * baseColorRatio
+          + vec4(forceFieldColor, 1.0) * max(forceFieldIntensity - baseColorRatio, 0.0)
+          + forceFieldPatternColor * max(forceFieldIntensity - baseColorRatio, 0.0);
+  // color = color * 0.01 + baseColor;
 }`;
 
 type Attribs = {

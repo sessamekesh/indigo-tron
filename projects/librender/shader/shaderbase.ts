@@ -1,4 +1,5 @@
 import { ShaderUtils } from './shaderutils';
+import { mat4 } from 'gl-matrix';
 
 export type UniformLocationsType<UniformsType> = {
   [Key in keyof UniformsType]: WebGLUniformLocation;

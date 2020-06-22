@@ -26,7 +26,6 @@ import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
 import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
-import { ArenaFloorRenderResourcesSingleton } from '@libgamerender/arena/arenafloorrenderresources.singleton';
 import { BasicWallGeometryGenerator } from '@libgamerender/wall/basicwallgeometry.generator';
 import { LightcycleSteeringSystem } from '@libgamemodel/lightcycle/lightcyclesteeringsystem';
 import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
@@ -52,13 +51,17 @@ import { AiSteeringSystem } from '@libgamemodel/ai/aisteering.system';
 import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
 import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
+import { ArenaFloor3RenderSystem } from '@libgamerender/arena/arenafloor3.rendersystem';
 import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
 import { Solid2DShader } from '@librender/shader/solid2dshader';
 import { HudViewportSingleton } from '@libgamerender/hud/hudviewport.singleton';
 import { LambertRenderableUtil2 } from '@librender/renderable/lambertrenderableutil';
-import { ArenaFloorShader2 } from '@librender/shader/arenafloorshader2';
 import { ArenaFloor2RenderGroupComponent } from '@libgamerender/arena/arenafloor2.rendergroupcomponent';
 import { ArenaFloor2RenderableUtil2 } from '@librender/renderable/arenafloor2renderableutil';
+import { ArenaFloor3RenderableGroupSingleton } from '@libgamerender/arena/arenafloor3renderablegroup.singleton';
+import { ArenaFloor3GlResourcesSingleton } from '@libgamerender/arena/arenafloor3glresources.singleton';
+import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
+import { ArenaFloor3GeometrySingleton } from '@libgamerender/arena/arenafloor3geometry.singleton';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -144,6 +147,7 @@ export class GameAppService2 {
     ecs.addSystem2(BasicWallRenderSystem2);
     // ecs.addSystem2(EnvironmentArenaFloorSystem);
     ecs.addSystem2(EAFS2);
+    ecs.addSystem2(ArenaFloor3RenderSystem);
     ecs.addSystem2(ArenaWallRenderSystem);
 
     //
@@ -178,7 +182,7 @@ export class GameAppService2 {
     ShaderBuilderUtil.createShaders(
       ecs,
       gl,
-      [ LambertShader, ArenaWallShader, Solid2DShader, ArenaFloorShader2 ]);
+      [ LambertShader, ArenaWallShader, Solid2DShader, ArenaFloorShader3 ]);
     const renderGroups = ecs.createEntity();
     renderGroups.addComponent(
       LambertRenderGroupSingleton,
@@ -214,8 +218,10 @@ export class GameAppService2 {
     //
     // Render Resources for various objects
     //
-    await ArenaFloorRenderResourcesSingleton.load(
-      gl, ecs, rp.FloorReflectionTexture.getOrThrow(gl));
+    ArenaFloor3GeometrySingleton.generate(ecs);
+    ArenaFloor3RenderableGroupSingleton.generate(
+      ecs, rp.OwnedMat4Allocator.get(), rp.OwnedVec3Allocator.get());
+    ArenaFloor3GlResourcesSingleton.attach(ecs, rp.FloorReflectionTexture.getOrThrow(gl));
 
     //
     // Miscelaneous Objects

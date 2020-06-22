@@ -8,8 +8,6 @@ import { WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { mat4, glMatrix, vec2 } from 'gl-matrix';
 import { LambertRenderableUtil } from '@libgamerender/utils/lambertrenderable.util';
-import { ArenaFloorRenderableUtil } from '@libgamerender/utils/arenafloorrenderable.util';
-import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { ArenaWallTexturePackComponent, ArenaWallUnitGeoComponent } from '@libgamerender/components/arenawallrenderable.component';
 import { ArenaWallRenderableUtil } from '@libgamerender/utils/arenawallrenderable.util';
 import { ArenaWallComponent } from '@libgamemodel/arena/arenawall.component';
@@ -19,6 +17,9 @@ import { MinimapComponent } from '@libgamerender/hud/minimap.component';
 import { LambertRenderGroupSingleton } from '@libgamerender/components/lambertrendergroup.singleton';
 import { LightcycleRenderableTag } from '@libgamerender/lightcycle/lightcycle2.rendercomponent';
 import { ArenaFloor2RenderGroupComponent } from '@libgamerender/arena/arenafloor2.rendergroupcomponent';
+import { ArenaFloor3RenderUtil } from '@libgamerender/utils/arenafloor3renderutil';
+import { FloorComponent } from '@libgamemodel/components/floor.component';
+import { ColorUtil } from '@libutil/colorutil';
 
 export class GameAppRenderSystem extends ECSSystem {
   start() { return true; }
@@ -39,9 +40,6 @@ export class GameAppRenderSystem extends ECSSystem {
       LambertShader: lambertShader
     } = ecs.getSingletonComponentOrThrow(LambertShaderComponent);
     const {
-      ArenaFloor2Shader: arenaFloor2Shader,
-    } = ecs.getSingletonComponentOrThrow(ArenaFloor2ShaderComponent);
-    const {
       ArenaWallShader: arenaWallShader,
     } = ecs.getSingletonComponentOrThrow(ArenaWallShaderComponent);
     const {
@@ -60,7 +58,8 @@ export class GameAppRenderSystem extends ECSSystem {
     // Generate floor reflection texture
     //
     floorReflectionFramebuffer.bind(gl);
-    gl.clearColor(0, 0, 0, 1);
+    const reflectionClearColor = ColorUtil.COLOR_THEME_MIDTONE_GRAY;
+    gl.clearColor(reflectionClearColor.r, reflectionClearColor.g, reflectionClearColor.b, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
 
@@ -76,6 +75,9 @@ export class GameAppRenderSystem extends ECSSystem {
         [[LightcycleRenderableTag], [WallComponent2]],
         lightSettings, matView, matProj);
 
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.blendEquation(gl.FUNC_ADD);
       ArenaWallRenderableUtil.renderEntitiesMatchingTags(
         gl, ecs, arenaWallShader,
         [
@@ -85,6 +87,7 @@ export class GameAppRenderSystem extends ECSSystem {
         ArenaWallTexturePack,
         matView,
         matProj);
+      gl.disable(gl.BLEND);
     });
 
     //
@@ -95,7 +98,8 @@ export class GameAppRenderSystem extends ECSSystem {
     gl.canvas.height = (gl.canvas as HTMLCanvasElement).clientHeight * window.devicePixelRatio;
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.05, 0.05, 0.05, 1);
+    const clearColor = ColorUtil.COLOR_THEME_MIDTONE_GRAY;
+    gl.clearColor(clearColor.r, clearColor.g, clearColor.b, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
 
@@ -114,10 +118,12 @@ export class GameAppRenderSystem extends ECSSystem {
             [[LightcycleRenderableTag], [DebugRenderTag], [WallComponent2]],
             lightSettings, matView, matProj);
 
-          ArenaFloorRenderableUtil.renderEntitiesMatchingTags2(
-            gl, arenaFloor2Shader, arenaFloor2RenderGroup,
-            [[FloorComponent]], lightSettings, matView, matProj, viewportDimensions);
+          ArenaFloor3RenderUtil.renderEntitiesMatchingTags(
+            ecs, [[FloorComponent]], matProj, matView, viewportDimensions);
 
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          gl.blendEquation(gl.FUNC_ADD);
           ArenaWallRenderableUtil.renderEntitiesMatchingTags(
             gl, ecs, arenaWallShader,
             [
@@ -127,6 +133,7 @@ export class GameAppRenderSystem extends ECSSystem {
             ArenaWallTexturePack,
             matView,
             matProj);
+          gl.disable(gl.BLEND);
         });
       });
     });

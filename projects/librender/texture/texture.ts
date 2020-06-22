@@ -152,6 +152,11 @@ export class Texture {
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
   }
 
+  bindUniform(gl: WebGL2RenderingContext, uniform: WebGLUniformLocation, slot: number = 0) {
+    gl.uniform1i(uniform, slot);
+    this.bind(gl, slot);
+  }
+
   setWrapU(gl: WebGL2RenderingContext, wrapType: TextureWrapType) {
     if (wrapType === this.samplerState.WrapU) {
       return;

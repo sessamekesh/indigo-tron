@@ -218,6 +218,25 @@ export class ECSManager {
     });
   }
 
+  withSingletons<SingletonKlassObj extends KlassObjBase>(
+      singletonQuery: SingletonKlassObj,
+      cb: (singletons: MappedKlassObjType<SingletonKlassObj>)=>void): string[] {
+    const partialSingletons =
+      mapObject(
+        singletonQuery,
+        klass => this.getSingletonComponent(klass)) as unknown as Partial<MappedKlassObjType<SingletonKlassObj>>;
+    const singletons = unwrapPartial(partialSingletons);
+
+    if (!singletons) {
+      return Object.entries(partialSingletons)
+        .filter(entry => entry[1] == null)
+        .map(entry => entry[0]);
+    }
+
+    cb(singletons);
+    return [];
+  }
+
   // Utility methods...
   private getOrCreateIndex<T>(klass: Klass<T>): Set<number> {
     const index = this.indices_.get(klass);

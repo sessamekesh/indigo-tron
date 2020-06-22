@@ -3,6 +3,7 @@ import { FlatColorLambertShader } from '@librender/shader/flatcolorlambertshader
 import { ArenaWallShader } from '@librender/shader/arenawallshader';
 import { Solid2DShader } from '@librender/shader/solid2dshader';
 import { ArenaFloorShader2 } from '@librender/shader/arenafloorshader2';
+import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 
 export class ShaderSingletonTag {}
 
@@ -24,4 +25,8 @@ export class Solid2DShaderComponent {
 
 export class ArenaFloor2ShaderComponent {
   constructor(public readonly ArenaFloor2Shader: ArenaFloorShader2) {}
+}
+
+export class ArenaFloor3ShaderSingleton {
+  constructor(public readonly ArenaFloor3Shader: ArenaFloorShader3) {}
 }

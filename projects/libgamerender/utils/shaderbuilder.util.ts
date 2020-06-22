@@ -1,14 +1,15 @@
 import { ECSManager } from '@libecs/ecsmanager';
-import { ShaderSingletonTag, LambertShaderComponent, FlatColorLambertShaderComponent, ArenaWallShaderComponent, Solid2DShaderComponent, ArenaFloor2ShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { ShaderSingletonTag, LambertShaderComponent, FlatColorLambertShaderComponent, ArenaWallShaderComponent, Solid2DShaderComponent, ArenaFloor2ShaderComponent, ArenaFloor3ShaderSingleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { LambertShader } from '@librender/shader/lambertshader';
 import { assert } from '@libutil/loadutils';
 import { FlatColorLambertShader } from '@librender/shader/flatcolorlambertshader';
 import { ArenaWallShader } from '@librender/shader/arenawallshader';
 import { Solid2DShader } from '@librender/shader/solid2dshader';
 import { ArenaFloorShader2 } from '@librender/shader/arenafloorshader2';
+import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 
 type ShaderType = typeof LambertShader | typeof ArenaFloorShader2 | typeof FlatColorLambertShader
-    | typeof ArenaWallShader | typeof Solid2DShader;
+    | typeof ArenaWallShader | typeof Solid2DShader | typeof ArenaFloorShader3;
 
 export class ShaderBuilderUtil {
   static createShaders(ecs: ECSManager, gl: WebGL2RenderingContext, shaderList: ShaderType[]) {
@@ -44,6 +45,12 @@ export class ShaderBuilderUtil {
             ArenaFloor2ShaderComponent,
             assert('ArenaFloor2Shader', ArenaFloorShader2.create(gl)));
           break;
+        case ArenaFloorShader3:
+          shadersEntity.addComponent(
+            ArenaFloor3ShaderSingleton,
+            assert('ArenaFloor3Shader', ArenaFloorShader3.create(gl)));
+          break;
+          // TODO (sessamekesh):
         default:
           throw new Error('Failed to create unsupported shader type: ' + klass.name);
       }
