@@ -22,6 +22,7 @@ import { LineSegment2D } from "@libutil/math/linesegment";
 import { WanderState } from "./wander.state";
 import { AiControlComponent } from "@libgamemodel/ai/aicontrol.component";
 import { MathUtils } from "@libutil/mathutils";
+import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
 
 export class AvoidWallState extends AIState {
   transition(ecs: ECSManager, entity: Entity, dt: number) {
@@ -63,7 +64,8 @@ export class AvoidWallState extends AIState {
       throw new Error('Failed to execute action, control not defined on entity');
     }
 
-    const lightcycleOrientation = lightcycleComponent.BodySceneNode.getRotAngle();
+    const lightcycleOrientation =
+      lightcycleComponent.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
     // TODO (sessamekesh): Is this arbitrary value a good enough one to use? I think so...
     if (steerDir === 'left') {
       control.GoalOrientation = MathUtils.clampAngle(lightcycleOrientation + 0.5);
@@ -83,7 +85,8 @@ export class AvoidWallState extends AIState {
       throw new Error('Failed to execute action, control not defined on entity');
     }
 
-    const lightcycleOrientation = lightcycleComponent.BodySceneNode.getRotAngle();
+    const lightcycleOrientation =
+      lightcycleComponent.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
     return tempVec2.get(
       5,
       (lineSegmentDir, cycleForward, lightcyclePos2, farWallPoint, nearWallPoint) => {
@@ -130,7 +133,8 @@ function getWallToAvoid(ecs: ECSManager, entity: Entity): LineSegment2D|null {
   return tempVec2.get(2, (lightcyclePos2, lightcycleDir2) => {
     LightcycleUtils.currentPosition2(lightcyclePos2, entity, ecs);
     const lightcycleComponent = entity.getComponent(LightcycleComponent2)!;
-    const lightcycleOrientation = lightcycleComponent.BodySceneNode.getRotAngle();
+    const lightcycleOrientation =
+      lightcycleComponent.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
     vec2.set(lightcycleDir2, Math.sin(lightcycleOrientation), Math.cos(lightcycleOrientation));
     return ArenaCollisionUtil.getClosestWallInPath(
       ecs, lightcyclePos2, lightcycleDir2, blackboard.forceGet('WallScanDistance'));

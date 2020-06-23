@@ -7,6 +7,7 @@ import { WallSpawnerUtil } from "./wallspawner.util";
 import { WallComponent2 } from "./wallcomponent";
 import { LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
+import { Mat4TransformAddon } from "@libscenegraph/scenenodeaddons/mat4transformaddon";
 
 export class WallSpawnerSystem2 extends ECSSystem {
   start(ecs: ECSManager) { return true; }
@@ -27,7 +28,7 @@ export class WallSpawnerSystem2 extends ECSSystem {
       (entity, wallGenerator, colorComponent) => {
         vec3Allocator.get(1, pos3 => {
           vec2Allocator.get(1, pos2 => {
-            wallGenerator.PositionSceneNode.getPos(pos3);
+            wallGenerator.PositionSceneNode.getAddon(Mat4TransformAddon).getPos(pos3);
             vec2.set(pos2, pos3[0], pos3[2]);
             WallSpawnerUtil.spawnWallsBetween(
               vec2Allocator,

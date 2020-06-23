@@ -14,6 +14,7 @@ import { PlaneAbsoluteConstraintComponent } from "./planeabsoluteconstraint.comp
 import { BoundingSphereConstraintComponent } from "./boundingsphereconstraint.component";
 import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 import { ForceDampingComponent } from "./forcedamping.component";
+import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
 
 export class UpdatePhysicsSystemConfigComponent {
   constructor(
@@ -131,7 +132,7 @@ export class UpdatePhysicsSystem extends ECSSystem {
       const forceAccumulator = this.getForceAccumulator(entity, vec3Allocator);
       // Find the stretch/compression of the spring, and apply force as appropriate
       tempVec3.get(3, (goalPos, diff, direction) => {
-        springForceComponent.TargetSceneNode.getPos(goalPos);
+        springForceComponent.TargetSceneNode.getAddon(Mat4TransformAddon).getPos(goalPos);
         vec3.sub(diff, positionComponent.Position.Value, goalPos);
         const springActualLength = vec3.length(diff);
 

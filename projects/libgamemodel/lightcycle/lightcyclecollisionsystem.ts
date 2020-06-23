@@ -3,18 +3,19 @@ import { ECSManager } from "@libecs/ecsmanager";
 import { LightcycleUpdateRandomFnComponent } from "./lightcycleupdate2.system";
 import { LightcycleComponent2 } from "./lightcycle.component";
 import { WallComponent2 } from "@libgamemodel/wall/wallcomponent";
-import { SceneNodeFactory } from "@libutil/scene/scenenodefactory";
 import { TempGroupAllocator } from "@libutil/allocator";
 import { vec3 } from "gl-matrix";
 import { LineSegment2D, LineSegmentUtils } from "@libutil/math/linesegment";
 import { Entity } from "@libecs/entity";
 import { LightcycleCollisionBoundsComponent } from "./lightcyclecollisionbounds.component";
-import { SceneNodeFactoryComponent, MathAllocatorsComponent, PlayerDeadTag, MainPlayerComponent } from "@libgamemodel/components/commoncomponents";
+import { SceneGraphComponent, MathAllocatorsComponent, PlayerDeadTag, MainPlayerComponent } from "@libgamemodel/components/commoncomponents";
 import { LightcycleUtils, CollisionAction } from "./lightcycleutils";
 import { MathUtils } from "@libutil/mathutils";
 import { UIEventEmitterComponent } from "@libgamemodel/components/gameui";
 import { ArenaWallComponent } from "@libgamemodel/arena/arenawall.component";
 import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
+import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
+import { SceneGraph2 } from "@libgamemodel/../libscenegraph/scenegraph2";
 
 export class LightcycleCollisionSystem extends ECSSystem {
   static setRandomFn(ecs: ECSManager, fn: ()=>number) {
@@ -42,8 +43,8 @@ export class LightcycleCollisionSystem extends ECSSystem {
       Vec3: vec3Allocator,
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
     const {
-      SceneNodeFactory: sceneNodeFactory,
-    } = ecs.getSingletonComponentOrThrow(SceneNodeFactoryComponent);
+      SceneGraph: sceneGraph,
+    } = ecs.getSingletonComponentOrThrow(SceneGraphComponent);
     const {
       Fn: randomFn,
     } = ecs.getSingletonComponentOrThrow(LightcycleUpdateRandomFnComponent);
@@ -57,13 +58,13 @@ export class LightcycleCollisionSystem extends ECSSystem {
         if (this.timeRemain < 0) {
           this.timeRemain = 5000;
           const pos = vec3.create();
-          lightcycle.BodySceneNode.getPos(pos);
+          lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getPos(pos);
         }
       }
       let playerDeath = false;
 
       const [bikeLeftLine, bikeRightLine, bikeFrontLine] =
-        this.getLightcycleLines(sceneNodeFactory, vec3Allocator, lightcycleEntity, lightcycle);
+        this.getLightcycleLines(sceneGraph, vec3Allocator, lightcycleEntity, lightcycle);
 
       ecs.iterateComponents([ArenaWallComponent], (_, arenaWall) => {
         if (playerDeath) return;
@@ -95,15 +96,17 @@ export class LightcycleCollisionSystem extends ECSSystem {
           depthAdjustment[1] /= actions.length;
         }
 
+        const frontWheelMat4Addon = lightcycle.FrontWheelSceneNode.getAddon(Mat4TransformAddon);
+        const bodyMat4Addon = lightcycle.BodySceneNode.getAddon(Mat4TransformAddon);
         const newOrientation = MathUtils.clampAngle(
-          lightcycle.FrontWheelSceneNode.getRotAngle() + angleAdjustment);
+          frontWheelMat4Addon.getSelfRotAngle() + angleAdjustment);
         vec3Allocator.get(1, posAdjust => {
-          lightcycle.BodySceneNode.getPos(posAdjust);
+          bodyMat4Addon.getPos(posAdjust);
           posAdjust[0] -= depthAdjustment[0];
           posAdjust[2] -= depthAdjustment[1];
-          lightcycle.BodySceneNode.update({pos: posAdjust});
+          bodyMat4Addon.update({pos: posAdjust});
         });
-        lightcycle.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
+        frontWheelMat4Addon.update({rot: { angle: newOrientation }});
         lightcycle.Vitality -= vitalityLost;
 
         if (vitalityLost > 0 && lightcycleEntity.hasComponent(MainPlayerComponent)) {
@@ -146,9 +149,10 @@ export class LightcycleCollisionSystem extends ECSSystem {
         let vitalityLost = 0;
         actions.forEach(action => vitalityLost += action.vitalityLost);
 
+        const frontWheelMat4Addon = lightcycle.FrontWheelSceneNode.getAddon(Mat4TransformAddon);
         const newOrientation = MathUtils.clampAngle(
-          lightcycle.FrontWheelSceneNode.getRotAngle() + angleAdjustment);
-        lightcycle.FrontWheelSceneNode.update({rot: { angle: newOrientation }});
+          frontWheelMat4Addon.getSelfRotAngle() + angleAdjustment);
+          frontWheelMat4Addon.update({rot: { angle: newOrientation }});
         LightcycleUtils.applyCollisionDamage2(vitalityLost, wall, lightcycle);
 
         if (wall.Vitality <= 0) {
@@ -172,35 +176,35 @@ export class LightcycleCollisionSystem extends ECSSystem {
   }
 
   private getLightcycleLines(
-      sceneNodeFactory: SceneNodeFactory, vec3Allocator: TempGroupAllocator<vec3>,
+      sceneGraph: SceneGraph2, vec3Allocator: TempGroupAllocator<vec3>,
       entity: Entity, lightcycleComponent: LightcycleComponent2): LineSegment2D[] {
     let collisionBoundsComponent = entity.getComponent(LightcycleCollisionBoundsComponent);
     if (!collisionBoundsComponent) {
-      const flNode = sceneNodeFactory.createSceneNode();
-      const frNode = sceneNodeFactory.createSceneNode();
-      const blNode = sceneNodeFactory.createSceneNode();
-      const brNode = sceneNodeFactory.createSceneNode();
+      const flNode = sceneGraph.createSceneNode();
+      const frNode = sceneGraph.createSceneNode();
+      const blNode = sceneGraph.createSceneNode();
+      const brNode = sceneGraph.createSceneNode();
       vec3Allocator.get(1, (tmp) => {
-        flNode.update({ pos: vec3.set(tmp, 0.5, 0, 1.5) });
-        frNode.update({ pos: vec3.set(tmp, -0.5, 0, 1.5) });
-        blNode.update({ pos: vec3.set(tmp, 0.5, 0, -1.5) });
-        brNode.update({ pos: vec3.set(tmp, -0.5, 0, -1.5) });
+        flNode.getAddon(Mat4TransformAddon).update({ pos: vec3.set(tmp, 0.5, 0, 1.5) });
+        frNode.getAddon(Mat4TransformAddon).update({ pos: vec3.set(tmp, -0.5, 0, 1.5) });
+        blNode.getAddon(Mat4TransformAddon).update({ pos: vec3.set(tmp, 0.5, 0, -1.5) });
+        brNode.getAddon(Mat4TransformAddon).update({ pos: vec3.set(tmp, -0.5, 0, -1.5) });
       });
-      flNode.attachToParent(lightcycleComponent.FrontWheelSceneNode);
-      frNode.attachToParent(lightcycleComponent.FrontWheelSceneNode);
-      blNode.attachToParent(lightcycleComponent.RearWheelSceneNode);
-      brNode.attachToParent(lightcycleComponent.RearWheelSceneNode);
+      flNode.setParent(lightcycleComponent.FrontWheelSceneNode);
+      frNode.setParent(lightcycleComponent.FrontWheelSceneNode);
+      blNode.setParent(lightcycleComponent.RearWheelSceneNode);
+      brNode.setParent(lightcycleComponent.RearWheelSceneNode);
       entity.addListener('destroy', () => {
-        flNode.detach(); frNode.detach(); blNode.detach(); brNode.detach();
+        flNode.destroy(); frNode.destroy(); blNode.destroy(); brNode.destroy();
       });
       collisionBoundsComponent =
         entity.addComponent(LightcycleCollisionBoundsComponent, flNode, frNode, blNode, brNode);
     }
     return vec3Allocator.get(4, (fl, fr, bl, br) => {
-      collisionBoundsComponent!.FrontLeftPoint.getPos(fl);
-      collisionBoundsComponent!.FrontRightPoint.getPos(fr);
-      collisionBoundsComponent!.BackLeftPoint.getPos(bl);
-      collisionBoundsComponent!.BackRightPoint.getPos(br);
+      collisionBoundsComponent!.FrontLeftPoint.getAddon(Mat4TransformAddon).getPos(fl);
+      collisionBoundsComponent!.FrontRightPoint.getAddon(Mat4TransformAddon).getPos(fr);
+      collisionBoundsComponent!.BackLeftPoint.getAddon(Mat4TransformAddon).getPos(bl);
+      collisionBoundsComponent!.BackRightPoint.getAddon(Mat4TransformAddon).getPos(br);
       const leftLine = {
         x0: bl[0], y0: bl[2],
         x1: fl[0], y1: fl[2],

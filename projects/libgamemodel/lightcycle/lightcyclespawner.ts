@@ -1,10 +1,11 @@
 import { ECSManager } from "@libecs/ecsmanager";
 import { vec3, vec2 } from "gl-matrix";
-import { SceneNodeFactoryComponent } from "@libgamemodel/components/commoncomponents";
+import { SceneGraphComponent } from "@libgamemodel/components/commoncomponents";
 import { LightcycleComponent2 } from "./lightcycle.component";
 import { WallGeneratorComponent } from "@libgamemodel/wall/wallgenerator.component";
 import { Entity } from "@libecs/entity";
 import { LightcycleSteeringStateComponent } from "./lightcyclesteeringstate.component";
+import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
 
 type LightcycleInitialSpawnConfig = {
   Position: vec3,
@@ -15,12 +16,13 @@ type LightcycleInitialSpawnConfig = {
 
 export class LightcycleSpawner {
   static attachLightcycle(ecs: ECSManager, entity: Entity, config: LightcycleInitialSpawnConfig) {
-    const {SceneNodeFactory} = ecs.getSingletonComponentOrThrow(SceneNodeFactoryComponent);
+    const {SceneGraph} = ecs.getSingletonComponentOrThrow(SceneGraphComponent);
 
     const pos = vec3.create();
     vec3.copy(pos, config.Position);
 
-    const bodySceneNode = SceneNodeFactory.createSceneNode({
+    const bodySceneNode = SceneGraph.createSceneNode();
+    bodySceneNode.getAddon(Mat4TransformAddon).update({
       rot: {
         axis: vec3.fromValues(0, 1, 0),
         angle: config.Orientation,
@@ -28,7 +30,8 @@ export class LightcycleSpawner {
       pos,
     });
 
-    const frontWheelSceneNode = SceneNodeFactory.createSceneNode({
+    const frontWheelSceneNode = SceneGraph.createSceneNode();
+    frontWheelSceneNode.getAddon(Mat4TransformAddon).update({
       rot: {
         axis: vec3.fromValues(0, 1, 0),
         angle: config.Orientation,
@@ -37,10 +40,11 @@ export class LightcycleSpawner {
     });
 
     const BACK_WHEEL_OFFSET = 3.385;
-    const backWheelSceneNode = SceneNodeFactory.createSceneNode({
+    const backWheelSceneNode = SceneGraph.createSceneNode();
+    backWheelSceneNode.getAddon(Mat4TransformAddon).update({
       pos: vec3.fromValues(0, 0, -BACK_WHEEL_OFFSET),
     });
-    backWheelSceneNode.attachToParent(bodySceneNode);
+    backWheelSceneNode.setParent(bodySceneNode);
 
     entity.addComponent(
       LightcycleComponent2,
@@ -54,7 +58,7 @@ export class LightcycleSpawner {
 
     // TODO (sessamekesh): Use temp allocator instead (not urgent, this is infrequently used)
     const backWheelPos = vec3.create();
-    backWheelSceneNode.getPos(backWheelPos);
+    backWheelSceneNode.getAddon(Mat4TransformAddon).getPos(backWheelPos);
     entity.addComponent(
       WallGeneratorComponent, backWheelSceneNode, 10, 1,
       vec2.fromValues(backWheelPos[0], backWheelPos[2]));

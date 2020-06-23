@@ -11,6 +11,7 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { LightcycleColorComponent } from './lightcyclecolor.component';
 import { assert } from '@libutil/loadutils';
+import { Mat4TransformAddon } from '@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon';
 
 const FULL_COLLISION_DAMAGE = 75;
 
@@ -80,7 +81,7 @@ export class LightcycleUtils {
     if (!vec3Allocator || !lightcycle) return false;
 
     vec3Allocator.get(1, (pos3) => {
-      lightcycle.BodySceneNode.getPos(pos3);
+      lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getPos(pos3);
       vec2.set(o, pos3[0], pos3[2]);
     });
 
@@ -94,9 +95,9 @@ export class LightcycleUtils {
       dt: number,
       vec3Allocator: TempGroupAllocator<vec3>) {
     vec3Allocator.get(2, (lightcyclePos, lightcycleFwd) => {
-      lightcycle.BodySceneNode.getPos(lightcyclePos);
-      const orientation = lightcycle.BodySceneNode.getRotAngle();
-      const wheelOrientation = lightcycle.FrontWheelSceneNode.getRotAngle();
+      lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getPos(lightcyclePos);
+      const orientation = lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
+      const wheelOrientation = lightcycle.FrontWheelSceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
       // TODO (sessamekesh): You need the actual angular velocity here, to find the radius
       if (wheelOrientation - orientation > 0.01) {
       }
@@ -188,9 +189,9 @@ export class LightcycleUtils {
       vec3Allocator: TempGroupAllocator<vec3>) {
     // TODO (sessamekesh): Fill this in
     vec3Allocator.get(2, (pos, fwd) => {
-      const currentAngle = lightcycle.BodySceneNode.getRotAngle();
+      const currentAngle = lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
       vec3.set(fwd, Math.sin(currentAngle), 0, Math.cos(currentAngle));
-      lightcycle.BodySceneNode.getPos(pos);
+      lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getPos(pos);
       vec3.scaleAndAdd(o, pos, fwd, dt * lightcycle.Velocity);
     });
   }
@@ -223,7 +224,7 @@ export class LightcycleUtils {
         0,
         Math.cos(circleToBikeGlobalAngle));
 
-      lightcycle.BodySceneNode.getPos(lightcyclePos);
+      lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getPos(lightcyclePos);
       vec3.scaleAndAdd(o.Origin, lightcyclePos, toOriginNormal, o.Radius);
       vec3.set(o.Up, 0, 1, 0);
     });
@@ -244,9 +245,13 @@ export class LightcycleUtils {
     }
 
     if (actualAngularVelocity > 0) {
-      return MathUtils.clampAngle(lightcycle.BodySceneNode.getRotAngle() + glMatrix.toRadian(90));
+      return MathUtils.clampAngle(
+        lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle()
+        + glMatrix.toRadian(90));
     } else {
-      return MathUtils.clampAngle(lightcycle.BodySceneNode.getRotAngle() - glMatrix.toRadian(90));
+      return MathUtils.clampAngle(
+        lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle()
+        - glMatrix.toRadian(90));
     }
   }
 

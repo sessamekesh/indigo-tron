@@ -16,6 +16,7 @@
       "@io/*": ["../io/*"],
       "@librender/*": ["../librender/*"],
       "@libgamerender/*": ["../libgamerender/*"],
+      "@libscenegraph/*": ["../libscenegraph/*"],
     },
     "lib": [
       "ES2018",

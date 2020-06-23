@@ -2,17 +2,18 @@ import { ECSSystem } from '@libecs/ecssystem';
 import { ECSManager } from '@libecs/ecsmanager';
 import { LambertRenderGroupSingleton } from '@libgamerender/components/lambertrendergroup.singleton';
 import { BasicWallGeometrySingleton } from './basicwallgeometry.singleton';
-import { MathAllocatorsComponent, SceneNodeFactoryComponent } from '@libgamemodel/components/commoncomponents';
+import { MathAllocatorsComponent, SceneGraphComponent } from '@libgamemodel/components/commoncomponents';
 import { WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { LightcycleColorComponent, LightcycleColor } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 import { TempGroupAllocator } from '@libutil/allocator';
 import { vec3 } from 'gl-matrix';
-import { SceneNodeFactory } from '@libutil/scene/scenenodefactory';
 import { Entity } from '@libecs/entity';
 import { BasicWallRenderComponent } from './basicwall.rendercomponent';
 import { LambertRenderableGroup } from '@librender/renderable/lambertrenderableutil';
 import { Texture } from '@librender/texture/texture';
 import { Y_UNIT_DIR } from '@libutil/helpfulconstants';
+import { SceneGraph2 } from '@libscenegraph/scenegraph2';
+import { Mat4TransformAddon } from '@libscenegraph/scenenodeaddons/mat4transformaddon';
 
 export class BasicWallRenderSystem2 extends ECSSystem {
   start() { return true; }
@@ -22,7 +23,7 @@ export class BasicWallRenderSystem2 extends ECSSystem {
       basicWallGeometry: BasicWallGeometrySingleton,
       renderGroup: LambertRenderGroupSingleton,
       mathAllocators: MathAllocatorsComponent,
-      sceneNodeFactory: SceneNodeFactoryComponent,
+      sceneNodeFactory: SceneGraphComponent,
     };
 
     const componentQuery = {
@@ -35,7 +36,7 @@ export class BasicWallRenderSystem2 extends ECSSystem {
         entity,
         s.renderGroup.LambertRenderGroup,
         s.mathAllocators.Vec3,
-        s.sceneNodeFactory.SceneNodeFactory,
+        s.sceneNodeFactory.SceneGraph,
         c.wall,
         s.basicWallGeometry,
         c.lightcycleColor.Color);
@@ -46,7 +47,7 @@ export class BasicWallRenderSystem2 extends ECSSystem {
       entity: Entity,
       lambertRenderGroup: LambertRenderableGroup,
       vec3Allocator: TempGroupAllocator<vec3>,
-      sceneNodeFactory: SceneNodeFactory,
+      sceneGraph: SceneGraph2,
       wallComponent: WallComponent2,
       wallGeo: BasicWallGeometrySingleton,
       color: LightcycleColor): BasicWallRenderComponent {
@@ -70,8 +71,9 @@ export class BasicWallRenderSystem2 extends ECSSystem {
           wallComponent.Corner2.Value[0] - wallComponent.Corner1.Value[0]);
 
         // Lazy hack, use a scene node because we have the position and rotation. Don't do this.
-        const sceneNode = sceneNodeFactory.createSceneNode();
-        sceneNode.update({
+        const sceneNode = sceneGraph.createSceneNode();
+        const mat4Addon = sceneNode.getAddon(Mat4TransformAddon);
+        mat4Addon.update({
           pos: midpoint,
           rot: {
             axis: Y_UNIT_DIR,
@@ -79,8 +81,8 @@ export class BasicWallRenderSystem2 extends ECSSystem {
           },
           scl,
         });
-        sceneNode.getMatWorld(lambertRenderable.perObjectData.matWorld.Value);
-        sceneNode.detach();
+        mat4Addon.getMatWorld(lambertRenderable.perObjectData.matWorld.Value);
+        sceneNode.destroy();
       });
 
       lambertRenderable.perObjectData.ambientOverride = 0.9;

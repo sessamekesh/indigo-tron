@@ -10,6 +10,7 @@ import { PlaneAbsoluteConstraintComponent } from "@libgamemodel/physics/planeabs
 import { TempGroupAllocator } from "@libutil/allocator";
 import { MathUtils } from "@libutil/mathutils";
 import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
+import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
 
 export class CameraRig5System extends ECSSystem {
   start() { return true; }
@@ -50,7 +51,7 @@ export class CameraRig5System extends ECSSystem {
             followPosition, lightcycleComponent, adjustedSteering,
             -cameraRigComponent.FollowCurveTime, tempVec3Allocator, tempCircle3Allocator);
 
-          lightcycleComponent.BodySceneNode.getPos(lightcyclePos);
+          lightcycleComponent.BodySceneNode.getAddon(Mat4TransformAddon).getPos(lightcyclePos);
           vec3.sub(toLead, leadPosition, lightcyclePos);
           vec3.normalize(toLead, toLead);
           vec3.sub(toFollow, followPosition, lightcyclePos);

@@ -12,6 +12,7 @@ export class SceneGraph2 {
     }
     value.__extendSceneNode(this.rootNode);
     this.modules.set(key, value);
+    return this;
   }
 
   with<ModuleType extends SceneGraph2Module>(key: SceneGraph2ModuleKey<ModuleType>) {

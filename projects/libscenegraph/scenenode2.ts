@@ -15,6 +15,7 @@ export class SceneNode2 {
       oldParent.addons.forEach(addon => addon.onRemoveChild(this));
     }
     parent?.addons.forEach(addon => addon.onAddChild(this));
+    parent?.children.push(this);
   }
 
   setAddon<AddonType extends SceneNode2Addon>(key: SceneNode2AddonKey<AddonType>, addon: AddonType) {

@@ -1,14 +1,14 @@
 import { LambertRenderable } from '@librender/renderable/lambertrenderableutil';
-import { SceneNode } from '@libutil/scene/scenenode';
+import { SceneNode2 } from '@libscenegraph/scenenode2';
 
 export class LightcycleRenderableTag {}
 
 export class LightcycleRenderComponent2 {
   constructor(
     public FrontWheel: LambertRenderable,
-    public FrontWheelSceneNode: SceneNode,
+    public FrontWheelSceneNode: SceneNode2,
     public RearWheel: LambertRenderable,
-    public RearWheelSceneNode: SceneNode,
+    public RearWheelSceneNode: SceneNode2,
     public Body: LambertRenderable,
-    public BodySceneNode: SceneNode) {}
+    public BodySceneNode: SceneNode2) {}
 }

@@ -37,8 +37,11 @@ export class Mat4TransformAddon extends SceneNode2Addon {
     mat4.identity(this.selfTransform_.Value);
 
     this.pos_ = vec3Allocator.get();
+    vec3.set(this.pos_.Value, 0, 0, 0);
     this.rotAxis_ = vec3Allocator.get();
+    vec3.set(this.rotAxis_.Value, 1, 0, 0);
     this.scl_ = vec3Allocator.get();
+    vec3.set(this.scl_.Value, 1, 1, 1);
   }
 
   cleanup() {
@@ -85,7 +88,7 @@ export class Mat4TransformAddon extends SceneNode2Addon {
 
   onChangeParent(oldParent: SceneNode2|null, newParent: SceneNode2|null) {
     if (oldParent !== newParent) {
-      this.isWorldDirty_ = true;
+      this.dirtyWorld();
     }
   }
 

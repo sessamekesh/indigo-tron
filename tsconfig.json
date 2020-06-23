@@ -29,6 +29,7 @@
       "@libgamemodel/*": ["projects/libgamemodel/*"],
       "@libgamerender/*": ["projects/libgamerender/*"],
       "@io/*": ["projects/io/*"],
+      "@libscenegraph/*": ["projects/libscenegraph/*"],
     }
   }
 }

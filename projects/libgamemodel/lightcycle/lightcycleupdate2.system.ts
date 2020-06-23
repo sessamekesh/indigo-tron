@@ -5,6 +5,7 @@ import { MathUtils } from "@libutil/mathutils";
 import { MovementUtils } from "@libgamemodel/utilities/movementutils";
 import { MathAllocatorsComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
 import { LightcycleSteeringStateComponent } from "./lightcyclesteeringstate.component";
+import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
 
 export class LightcycleUpdateRandomFnComponent {
   constructor(public Fn: ()=>number) {}
@@ -33,9 +34,12 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
         (entity, lightcycle, steeringState) => {
       // Steering state
       const turnAmount = steeringState.SteeringStrength * lightcycle.AngularVelocity * dt;
+      const frontWheelMat4Addon = lightcycle.FrontWheelSceneNode.getAddon(Mat4TransformAddon);
+      const rearWheelMat4Addon = lightcycle.RearWheelSceneNode.getAddon(Mat4TransformAddon);
+      const bodyMat4Addon = lightcycle.BodySceneNode.getAddon(Mat4TransformAddon);
       const newOrientation =
-        MathUtils.clampAngle(lightcycle.FrontWheelSceneNode.getRotAngle() + turnAmount);
-      lightcycle.FrontWheelSceneNode.update({ rot: { angle: newOrientation }});
+        MathUtils.clampAngle(frontWheelMat4Addon.getSelfRotAngle() + turnAmount);
+      frontWheelMat4Addon.update({ rot: { angle: newOrientation }});
 
       // Actual position
       const movementAmt = lightcycle.Velocity * dt;
@@ -45,8 +49,8 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
         lightcycle.BodySceneNode, movementAmt, vec3Allocator);
 
       vec3Allocator.get(3, (frontWheelPos, rearWheelPos, newRearPos) => {
-        lightcycle.FrontWheelSceneNode.getPos(frontWheelPos);
-        lightcycle.RearWheelSceneNode.getPos(rearWheelPos);
+        frontWheelMat4Addon.getPos(frontWheelPos);
+        rearWheelMat4Addon.getPos(rearWheelPos);
         const BACK_WHEEL_OFFSET = 3.385;
         MathUtils.nudgeToDistance(
           newRearPos, frontWheelPos, rearWheelPos,
@@ -54,7 +58,7 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
 
         const newBodyOrientation = MovementUtils.findOrientationBetweenPoints(
           frontWheelPos, newRearPos);
-        lightcycle.BodySceneNode.update({
+        bodyMat4Addon.update({
           pos: frontWheelPos,
           rot: {
             angle: MathUtils.clampAngle(newBodyOrientation),

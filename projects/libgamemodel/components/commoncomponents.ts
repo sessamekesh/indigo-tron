@@ -1,10 +1,10 @@
-import { SceneNodeFactory } from "@libutil/scene/scenenodefactory";
 import { TempGroupAllocator, LifecycleOwnedAllocator } from "@libutil/allocator";
 import { quat, mat4, vec3, vec2, vec4 } from "gl-matrix";
 import { LightcycleColor } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 import { Entity } from "@libecs/entity";
 import { Circle3 } from '@libutil/math/circle3';
 import { Plane } from "@libgamemodel/physics/plane";
+import { SceneGraph2 } from '@libscenegraph/scenegraph2';
 
 export class MathAllocatorsComponent {
   constructor(
@@ -25,8 +25,8 @@ export class OwnedMathAllocatorsComponent {
     public readonly Plane: LifecycleOwnedAllocator<Plane>) {}
 }
 
-export class SceneNodeFactoryComponent {
-  constructor(public readonly SceneNodeFactory: SceneNodeFactory) {}
+export class SceneGraphComponent {
+  constructor(public readonly SceneGraph: SceneGraph2) {}
 }
 
 export class FrameNumberComponent {

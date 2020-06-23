@@ -16,7 +16,7 @@ import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { vec3, glMatrix, vec2 } from 'gl-matrix';
 import { ArenaWallRenderingConfigComponent, ArenaWallUnitGeoComponent, ArenaWallTexturePackComponent } from '@libgamerender/components/arenawallrenderable.component';
 import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
-import { MathAllocatorsComponent, SceneNodeFactoryComponent, PauseStateComponent, OwnedMathAllocatorsComponent, MainPlayerComponent } from '@libgamemodel/components/commoncomponents';
+import { MathAllocatorsComponent, PauseStateComponent, OwnedMathAllocatorsComponent, MainPlayerComponent, SceneGraphComponent } from '@libgamemodel/components/commoncomponents';
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
 import { LightcycleUpdateSystem2 } from '@libgamemodel/lightcycle/lightcycleupdate2.system';
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
@@ -62,6 +62,8 @@ import { ArenaFloor3RenderableGroupSingleton } from '@libgamerender/arena/arenaf
 import { ArenaFloor3GlResourcesSingleton } from '@libgamerender/arena/arenafloor3glresources.singleton';
 import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 import { ArenaFloor3GeometrySingleton } from '@libgamerender/arena/arenafloor3geometry.singleton';
+import { SceneGraph2 } from '@libscenegraph/scenegraph2';
+import { Mat4TransformModule } from '@libscenegraph/scenenodeaddons/mat4transformmodule';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -275,8 +277,14 @@ export class GameAppService2 {
       this.renderProviders_.OwnedQuatAllocator.get(),
       this.renderProviders_.PlaneAllocator.get());
     utilitiesEntity.addComponent(
-      SceneNodeFactoryComponent, this.renderProviders_.SceneNodeFactory.get());
-
+      SceneGraphComponent,
+      new SceneGraph2()
+        .addModule(Mat4TransformModule,
+          new Mat4TransformModule(
+            this.renderProviders_.OwnedMat4Allocator.get(),
+            this.renderProviders_.OwnedVec3Allocator.get(),
+            this.renderProviders_.Mat4Allocator.get(),
+            this.renderProviders_.QuatAllocator.get())));
     // TODO (sessamekesh): Move all the singletons from here to libgamemodel/libgamerender
     //  because the model and render systems that need them are in those libraries (not here)
 
