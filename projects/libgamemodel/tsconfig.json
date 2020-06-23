@@ -24,6 +24,7 @@
       "@libgamemodel/*": ["./*"],
       "@testutils/*": ["../testutils/*"],
       "@io/*": ["../io/*"],
+      "@libscenegraph/*": ["../libscenegraph/*"],
     }
   }
 }

@@ -51,6 +51,7 @@ export type OwnedResource<T> = {
   ReleaseFn: ()=>void,
 };
 
+// TODO (sessamekesh): You may be wasting memory with this - just... don't use it, eh?
 export class LifecycleOwnedAllocator<T extends Object> {
   private buffer_: T[] = [];
   private availability_: boolean[] = [];
