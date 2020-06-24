@@ -14,9 +14,7 @@ import { ArenaWallComponent } from '@libgamemodel/arena/arenawall.component';
 import { DebugRenderTag } from '@libgamemodel/debug/debugrendertag';
 import { Solid2DRenderableUtil } from '@libgamerender/utils/solid2drenderable.util';
 import { MinimapComponent } from '@libgamerender/hud/minimap.component';
-import { LambertRenderGroupSingleton } from '@libgamerender/components/lambertrendergroup.singleton';
 import { LightcycleRenderableTag } from '@libgamerender/lightcycle/lightcycle2.rendercomponent';
-import { ArenaFloor2RenderGroupComponent } from '@libgamerender/arena/arenafloor2.rendergroupcomponent';
 import { ArenaFloor3RenderUtil } from '@libgamerender/utils/arenafloor3renderutil';
 import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { ColorUtil } from '@libutil/colorutil';
@@ -49,10 +47,6 @@ export class GameAppRenderSystem extends ECSSystem {
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
     const ArenaWallTexturePack = ecs.getSingletonComponentOrThrow(ArenaWallTexturePackComponent);
     const ArenaWallUnitGeo = ecs.getSingletonComponentOrThrow(ArenaWallUnitGeoComponent);
-    const { LambertRenderGroup } = ecs.getSingletonComponentOrThrow(LambertRenderGroupSingleton);
-    const {
-      RenderGroup: arenaFloor2RenderGroup,
-    } = ecs.getSingletonComponentOrThrow(ArenaFloor2RenderGroupComponent);
 
     //
     // Generate floor reflection texture
@@ -69,11 +63,9 @@ export class GameAppRenderSystem extends ECSSystem {
         matProj, glMatrix.toRadian(45), gl.canvas.width / gl.canvas.height, 0.1, 1000.0);
 
       LambertRenderableUtil.renderEntitiesMatchingTags2(
-        gl,
-        LambertRenderGroup,
-        lambertShader,
+        ecs,
         [[LightcycleRenderableTag], [WallComponent2]],
-        lightSettings, matView, matProj);
+        lightSettings, matView, matProj, mat4Allocator);
 
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -111,15 +103,13 @@ export class GameAppRenderSystem extends ECSSystem {
           mat4.perspective(
             matProj, glMatrix.toRadian(45), gl.canvas.width / gl.canvas.height, 0.1, 1000.0);
 
-          LambertRenderableUtil.renderEntitiesMatchingTags2(
-            gl,
-            LambertRenderGroup,
-            lambertShader,
-            [[LightcycleRenderableTag], [DebugRenderTag], [WallComponent2]],
-            lightSettings, matView, matProj);
+            LambertRenderableUtil.renderEntitiesMatchingTags2(
+              ecs,
+              [[LightcycleRenderableTag], [DebugRenderTag], [WallComponent2]],
+              lightSettings, matView, matProj, mat4Allocator);
 
           ArenaFloor3RenderUtil.renderEntitiesMatchingTags(
-            ecs, [[FloorComponent]], matProj, matView, viewportDimensions);
+            ecs, [[FloorComponent]], matProj, matView, viewportDimensions, mat4Allocator);
 
           gl.enable(gl.BLEND);
           gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);

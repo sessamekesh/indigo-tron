@@ -58,4 +58,9 @@ export class SceneNode2 {
   onEachChild(fn: (child: SceneNode2)=>void) {
     this.children.forEach(fn);
   }
+
+  // USE THIS CAREFULLY!
+  getChildren(): SceneNode2[] {
+    return this.children;
+  }
 }

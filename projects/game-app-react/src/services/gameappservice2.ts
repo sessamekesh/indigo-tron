@@ -20,11 +20,11 @@ import { MathAllocatorsComponent, PauseStateComponent, OwnedMathAllocatorsCompon
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
 import { LightcycleUpdateSystem2 } from '@libgamemodel/lightcycle/lightcycleupdate2.system';
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
-import { LambertRenderGroupSingleton } from '@libgamerender/components/lambertrendergroup.singleton';
 import { LightcycleLambertRenderResourcesComponent, ArenaFloorReflectionFramebufferComponent, ArenaFloorReflectionTextureComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
+import { Renderable2SceneGraphModule } from '@librender/renderable/renderable2.scenegraphmodule';
 import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
 import { BasicWallGeometryGenerator } from '@libgamerender/wall/basicwallgeometry.generator';
 import { LightcycleSteeringSystem } from '@libgamemodel/lightcycle/lightcyclesteeringsystem';
@@ -34,7 +34,6 @@ import { GameAppRenderSystem } from '@libgamerender/systems/gameapp.rendersystem
 import { GreenAiUtil2 } from '@libgamemodel/ai2/greenai/greenai2.util';
 import { AIStateManagerSystem } from '@libgamemodel/ai2/aistatemanager.system';
 import { BasicWallRenderSystem2 } from '@libgamerender/wall/basicwall.rendersystem';
-import { EnvironmentArenaFloorSystem as EAFS2 } from '@libgamerender/arena/arenafloor.rendersystem';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
 import { MinimapComponent } from '@libgamerender/hud/minimap.component';
 import { HudConfigUpdateSystem } from '@libgamerender/hud/hudconfigupdate.system';
@@ -55,10 +54,6 @@ import { ArenaFloor3RenderSystem } from '@libgamerender/arena/arenafloor3.render
 import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
 import { Solid2DShader } from '@librender/shader/solid2dshader';
 import { HudViewportSingleton } from '@libgamerender/hud/hudviewport.singleton';
-import { LambertRenderableUtil2 } from '@librender/renderable/lambertrenderableutil';
-import { ArenaFloor2RenderGroupComponent } from '@libgamerender/arena/arenafloor2.rendergroupcomponent';
-import { ArenaFloor2RenderableUtil2 } from '@librender/renderable/arenafloor2renderableutil';
-import { ArenaFloor3RenderableGroupSingleton } from '@libgamerender/arena/arenafloor3renderablegroup.singleton';
 import { ArenaFloor3GlResourcesSingleton } from '@libgamerender/arena/arenafloor3glresources.singleton';
 import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 import { ArenaFloor3GeometrySingleton } from '@libgamerender/arena/arenafloor3geometry.singleton';
@@ -147,8 +142,6 @@ export class GameAppService2 {
     //
     ecs.addSystem2(LightcycleLambertSystem2);
     ecs.addSystem2(BasicWallRenderSystem2);
-    // ecs.addSystem2(EnvironmentArenaFloorSystem);
-    ecs.addSystem2(EAFS2);
     ecs.addSystem2(ArenaFloor3RenderSystem);
     ecs.addSystem2(ArenaWallRenderSystem);
 
@@ -185,13 +178,6 @@ export class GameAppService2 {
       ecs,
       gl,
       [ LambertShader, ArenaWallShader, Solid2DShader, ArenaFloorShader3 ]);
-    const renderGroups = ecs.createEntity();
-    renderGroups.addComponent(
-      LambertRenderGroupSingleton,
-      LambertRenderableUtil2.createRenderGroup(rp.OwnedMat4Allocator.get()));
-    renderGroups.addComponent(
-      ArenaFloor2RenderGroupComponent,
-      ArenaFloor2RenderableUtil2.createRenderGroup(rp.OwnedMat4Allocator.get()));
 
     //
     // Geometry
@@ -221,8 +207,6 @@ export class GameAppService2 {
     // Render Resources for various objects
     //
     ArenaFloor3GeometrySingleton.generate(ecs);
-    ArenaFloor3RenderableGroupSingleton.generate(
-      ecs, rp.OwnedMat4Allocator.get(), rp.OwnedVec3Allocator.get());
     ArenaFloor3GlResourcesSingleton.attach(ecs, rp.FloorReflectionTexture.getOrThrow(gl));
 
     //
@@ -279,12 +263,16 @@ export class GameAppService2 {
     utilitiesEntity.addComponent(
       SceneGraphComponent,
       new SceneGraph2()
-        .addModule(Mat4TransformModule,
+        .addModule(
+          Mat4TransformModule,
           new Mat4TransformModule(
             this.renderProviders_.OwnedMat4Allocator.get(),
             this.renderProviders_.OwnedVec3Allocator.get(),
             this.renderProviders_.Mat4Allocator.get(),
-            this.renderProviders_.QuatAllocator.get())));
+            this.renderProviders_.QuatAllocator.get()))
+        .addModule(
+          Renderable2SceneGraphModule,
+          new Renderable2SceneGraphModule()));
     // TODO (sessamekesh): Move all the singletons from here to libgamemodel/libgamerender
     //  because the model and render systems that need them are in those libraries (not here)
 

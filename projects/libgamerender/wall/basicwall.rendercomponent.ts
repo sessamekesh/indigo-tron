@@ -1,5 +1,5 @@
-import { LambertRenderable } from '@librender/renderable/lambertrenderableutil';
+import { LambertRenderable2 } from '@librender/renderable/lambert.renderable2';
 
 export class BasicWallRenderComponent {
-  constructor(public WallLambertRenderable: LambertRenderable) {}
+  constructor(public renderable: LambertRenderable2) {}
 }

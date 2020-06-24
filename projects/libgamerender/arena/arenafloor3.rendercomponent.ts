@@ -1,5 +1,5 @@
-import { ArenaFloor3RenderableGroup, ArenaFloor3Renderable } from '@librender/renderable/arenafloor3renderableutil';
+import { SceneNode2 } from '@libscenegraph/scenenode2';
 
 export class ArenaFloor3RenderComponent {
-  constructor(public Floor: ArenaFloor3Renderable) {}
+  constructor(public RenderableSceneNode: SceneNode2) {}
 }

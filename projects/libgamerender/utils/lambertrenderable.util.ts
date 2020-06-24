@@ -4,7 +4,12 @@ import { LightSettingsComponent, OverrideAmbientCoefficientComponent } from '@li
 import { mat4 } from 'gl-matrix';
 import { ECSManager } from '@libecs/ecsmanager';
 import { Klass } from '@libecs/klass';
-import { LambertRenderableGroup } from '@librender/renderable/lambertrenderableutil';
+import { TempGroupAllocator } from '@libutil/allocator';
+import { GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
+import { LambertShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { SceneGraphComponent } from '@libgamemodel/components/commoncomponents';
+import { Renderable2SceneGraphModule } from '@librender/renderable/renderable2.scenegraphmodule';
+import { LambertRenderable2 } from '@librender/renderable/lambert.renderable2';
 
 // May want to support complex tags in the future - e.g., [MainPlayerTag, LightcycleRenderable] etc
 type RenderTag = Klass<any>;
@@ -67,34 +72,46 @@ export class LambertRenderableUtil {
   }
 
   static renderEntitiesMatchingTags2(
-      gl: WebGL2RenderingContext,
-      lambertGroup: LambertRenderableGroup,
-      lambertShader: LambertShader,
-      tags: RenderTag[][],
+      ecs: ECSManager,
+      tagSets: RenderTag[][],
       lightSettings: LightSettingsComponent,
       matView: mat4,
-      matProj: mat4) {
-    tags.forEach(tagSet => {
-      const renderables = lambertGroup.query(tagSet);
-      if (renderables.length === 0) return;
+      matProj: mat4,
+      mat4Allocator: TempGroupAllocator<mat4>) {
+    const singletonQuery = {
+      gl: GLContextComponent,
+      shader: LambertShaderComponent,
+      sceneGraph: SceneGraphComponent,
+    };
+    ecs.withSingletons(singletonQuery, (singletons) => {
+      const gl = singletons.gl.gl;
+      const shader = singletons.shader.LambertShader;
 
-      lambertShader.activate(gl);
-      for (let i = 0; i < renderables.length; i++) {
-        const renderable = renderables[i];
-        const ambientValue = renderable.perObjectData.ambientOverride == null
-          ? lightSettings.AmbientCoefficient
-          : renderable.perObjectData.ambientOverride;
-        lambertShader.render(gl, {
-          AmbientCoefficient: ambientValue,
-          DiffuseTexture: renderable.glResources.diffuseTexture,
-          Geo: renderable.glResources.geo,
-          LightColor: lightSettings.Color,
-          LightDirection: lightSettings.Direction,
-          MatProj: matProj,
-          MatView: matView,
-          MatWorld: renderable.perObjectData.matWorld.Value,
-        });
-      }
+      const renderableModule = singletons.sceneGraph.SceneGraph.with(Renderable2SceneGraphModule);
+      const renderables = renderableModule.queryRenderables(LambertRenderable2, tagSets);
+
+      const skipRendering = renderables.length === 0;
+      if (skipRendering) return;
+
+      shader.activate(gl);
+
+      mat4Allocator.get(1, (matWorld) => {
+        for (let i = 0; i < renderables.length; i++) {
+          const renderable = renderables[i];
+          renderable.getMat4(matWorld);
+          const r = renderable.renderable.perObjectData;
+          shader.render(gl, {
+            AmbientCoefficient: r.ambientOverride || lightSettings.AmbientCoefficient,
+            DiffuseTexture: r.diffuseTexture,
+            Geo: r.geo,
+            LightColor: lightSettings.Color,
+            LightDirection: lightSettings.Direction,
+            MatProj: matProj,
+            MatView: matView,
+            MatWorld: matWorld,
+          });
+        }
+      });
     });
   }
 }

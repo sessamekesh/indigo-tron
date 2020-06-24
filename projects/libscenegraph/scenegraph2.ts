@@ -10,7 +10,16 @@ export class SceneGraph2 {
     if (this.modules.has(key)) {
       throw new Error('SceneGraphModule with key already exists: ' + key);
     }
-    value.__extendSceneNode(this.rootNode);
+
+    const requiredModules = value.__getRequiredModules();
+    const missingModules = requiredModules.filter(moduleKey => !this.modules.has(moduleKey));
+    if (missingModules.length > 0) {
+      throw new Error(
+        'SceneGraphModule requires installation of missing modules: ' + missingModules.join(','));
+    }
+
+    this.extendAllSceneNodes(value, this.rootNode);
+    value.__setRootSceneNode(this.rootNode);
     this.modules.set(key, value);
     return this;
   }
@@ -28,5 +37,11 @@ export class SceneGraph2 {
     sceneNode.setParent(parent || this.rootNode);
     this.modules.forEach(mod => mod.__extendSceneNode(sceneNode));
     return sceneNode;
+  }
+
+  protected extendAllSceneNodes
+      <ModuleType extends SceneGraph2Module>(mod: ModuleType, sceneNode: SceneNode2) {
+    mod.__extendSceneNode(sceneNode);
+    sceneNode.onEachChild(child => this.extendAllSceneNodes(mod, child));
   }
 }
