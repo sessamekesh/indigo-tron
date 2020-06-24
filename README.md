@@ -10,13 +10,7 @@ TODO (sessamekesh): Put in better notes here, this is all for you right now!
 
 ## General TODO
 Here's a list of things I still need to do before launching this:
-- [ ] Migrate RenderGroup to SceneGraph2
-  - Create a new type of Renderable that has a cleanup method on itself (instead of on RenderableGroup)
-    - Extend this with LambertRenderable, SolidColor2DRenderable, etc., in the librender / libgamerender modules
-  - Create a SceneNodeAddon (librender) that stores map `Klass<T extends Renderable<any>> => T[]` and method getRenderableList(renderableKlass)
-  - Create a SceneNodeModule (librender) that exposes getRenderables() and getRenderablesOfType(renderKlass) methods for the entire scene graph
 - [ ] Adjust the wall rendering (notes in the wall shader)
-- [ ] Finish migration to new renderable system (RenderGroup etc)
 - [ ] Revamp physics
   - Create a traditional physics engine - simple force / constraints
   - Lightcycles are moved forward with a LightcycleDrivingForce
@@ -35,6 +29,10 @@ Here's a list of things I still need to do before launching this:
 - [ ] Asynchronously load all resources (right now it's serial, and takes awhile)
 - [ ] Create a joystick for mobile use (right hand side)
 - [ ] Make arena wall a more pretty thing to look at - moderate value, instead of dark
+
+## Possible improvements?
+- [ ] Rendering takes a long time - perhaps in making so many draw calls, especially on the walls.
+  - [ ] Frame time could be dramatically (~60%) reduced by drawing walls instanced, or as part of a triangle strip.
 
 Note: Object pool for temporary math objects (vec3 etc) is somewhat worth it to use, it seems to reduce frame memory increase by somewhere in the 10s KB range (~25% it seems like!)
 Owned math resources, it is less clear if it helps or not.
