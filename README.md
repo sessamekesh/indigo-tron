@@ -10,7 +10,6 @@ TODO (sessamekesh): Put in better notes here, this is all for you right now!
 
 ## General TODO
 Here's a list of things I still need to do before launching this:
-- [ ] Adjust the wall rendering (notes in the wall shader)
 - [ ] Revamp physics
   - Create a traditional physics engine - simple force / constraints
   - Lightcycles are moved forward with a LightcycleDrivingForce

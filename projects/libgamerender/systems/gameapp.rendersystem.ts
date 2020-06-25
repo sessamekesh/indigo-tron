@@ -3,13 +3,10 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { ArenaFloorReflectionFramebufferComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
 import { CameraComponent, ReflectionCameraComponent } from '@libgamemodel/components/gameappuicomponents';
-import { LambertShaderComponent, ArenaWallShaderComponent, ArenaFloor2ShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { mat4, glMatrix, vec2 } from 'gl-matrix';
 import { LambertRenderableUtil } from '@libgamerender/utils/lambertrenderable.util';
-import { ArenaWallTexturePackComponent, ArenaWallUnitGeoComponent } from '@libgamerender/components/arenawallrenderable.component';
-import { ArenaWallRenderableUtil } from '@libgamerender/utils/arenawallrenderable.util';
 import { ArenaWallComponent } from '@libgamemodel/arena/arenawall.component';
 import { DebugRenderTag } from '@libgamemodel/debug/debugrendertag';
 import { Solid2DRenderableUtil } from '@libgamerender/utils/solid2drenderable.util';
@@ -18,6 +15,7 @@ import { LightcycleRenderableTag } from '@libgamerender/lightcycle/lightcycle2.r
 import { ArenaFloor3RenderUtil } from '@libgamerender/utils/arenafloor3renderutil';
 import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { ColorUtil } from '@libutil/colorutil';
+import { ArenaWall2RenderableUtil } from '@libgamerender/utils/arenawall2renderable.util';
 
 export class GameAppRenderSystem extends ECSSystem {
   start() { return true; }
@@ -35,18 +33,10 @@ export class GameAppRenderSystem extends ECSSystem {
       ReflectionCamera: reflectionCamera,
     } = ecs.getSingletonComponentOrThrow(ReflectionCameraComponent);
     const {
-      LambertShader: lambertShader
-    } = ecs.getSingletonComponentOrThrow(LambertShaderComponent);
-    const {
-      ArenaWallShader: arenaWallShader,
-    } = ecs.getSingletonComponentOrThrow(ArenaWallShaderComponent);
-    const {
       Vec2: vec2Allocator,
       Mat4: mat4Allocator,
       Vec3: vec3Allocator,
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
-    const ArenaWallTexturePack = ecs.getSingletonComponentOrThrow(ArenaWallTexturePackComponent);
-    const ArenaWallUnitGeo = ecs.getSingletonComponentOrThrow(ArenaWallUnitGeoComponent);
 
     //
     // Generate floor reflection texture
@@ -70,15 +60,8 @@ export class GameAppRenderSystem extends ECSSystem {
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.blendEquation(gl.FUNC_ADD);
-      ArenaWallRenderableUtil.renderEntitiesMatchingTags(
-        gl, ecs, arenaWallShader,
-        [
-          ArenaWallComponent,
-        ],
-        ArenaWallUnitGeo.Geo,
-        ArenaWallTexturePack,
-        matView,
-        matProj);
+      ArenaWall2RenderableUtil.renderEntitiesMatchingTags(
+        ecs, [[ArenaWallComponent]], matProj, matView);
       gl.disable(gl.BLEND);
     });
 
@@ -114,15 +97,8 @@ export class GameAppRenderSystem extends ECSSystem {
           gl.enable(gl.BLEND);
           gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
           gl.blendEquation(gl.FUNC_ADD);
-          ArenaWallRenderableUtil.renderEntitiesMatchingTags(
-            gl, ecs, arenaWallShader,
-            [
-              ArenaWallComponent,
-            ],
-            ArenaWallUnitGeo.Geo,
-            ArenaWallTexturePack,
-            matView,
-            matProj);
+          ArenaWall2RenderableUtil.renderEntitiesMatchingTags(
+            ecs, [[ArenaWallComponent]], matProj, matView);
           gl.disable(gl.BLEND);
         });
       });

@@ -2,7 +2,7 @@ import { ECSManager } from '@libecs/ecsmanager';
 import { IEventManager } from '@libutil/eventmanager';
 import { GameAppUIEvents } from './gameappuieventmanager';
 import { DracoDecoderComponent } from '@libgamerender/renderresourcesingletons/dracodecodercomponent';
-import { ArenaWallShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { ArenaWallShader2Singleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { GeoRenderResourcesSingletonTag } from '@libgamerender/renderresourcesingletons/georenderresourcessingletontag';
 import { RenderResourcesSingletonTag } from '@libgamerender/renderresourcesingletons/renderresourcessingletontag';
 import { KeyboardManager } from '@io/keyboardmanager';
@@ -14,7 +14,6 @@ import { GamepadBikeInputController } from '@io/bikeinput/gamepadbikeinputcontro
 import { Entity } from '@libecs/entity';
 import { BasicCamera } from '@libgamemodel/camera/basiccamera';
 import { vec3, glMatrix, vec2 } from 'gl-matrix';
-import { ArenaWallRenderingConfigComponent, ArenaWallUnitGeoComponent, ArenaWallTexturePackComponent } from '@libgamerender/components/arenawallrenderable.component';
 import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
 import { MathAllocatorsComponent, PauseStateComponent, OwnedMathAllocatorsComponent, MainPlayerComponent, SceneGraphComponent } from '@libgamemodel/components/commoncomponents';
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
@@ -26,7 +25,9 @@ import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
 import { Renderable2SceneGraphModule } from '@librender/renderable/renderable2.scenegraphmodule';
 import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
+import { ArenaWall2RenderResourcesSingleton } from '@libgamerender/arena/arenawall2renderresources.singleton';
 import { BasicWallGeometryGenerator } from '@libgamerender/wall/basicwallgeometry.generator';
+import { ArenaWall2GeoGenerator } from '@librender/geo/generators/arenawall2geogenerator';
 import { LightcycleSteeringSystem } from '@libgamemodel/lightcycle/lightcyclesteeringsystem';
 import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
 import { LightcycleLambertSystem2 } from '@libgamerender/lightcycle/lightcycle.lambertsystem2';
@@ -41,11 +42,9 @@ import { MinimapRenderSystem } from '@libgamerender/hud/minimap.rendersystem';
 import { Key } from 'ts-key-enum';
 import { ShaderBuilderUtil } from '@libgamerender/utils/shaderbuilder.util';
 import { LambertShader } from '@librender/shader/lambertshader';
-import { ArenaWallShader } from '@librender/shader/arenawallshader';
-import { ArenaWallGeo } from '@librender/geo/arenawallgeo';
 import { assert } from '@libutil/loadutils';
 import { Texture } from '@librender/texture/texture';
-import { ArenaWallRenderSystem } from '@libgamerender/arena/arenawall.rendersystem';
+import { ArenaWall2RenderSystem } from '@libgamerender/arena/arenawall2.rendersystem';
 import { AiSteeringSystem } from '@libgamemodel/ai/aisteering.system';
 import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
@@ -59,6 +58,7 @@ import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 import { ArenaFloor3GeometrySingleton } from '@libgamerender/arena/arenafloor3geometry.singleton';
 import { SceneGraph2 } from '@libscenegraph/scenegraph2';
 import { Mat4TransformModule } from '@libscenegraph/scenenodeaddons/mat4transformmodule';
+import { ArenaWallShader2 } from '@librender/shader/arenawallshader2';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -143,7 +143,7 @@ export class GameAppService2 {
     ecs.addSystem2(LightcycleLambertSystem2);
     ecs.addSystem2(BasicWallRenderSystem2);
     ecs.addSystem2(ArenaFloor3RenderSystem);
-    ecs.addSystem2(ArenaWallRenderSystem);
+    ecs.addSystem2(ArenaWall2RenderSystem);
 
     //
     // HUD
@@ -177,7 +177,7 @@ export class GameAppService2 {
     ShaderBuilderUtil.createShaders(
       ecs,
       gl,
-      [ LambertShader, ArenaWallShader, Solid2DShader, ArenaFloorShader3 ]);
+      [ LambertShader, Solid2DShader, ArenaFloorShader3, ArenaWallShader2 ]);
 
     //
     // Geometry
@@ -195,12 +195,17 @@ export class GameAppService2 {
       await rp.BikeWheelTexture.getOrThrow(gl),
       await rp.BikeBodyTexture.getOrThrow(gl));
     geoEntity.addComponent(
-      ArenaWallUnitGeoComponent,
+      ArenaWall2RenderResourcesSingleton,
       assert(
-        'ArenaWallUnitGeo',
-        ArenaWallGeo.createUnitWall(
-          gl,
-          ecs.getSingletonComponentOrThrow(ArenaWallShaderComponent).ArenaWallShader)));
+        'ArenaWall2UnitGeo',
+        ArenaWall2GeoGenerator.createUnitWall(
+          gl, ecs.getSingletonComponentOrThrow(ArenaWallShader2Singleton).ArenaWallShader2)),
+      await Texture.createFromURL(gl, 'assets/particles/gimp_cloud_1.png', Texture.REPEAT_LINEAR),
+      await Texture.createFromURL(gl, 'assets/particles/gimp_cloud_2.png', Texture.REPEAT_LINEAR),
+      /* Wisp2Scale */ vec2.fromValues(1/25, 1/25),
+      /* Wisp2Scale */ vec2.fromValues(1/15, 1/20),
+      /* Wisp1Velocity */ vec2.fromValues(0.15, -0.4),
+      /* Wisp2Velocity */ vec2.fromValues(-0.15, -0.15));
     BasicWallGeometryGenerator.attachGeoSingleton(ecs);
 
     //
@@ -222,20 +227,6 @@ export class GameAppService2 {
     texturesEntity.addComponent(
       ArenaFloorReflectionTextureComponent,
       rp.FloorReflectionTexture.getOrThrow(gl));
-    texturesEntity.addComponent(
-      ArenaWallTexturePackComponent,
-      /* BaseColor */
-      await Texture.createFromURL(
-        gl, 'assets/textures/wall_basecolor.png', Texture.REPEAT_MIRRORED_LINEAR),
-      /* Distortion */
-      await Texture.createFromURL(
-        gl, 'assets/textures/perlin_distortion_1.png', Texture.REPEAT_MIRRORED_LINEAR),
-      /* Intensity */
-      await Texture.createFromURL(
-        gl, 'assets/textures/forcefield_intensity.png', Texture.REPEAT_LINEAR),
-      /* ForceField */
-      await Texture.createFromURL(
-        gl, 'assets/textures/forcefield_mask.png', Texture.REPEAT_LINEAR));
   }
 
   private async setFreshEcsState_() {
@@ -301,15 +292,6 @@ export class GameAppService2 {
     vec3.normalize(lightDirection, lightDirection);
     lightsEntity.addComponent(
       LightSettingsComponent, lightDirection, vec3.fromValues(1, 1, 1), 0.55);
-
-    const renderSpawnConfigEntity = ecs.createEntity();
-    renderSpawnConfigEntity.addComponent(
-      ArenaWallRenderingConfigComponent,
-      /* BaseColorUVPerWorldUnit */ vec2.fromValues(0.025, 0.05),
-      /* IntensityUVPerWorldUnit */ vec2.fromValues(0.025, 0.0125),
-      /* ForceFieldUVPerWorldUnit */ vec2.fromValues(0.0725, 0.0725),
-      /* IntensityDisplacementUpdateRateInWorldUnits */ vec2.fromValues(0, -0.325),
-      /* DistortionOffsetUpdateRateInWorldUnits */ vec2.fromValues(0.035, 0.035));
 
     //
     // System run-time configuration

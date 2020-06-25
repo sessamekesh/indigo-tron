@@ -15,7 +15,7 @@ export class ArenaFloor3GeometrySingleton {
       const attribs = shader.getAttribLocations();
       const buffers: AttribBuffersType<typeof attribs> = {
         pos: {
-          data: new Float32Array([-1, 0, -1,  1, 0, -1,  -1, 0, 1,  1, 0, 1]),
+          data: new Float32Array([-0.508, 0, -0.508,  0.508, 0, -0.508,  -0.508, 0, 0.508,  0.508, 0, 0.508]),
           dataType: 'float',
           sizePerElement: 3,
         },
