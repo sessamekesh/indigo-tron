@@ -11,6 +11,7 @@
     "sourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "downlevelIteration": true,
     "removeComments": false,
     "noImplicitAny": true,
     "allowJs": true,

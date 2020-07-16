@@ -17,25 +17,21 @@ import { vec3, glMatrix, vec2 } from 'gl-matrix';
 import { ReflectionCamera } from '@libgamemodel/camera/reflectioncamera';
 import { MathAllocatorsComponent, PauseStateComponent, OwnedMathAllocatorsComponent, MainPlayerComponent, SceneGraphComponent } from '@libgamemodel/components/commoncomponents';
 import { UIEventEmitterComponent } from '@libgamemodel/components/gameui';
-import { LightcycleUpdateSystem2 } from '@libgamemodel/lightcycle/lightcycleupdate2.system';
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
 import { LightcycleLambertRenderResourcesComponent, ArenaFloorReflectionFramebufferComponent, ArenaFloorReflectionTextureComponent, GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
-import { LightcycleSpawner } from '@libgamemodel/lightcycle/lightcyclespawner';
 import { EnvironmentUtils } from '@libgamemodel/environment/environmentutils';
 import { WallSpawnerSystem2 } from '@libgamemodel/wall/wallspawner2.system';
 import { Renderable2SceneGraphModule } from '@librender/renderable/renderable2.scenegraphmodule';
-import { LightcycleCollisionSystem } from '@libgamemodel/lightcycle/lightcyclecollisionsystem';
 import { ArenaWall2RenderResourcesSingleton } from '@libgamerender/arena/arenawall2renderresources.singleton';
 import { BasicWallGeometryGenerator } from '@libgamerender/wall/basicwallgeometry.generator';
 import { ArenaWall2GeoGenerator } from '@librender/geo/generators/arenawall2geogenerator';
-import { LightcycleSteeringSystem } from '@libgamemodel/lightcycle/lightcyclesteeringsystem';
 import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
 import { LightcycleLambertSystem2 } from '@libgamerender/lightcycle/lightcycle.lambertsystem2';
 import { GameAppRenderSystem } from '@libgamerender/systems/gameapp.rendersystem';
-import { GreenAiUtil2 } from '@libgamemodel/ai2/greenai/greenai2.util';
 import { AIStateManagerSystem } from '@libgamemodel/ai2/aistatemanager.system';
 import { BasicWallRenderSystem2 } from '@libgamerender/wall/basicwall.rendersystem';
 import { LightSettingsComponent } from '@libgamerender/components/lightsettings.component';
+import { Lightcycle3CollisionDamageSystem } from '@libgamemodel/lightcycle3/lightcycle3collisiondamage.system';
 import { MinimapComponent } from '@libgamerender/hud/minimap.component';
 import { HudConfigUpdateSystem } from '@libgamerender/hud/hudconfigupdate.system';
 import { MinimapRenderSystem } from '@libgamerender/hud/minimap.rendersystem';
@@ -46,19 +42,26 @@ import { assert } from '@libutil/loadutils';
 import { Texture } from '@librender/texture/texture';
 import { ArenaWall2RenderSystem } from '@libgamerender/arena/arenawall2.rendersystem';
 import { AiSteeringSystem } from '@libgamemodel/ai/aisteering.system';
-import { LightcycleColorComponent } from '@libgamemodel/lightcycle/lightcyclecolor.component';
 import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgamemodel/physics/updatephysics.system';
+import { LightcycleDrivingSystem3 } from '@libgamemodel/lightcycle3/lightcycle3driving.system';
+import { Lightcycle3WallGeneratorSystem } from '@libgamemodel/lightcycle3/lightcycle3wallgenerator.system';
+import { Lightcycle3SteeringSystem } from '@libgamemodel/lightcycle3/lightcycle3steering.system';
 import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
 import { ArenaFloor3RenderSystem } from '@libgamerender/arena/arenafloor3.rendersystem';
 import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
+import { CameraRig6System } from '@libgamemodel/camera/camerarig6.system';
 import { Solid2DShader } from '@librender/shader/solid2dshader';
 import { HudViewportSingleton } from '@libgamerender/hud/hudviewport.singleton';
 import { ArenaFloor3GlResourcesSingleton } from '@libgamerender/arena/arenafloor3glresources.singleton';
 import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 import { ArenaFloor3GeometrySingleton } from '@libgamerender/arena/arenafloor3geometry.singleton';
 import { SceneGraph2 } from '@libscenegraph/scenegraph2';
+import { Lightcycle3ArenaCollisionSystem } from '@libgamemodel/lightcycle3/lightcycle3arenacollision.system';
 import { Mat4TransformModule } from '@libscenegraph/scenenodeaddons/mat4transformmodule';
 import { ArenaWallShader2 } from '@librender/shader/arenawallshader2';
+import { Lightcycle3SpawnerUtil } from '@libgamemodel/lightcycle3/lightcycle3spawner.util';
+import { Lightcycle3LambertGeoRenderSystem } from '@libgamerender/lightcycle/lightcycle3lambertgeo.rendersystem';
+import { LightcycleCollisionsListSingleton } from '@libgamemodel/components/lightcyclecollisionslist.singleton';
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -121,14 +124,17 @@ export class GameAppService2 {
     //  as often as is needed.
 
     //
-    // Logical Systems
+    // Logical Systems. Notice: Order is often important, get that right.
     //
-    ecs.addSystem2(LightcycleSteeringSystem);
-    ecs.addSystem2(LightcycleUpdateSystem2);
-    ecs.addSystem2(LightcycleCollisionSystem);
+    ecs.addSystem2(Lightcycle3SteeringSystem);
+    ecs.addSystem2(LightcycleDrivingSystem3);
+    ecs.addSystem2(Lightcycle3ArenaCollisionSystem);
+    ecs.addSystem2(Lightcycle3CollisionDamageSystem);
+    ecs.addSystem2(Lightcycle3WallGeneratorSystem);
     ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
     ecs.addSystem2(CameraRig5System);
+    ecs.addSystem2(CameraRig6System);
     ecs.addSystem2(AIStateManagerSystem);
     ecs.addSystem2(AiSteeringSystem);
 
@@ -144,6 +150,7 @@ export class GameAppService2 {
     ecs.addSystem2(BasicWallRenderSystem2);
     ecs.addSystem2(ArenaFloor3RenderSystem);
     ecs.addSystem2(ArenaWall2RenderSystem);
+    ecs.addSystem2(Lightcycle3LambertGeoRenderSystem);
 
     //
     // HUD
@@ -161,6 +168,11 @@ export class GameAppService2 {
 
     // Special case, the game frame render system (full frame generation code in there)
     ecs.addSystem2(GameAppRenderSystem);
+
+    //
+    // Verify Utilities
+    //
+    Lightcycle3SpawnerUtil.assertSingletonsPresent(ecs);
   }
 
   private static async loadGlResources(
@@ -235,6 +247,9 @@ export class GameAppService2 {
 
     await GameAppService2.loadGlResources(this.gl, ecs, this.renderProviders_);
 
+    //
+    // Utility singletons
+    //
     const utilitiesEntity = ecs.createEntity();
     utilitiesEntity.addComponent(
       MathAllocatorsComponent,
@@ -273,6 +288,11 @@ export class GameAppService2 {
     gameAppUiEntity.addComponent(UIEventEmitterComponent, this.gameAppUiManager);
 
     //
+    // Global game state singletons
+    //
+    LightcycleCollisionsListSingleton.upsert(ecs);
+
+    //
     // Logical rendering resources (camera, lights)
     //
     const camera = new BasicCamera(
@@ -309,13 +329,23 @@ export class GameAppService2 {
     // Initial game state
     //
     EnvironmentUtils.spawnArenaFloor(ecs, 250, 250);
-    const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
-      Position: vec3.fromValues(5, 0, 0),
-      Orientation: glMatrix.toRadian(180),
+    // const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
+    //   Position: vec3.fromValues(5, 0, 0),
+    //   Orientation: glMatrix.toRadian(180),
+    //   Velocity: 38.5,
+    //   AngularVelocity: 1.85,
+    // });
+    // mainPlayerEntity.addComponent(LightcycleColorComponent, 'blue');
+    // mainPlayerEntity.addComponent(MainPlayerComponent);
+    const mainPlayerEntity = Lightcycle3SpawnerUtil.spawnLightcycle(ecs, {
+      Position: vec2.fromValues(5, 0),
+      BodyOrientation: glMatrix.toRadian(180),
+      Color: 'blue',
+      MaxSteeringAngularVelocity: 1.85,
+      SpawnHealth: 100,
       Velocity: 38.5,
-      AngularVelocity: 1.85,
+      WallSpawnHealth: 10,
     });
-    mainPlayerEntity.addComponent(LightcycleColorComponent, 'blue');
     mainPlayerEntity.addComponent(MainPlayerComponent);
 
     const cameraRigEntity = ecs.createEntity();
@@ -334,10 +364,11 @@ export class GameAppService2 {
       /* GoalApproachMaxVelocity */ 250,
       /* GoalApproachMaxDistance */ 70);
 
-    GreenAiUtil2.createAiPlayer(
-      ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'green', 25, Math.random);
-    GreenAiUtil2.createAiPlayer(
-      ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'red', 75, Math.random);
+    // TODO (sessamekesh): Create this! Create lightcycle and then attach AI player, eh?
+    // GreenAiUtil2.createAiPlayer(
+    //   ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'green', 25, Math.random);
+    // GreenAiUtil2.createAiPlayer(
+    //   ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'red', 75, Math.random);
 
     //
     // HUD

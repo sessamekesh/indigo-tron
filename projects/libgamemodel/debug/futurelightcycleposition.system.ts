@@ -7,7 +7,7 @@ import { LifecycleOwnedAllocator } from "@libutil/allocator";
 import { vec3 } from "gl-matrix";
 import { OwnedMathAllocatorsComponent, MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
 import { LightcycleUtils } from "@libgamemodel/lightcycle/lightcycleutils";
-import { LightcycleSteeringStateComponent } from "@libgamemodel/lightcycle/lightcyclesteeringstate.component";
+import { LightcycleSteeringStateComponent } from "@libgamemodel/lightcycle3/lightcyclesteeringstate.component";
 import { DebugRenderTag } from "./debugrendertag";
 
 export class DebugFutureLightcyclePositionSystem extends ECSSystem {

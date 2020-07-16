@@ -3,7 +3,7 @@ import { ECSManager } from "@libecs/ecsmanager";
 import { CameraRig5Component } from "./camerarig5.component";
 import { LightcycleComponent2 } from "@libgamemodel/lightcycle/lightcycle.component";
 import { LightcycleUtils } from "@libgamemodel/lightcycle/lightcycleutils";
-import { LightcycleSteeringStateComponent } from "@libgamemodel/lightcycle/lightcyclesteeringstate.component";
+import { LightcycleSteeringStateComponent } from "@libgamemodel/lightcycle3/lightcyclesteeringstate.component";
 import { MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
 import { vec3 } from "gl-matrix";
 import { PlaneAbsoluteConstraintComponent } from "@libgamemodel/physics/planeabsoluteconstraint.component";

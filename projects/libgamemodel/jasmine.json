@@ -1,10 +1,12 @@
 {
-  "spec_files": [
-    "**/*.test.ts"
+  "reporters": [
+    {
+      "name": "jasmine-spec-reporter#SpecReporter",
+      "options": {
+        "displayStacktrace": "all"
+      }
+    }
   ],
-  "helpers": [
-    "../node_modules/ts-node/register/type-check.js"
-  ],
-  "stopSpecOnExpectationFailure": false,
-  "random": true
+  "spec_dir": ".",
+  "spec_files": ["**/*.spec.ts"]
 }

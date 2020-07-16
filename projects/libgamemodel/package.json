@@ -1,20 +1,19 @@
 {
-  "private": true,
   "name": "libgamemodel",
   "version": "1.0.0",
-  "description": "Game logic library for Indigo TRON",
+  "description": "Game model library for Indigo Tron",
   "scripts": {
-    "test": "ts-node -r tsconfig-paths/register node_modules/jasmine/bin/jasmine.js --reporter=jasmine-console-reporter --config=jasmine.json"
+    "test": "ts-node -r tsconfig-paths/register node_modules/jasmine/bin/jasmine.js --config=jasmine.json"
   },
+  "author": "kamaron.peterson@gmail.com",
   "license": "MIT",
   "devDependencies": {
-    "@types/jasmine": "^3.3.12",
-    "@types/node": "^11.13.4",
-    "jasmine": "^3.4.0",
-    "jasmine-console-reporter": "^3.1.0",
+    "@types/jasmine": "^3.5.11",
+    "jasmine": "^3.5.0",
+    "jasmine-spec-reporter": "^5.0.2",
     "jasmine-ts": "^0.3.0",
-    "ts-node": "^8.1.0",
-    "tsconfig-paths": "^3.8.0",
-    "typescript": "^3.4.3"
+    "ts-node": "^8.10.2",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^3.9.6"
   }
 }

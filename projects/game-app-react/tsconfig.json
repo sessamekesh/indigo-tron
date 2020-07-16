@@ -5,6 +5,7 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
+    "downlevelIteration": true,
     "module": "commonjs",
     "target": "es6",
     "jsx": "react",
@@ -22,5 +23,6 @@
       "ES2018",
       "DOM"
     ]
-  }
+  },
+  "include": ["src/**/*"],
 }

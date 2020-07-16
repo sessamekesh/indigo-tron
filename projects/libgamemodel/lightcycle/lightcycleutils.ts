@@ -6,12 +6,15 @@ import { glMatrix, vec3, vec2, vec4 } from 'gl-matrix';
 import { Entity } from '@libecs/entity';
 import { TempGroupAllocator } from '@libutil/allocator';
 import { Circle3 } from '@libutil/math/circle3';
-import { LightcycleSteeringStateComponent } from './lightcyclesteeringstate.component';
+import { LightcycleSteeringStateComponent } from '../lightcycle3/lightcyclesteeringstate.component';
 import { ECSManager } from '@libecs/ecsmanager';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 import { LightcycleColorComponent } from './lightcyclecolor.component';
 import { assert } from '@libutil/loadutils';
 import { Mat4TransformAddon } from '@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon';
+import { LightcycleComponent3 } from '@libgamemodel/lightcycle3/lightcycle3.component';
+import { LightcycleDrivingStatsComponent } from '@libgamemodel/lightcycle3/lightcycledrivingstats.component';
+import { MovementUtils } from '@libgamemodel/utilities/movementutils';
 
 const FULL_COLLISION_DAMAGE = 75;
 
@@ -182,6 +185,43 @@ export class LightcycleUtils {
     });
   }
 
+  static getApproximatePositionInFuture2(
+      o: vec3,
+      lightcycle: LightcycleComponent3,
+      steering: LightcycleSteeringStateComponent,
+      driveStats: LightcycleDrivingStatsComponent,
+      dt: number,
+      vec3Allocator: TempGroupAllocator<vec3>,
+      circle3Allocator: TempGroupAllocator<Circle3>): void {
+    const angle =
+      LightcycleUtils.getGlobalLightcycleCircleAngleToBike3(lightcycle, driveStats, steering);
+    if (!angle) {
+      // Get straight line, use that
+      LightcycleUtils.getStraightLinePositionInFuture3(
+        o, lightcycle, driveStats, dt, vec3Allocator);
+      return;
+    }
+    circle3Allocator.get(1, (travelCircle) => {
+      if (!LightcycleUtils.getLightcycle3TravelCircle3(
+          travelCircle, lightcycle, steering, driveStats, vec3Allocator)) {
+        // Get straight line, use that
+        LightcycleUtils.getStraightLinePositionInFuture3(
+          o, lightcycle, driveStats, dt, vec3Allocator);
+        return;
+      }
+
+      vec3Allocator.get(1, (toNewPos) => {
+        const actualDistance = driveStats.Velocity * dt;
+        const actualCircumference = 2 * Math.PI * travelCircle.Radius;
+        const actualAngleDifference = 2 * Math.PI * actualDistance / actualCircumference;
+        const sign = (steering.SteeringStrength < 0) ? -1 : 1;
+        const futureAngle = angle - glMatrix.toRadian(180) + actualAngleDifference * sign;
+        vec3.set(toNewPos, Math.sin(futureAngle), 0, Math.cos(futureAngle));
+        vec3.scaleAndAdd(o, travelCircle.Origin, toNewPos, travelCircle.Radius);
+      });
+    });
+  }
+
   static getStraightLinePositionInFuture(
       o: vec3,
       lightcycle: LightcycleComponent2,
@@ -193,6 +233,21 @@ export class LightcycleUtils {
       vec3.set(fwd, Math.sin(currentAngle), 0, Math.cos(currentAngle));
       lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getPos(pos);
       vec3.scaleAndAdd(o, pos, fwd, dt * lightcycle.Velocity);
+    });
+  }
+
+  static getStraightLinePositionInFuture3(
+      o: vec3,
+      lightcycle: LightcycleComponent3,
+      driveStats: LightcycleDrivingStatsComponent,
+      dt: number,
+      vec3Allocator: TempGroupAllocator<vec3>) {
+    vec3Allocator.get(2, (pos, fwd) => {
+      const currentAngle = lightcycle.FrontWheelRotation;
+      vec3.set(fwd, Math.sin(currentAngle), 0, Math.cos(currentAngle));
+      vec3.set(
+        pos, lightcycle.FrontWheelPosition.Value[0], 0, lightcycle.FrontWheelPosition.Value[1]);
+      vec3.scaleAndAdd(o, pos, fwd, dt * driveStats.Velocity);
     });
   }
 
@@ -231,9 +286,51 @@ export class LightcycleUtils {
     return true;
   }
 
+  static getLightcycle3TravelCircle3(
+      o: Circle3,
+      lightcycle: LightcycleComponent3,
+      steering: LightcycleSteeringStateComponent,
+      driveStats: LightcycleDrivingStatsComponent,
+      vec3Allocator: TempGroupAllocator<vec3>) {
+    // Time to complete a circle: T = 2*PI/AngularVelocity (rad/sec)
+    // Distance travelled (circumference): C = T * velocity (m)
+    // Radius: r = C / (2 * PI) = (T * Velocity) / (2 * PI) = Velocity / AngularVelocity
+    const actualAngularVelocity = LightcycleUtils.getActualAngularVelocity3(driveStats, steering);
+    const circleToBikeGlobalAngle =
+      LightcycleUtils.getGlobalLightcycleCircleAngleToBike3(lightcycle, driveStats, steering);
+    if (Math.abs(actualAngularVelocity) < 0.0001 || circleToBikeGlobalAngle == null) {
+      // No circle can be evaluated
+      return false;
+    }
+
+    o.Radius = Math.abs(driveStats.Velocity / actualAngularVelocity);
+
+    // Origin of circle: LightcyclePosition + radius * toOriginNormal
+    // toOriginNormal = [Math.sin(Orientation + 90), 0, Math.cos(Orientation + 90)]
+    //                  (+90 if steering is positive, -90 if steering is negative)
+    vec3Allocator.get(3, (lightcyclePos, toOriginNormal) => {
+      vec3.set(
+        toOriginNormal,
+        Math.sin(circleToBikeGlobalAngle),
+        0,
+        Math.cos(circleToBikeGlobalAngle));
+      vec3.set(
+        lightcyclePos,
+        lightcycle.FrontWheelPosition.Value[0], 0, lightcycle.FrontWheelPosition.Value[1]);
+      vec3.scaleAndAdd(o.Origin, lightcyclePos, toOriginNormal, o.Radius);
+      vec3.set(o.Up, 0, 1, 0);
+    });
+  }
+
   static getActualAngularVelocity(
       lightcycle: LightcycleComponent2, steering: LightcycleSteeringStateComponent): number {
     return steering.SteeringStrength * lightcycle.AngularVelocity;
+  }
+
+  static getActualAngularVelocity3(
+      driveStats: LightcycleDrivingStatsComponent,
+      steering: LightcycleSteeringStateComponent): number {
+    return steering.SteeringStrength * driveStats.MaxSteeringAngularVelocity;
   }
 
   static getGlobalLightcycleCircleAngleToBike(
@@ -252,6 +349,27 @@ export class LightcycleUtils {
       return MathUtils.clampAngle(
         lightcycle.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle()
         - glMatrix.toRadian(90));
+    }
+  }
+
+  static getGlobalLightcycleCircleAngleToBike3(
+      lightcycle: LightcycleComponent3,
+      driveStats: LightcycleDrivingStatsComponent,
+      steering: LightcycleSteeringStateComponent): number|null {
+    const actualAngularVelocity = LightcycleUtils.getActualAngularVelocity3(driveStats, steering);
+    if (Math.abs(actualAngularVelocity) < 0.0001) {
+      // No circle can be evaluated
+      return null;
+    }
+
+    // TODO (sessamekesh): Should it be this, or the front wheel angle? I think this, no?
+    const rot = MovementUtils.findOrientationBetweenPoints2(
+      lightcycle.FrontWheelPosition.Value,
+      lightcycle.RearWheelPosition.Value);
+    if (actualAngularVelocity > 0) {
+      return rot + glMatrix.toRadian(90);
+    } else {
+      return rot - glMatrix.toRadian(90);
     }
   }
 

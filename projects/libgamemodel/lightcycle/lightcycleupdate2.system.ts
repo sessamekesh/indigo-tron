@@ -4,7 +4,7 @@ import { LightcycleComponent2 } from "./lightcycle.component";
 import { MathUtils } from "@libutil/mathutils";
 import { MovementUtils } from "@libgamemodel/utilities/movementutils";
 import { MathAllocatorsComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
-import { LightcycleSteeringStateComponent } from "./lightcyclesteeringstate.component";
+import { LightcycleSteeringStateComponent } from "../lightcycle3/lightcyclesteeringstate.component";
 import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
 
 export class LightcycleUpdateRandomFnComponent {
@@ -16,8 +16,7 @@ export class LightcycleUpdateSystem2 extends ECSSystem {
     return true;
   }
 
-  // TODO (sessamekesh): Move this to using the regular physics. Slow frames are really screwing with
-  //  the ability of the update system to keep up!
+  // TODO (sessamekesh): Move this to using the regular physics.
   update(ecs: ECSManager, msDt: number) {
     const dt = msDt / 1000;
     const {

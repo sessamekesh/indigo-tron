@@ -49,6 +49,7 @@ export class SceneNode2 {
     this.addons.forEach((addon) => addon.cleanup());
     this.setParent(null);
     this.addons.clear();
+    this.children.forEach(child => child.destroy());
   }
 
   getParent() {

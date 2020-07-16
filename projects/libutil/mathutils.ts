@@ -43,6 +43,21 @@ export class MathUtils {
     });
   }
 
+  static nudgeToDistance2(
+    o: vec2, originPos: vec2, inputPos: vec2, distance: number,
+    vec2Allocator: TempGroupAllocator<vec2>) {
+  vec2Allocator.get(1, (toInputPos) => {
+    vec2.sub(toInputPos, inputPos, originPos);
+    const len = vec2.length(toInputPos);
+    if (len === 0) {
+      vec2.copy(o, originPos);
+      return;
+    }
+
+    vec2.scaleAndAdd(o, originPos, toInputPos, distance / len);
+  });
+}
+
   static getSphericalCoordinate(
       o: vec3, upVector: vec3, forwardVector: vec3, spin: number, tilt: number,
       vec3Allocator: TempGroupAllocator<vec3>, quatAllocator: TempGroupAllocator<quat>) {
@@ -68,6 +83,10 @@ export class MathUtils {
     return value - change;
   }
 
+  static vec2ToVec3(o: vec3, i: vec2, y: number) {
+    vec3.set(o, i[0], y, i[1]);
+  }
+
   static getAngleTowardsGoal(angle: number, goal: number, change: number) {
     const linearDistance = Math.abs(angle - goal);
     const highGoalDistance = Math.abs(angle - (goal + Math.PI * 2));
@@ -91,5 +110,58 @@ export class MathUtils {
   // Not really a cross product, but useful in collision detection of lines.
   static crossVec2(a: vec2, b: vec2): number {
     return a[0] * b[1] - a[1] * b[0];
+  }
+
+  static findPerpendicularVec2(o: vec2, i: vec2) {
+    o[0] = i[1];
+    o[1] = -i[0];
+  }
+
+  static invTransformVec2(
+      o: vec2, point: vec2, offset: vec2, rotation: number, tempVec2: TempGroupAllocator<vec2>) {
+    tempVec2.get(3, (zero, translatedPos, rotatedTranslatedPos) => {
+      vec2.set(zero, 0, 0);
+      vec2.sub(translatedPos, point, offset);
+      vec2.rotate(rotatedTranslatedPos, translatedPos, zero, -rotation);
+
+      vec2.copy(o, rotatedTranslatedPos);
+    });
+  }
+
+  static transformVec2(
+      o: vec2, point: vec2, origin: vec2, rotation: number, tempVec2: TempGroupAllocator<vec2>) {
+    tempVec2.get(3, (zero, unrotatedPoint, unRotatedTranslatedPoint) => {
+      vec2.set(zero, 0, 0);
+      vec2.rotate(unrotatedPoint, point, zero, rotation);
+      vec2.add(unRotatedTranslatedPoint, unrotatedPoint, origin);
+
+      vec2.copy(o, unRotatedTranslatedPoint);
+    });
+  }
+
+  /**
+   * Find the projection point on a line segment from lineStart to lineEnd, in terms of percentage
+   *  from start to finish. For example: returned value 0 means input point can be most closely
+   *  projected onto the beginning of the line - 1 means the end, 0.5 means halfway, any value less
+   *  than zero or above one means the projection is not on the line segment.
+   * @param point
+   * @param lineStart
+   * @param lineEnd
+   * @param tempVec2
+   */
+  static getProjectionOnLine(
+      point: vec2,
+      lineStart: vec2,
+      lineEnd: vec2,
+      tempVec2: TempGroupAllocator<vec2>): number {
+    return tempVec2.get(2, (lineSegmentDirection, toPoint) => {
+      vec2.sub(lineSegmentDirection, lineEnd, lineStart);
+      vec2.sub(toPoint, point, lineStart);
+      const lineSegmentLength = vec2.length(lineSegmentDirection);
+      // dot(toPoint, lineSegmentDirection) / lineSegmentLength gives distance along line segment
+      //  that the projection gives. Divide by lineSegmentLength^2 to give it as a proportion of
+      //  the length of the line segment.
+      return vec2.dot(toPoint, lineSegmentDirection) / (lineSegmentLength * lineSegmentLength);
+    });
   }
 }

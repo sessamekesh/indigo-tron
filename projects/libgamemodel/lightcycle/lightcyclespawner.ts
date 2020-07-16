@@ -4,7 +4,7 @@ import { SceneGraphComponent } from "@libgamemodel/components/commoncomponents";
 import { LightcycleComponent2 } from "./lightcycle.component";
 import { WallGeneratorComponent } from "@libgamemodel/wall/wallgenerator.component";
 import { Entity } from "@libecs/entity";
-import { LightcycleSteeringStateComponent } from "./lightcyclesteeringstate.component";
+import { LightcycleSteeringStateComponent } from "../lightcycle3/lightcyclesteeringstate.component";
 import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
 
 type LightcycleInitialSpawnConfig = {

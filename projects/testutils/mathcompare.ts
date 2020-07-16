@@ -1,4 +1,4 @@
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4, vec3, vec2 } from 'gl-matrix';
 
 /**
  * This file contains custom matchers for math comparisons. To read more about making these, check
@@ -13,6 +13,10 @@ function isVec3(input: any): input is vec3 {
   return (input instanceof Float32Array) && input.length === 3;
 }
 
+function isVec2(input: any): input is vec2 {
+  return (input instanceof Float32Array) && input.length === 2;
+}
+
 function stringifyMat4(input: mat4) {
   return `[[${input[0].toFixed(3)}, ${input[1].toFixed(3)}, ${input[2].toFixed(3)}, ${input[3].toFixed(3)}], `
       + `[${input[4].toFixed(3)}, ${input[5].toFixed(3)}, ${input[6].toFixed(3)}, ${input[7].toFixed(3)}], `
@@ -22,6 +26,10 @@ function stringifyMat4(input: mat4) {
 
 function stringifyVec3(input: vec3) {
   return `(${input[0]}, ${input[1]}, ${input[2]})`;
+}
+
+function stringifyVec2(input: vec2) {
+  return `(${input[0]}, ${input[1]})`;
 }
 
 function stringifyArray(input: number[]) {
@@ -35,6 +43,10 @@ function stringifyArray(input: number[]) {
 
 function getPercentDiff(a: number, b: number) {
   return Math.abs(a - b) / (Math.abs(a + b) / 2);
+}
+
+function areBothRoughlyZero(a: number, b: number) {
+  return (Math.abs(a) < 0.0000001) && (Math.abs(b) < 0.0000001);
 }
 
 function fail(msg: string): jasmine.CustomMatcherResult {
@@ -88,7 +100,7 @@ export const GLMatrixMatchers: jasmine.CustomMatcherFactories = {
         }
 
         for (let i = 0; i < 3; i++) {
-          if (getPercentDiff(expected[i], actual[i]) > 0.001) {
+          if ((getPercentDiff(expected[i], actual[i]) > 0.001) && !areBothRoughlyZero(expected[i], actual[i])) {
             return fail(`Actual value ${stringifyVec3(actual)} does not match expected ${stringifyVec3(expected)}`);
           }
         }
@@ -97,4 +109,32 @@ export const GLMatrixMatchers: jasmine.CustomMatcherFactories = {
       },
     };
   },
+  toAlmostEqualVec2: (): jasmine.CustomMatcher => {
+    return {
+      compare: (actual: any, expected: any): jasmine.CustomMatcherResult => {
+        if (!isVec2(actual)) {
+          return fail('Test value is not a vec2');
+        }
+        if (!isVec2(expected)) {
+          return fail('Expected value is not a vec2');
+        }
+
+        for (let i = 0; i < 2; i++) {
+          if ((getPercentDiff(expected[i], actual[i]) > 0.001) && !areBothRoughlyZero(expected[i], actual[i])) {
+            return fail(`Actual value ${stringifyVec2(actual)} does not match expected ${stringifyVec2(expected)}`);
+          }
+        }
+
+        return pass();
+      }
+    }
+  },
 };
+
+export function vec2ToVec3(i: vec2, y: number) {
+  return vec3.fromValues(i[0], y, i[1]);
+}
+
+export function vec3ToVec2(i: vec3) {
+  return vec2.fromValues(i[0], i[2]);
+}

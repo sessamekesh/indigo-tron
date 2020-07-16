@@ -5,11 +5,13 @@ import { LightcycleCollisionBoundsComponent } from '@libgamemodel/lightcycle/lig
 import { LambertGeo } from '@librender/geo/lambertgeo';
 import { LambertShader, LambertRenderCall } from '@librender/shader/lambertshader';
 import { CubeGeoGenerator } from '@librender/geo/generators/cubegeogenerator';
-import { vec3, mat4, vec4 } from 'gl-matrix';
-import { TempGroupAllocator } from '@libutil/allocator';
+import { vec3, vec4 } from 'gl-matrix';
 import { FrameSettings } from '@libgamerender/framesettings';
 import { Texture } from '@librender/texture/texture';
 import { FlatTexture } from '@librender/texture/flattexture';
+import { Mat4TransformAddon } from '@libscenegraph/scenenodeaddons/mat4transformaddon';
+import { LambertShaderComponent } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
 
 export interface DebugBikeSystemConfig {
   BikeCollisionBounds: boolean,
@@ -27,10 +29,7 @@ export class DebugBikeSystem extends ECSSystem {
 
   private cubeGeo: LambertGeo|null = null;
   private bikeCornerTexture: Texture|null = null;
-  constructor(
-      private lambertShader: LambertShader,
-      private mat4Allocator: TempGroupAllocator<mat4>,
-      private readonly config: DebugBikeSystemConfig = DebugBikeSystem.DEFAULT_CONFIG) {
+  constructor() {
     super();
   }
 
@@ -39,14 +38,18 @@ export class DebugBikeSystem extends ECSSystem {
   update(ecs: ECSManager, msDt: number) {}
 
   render(gl: WebGL2RenderingContext, ecs: ECSManager, frameSettings: FrameSettings) {
+    const lambertShader = ecs.getSingletonComponentOrThrow(LambertShaderComponent).LambertShader;
+    const mat4Allocator = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent).Mat4;
+    const config = DebugBikeSystem.DEFAULT_CONFIG;
+
     ecs.iterateComponents(
         [LightcycleComponent2, LightcycleCollisionBoundsComponent],
         (lightcycleEntity, lightcycleComponent, collisionBoundsComponent) => {
       // foobar here?
-      this.lambertShader.activate(gl);
-      this.mat4Allocator.get(1, (matWorld) => {
-        const geo = this.getCubeGeo(gl);
-        const tex = this.getCubeTexture(gl);
+      lambertShader.activate(gl);
+      mat4Allocator.get(1, (matWorld) => {
+        const geo = this.getCubeGeo(gl, lambertShader);
+        const tex = this.getCubeTexture(gl, config);
         if (geo && tex) {
           const call: LambertRenderCall = {
             AmbientCoefficient: 1,
@@ -59,35 +62,35 @@ export class DebugBikeSystem extends ECSSystem {
             MatWorld: matWorld,
           };
 
-          collisionBoundsComponent.FrontLeftPoint.getMatWorld(matWorld);
-          this.lambertShader.render(gl, call);
+          collisionBoundsComponent.FrontLeftPoint.getAddon(Mat4TransformAddon).getMatWorld(matWorld);
+          lambertShader.render(gl, call);
 
-          collisionBoundsComponent.FrontRightPoint.getMatWorld(matWorld);
-          this.lambertShader.render(gl, call);
+          collisionBoundsComponent.FrontRightPoint.getAddon(Mat4TransformAddon).getMatWorld(matWorld);
+          lambertShader.render(gl, call);
 
-          collisionBoundsComponent.BackLeftPoint.getMatWorld(matWorld);
-          this.lambertShader.render(gl, call);
+          collisionBoundsComponent.BackLeftPoint.getAddon(Mat4TransformAddon).getMatWorld(matWorld);
+          lambertShader.render(gl, call);
 
-          collisionBoundsComponent.BackRightPoint.getMatWorld(matWorld);
-          this.lambertShader.render(gl, call);
+          collisionBoundsComponent.BackRightPoint.getAddon(Mat4TransformAddon).getMatWorld(matWorld);
+          lambertShader.render(gl, call);
         }
       });
     });
   }
 
-  private getCubeGeo(gl: WebGL2RenderingContext) {
+  private getCubeGeo(gl: WebGL2RenderingContext, lambertShader: LambertShader) {
     if (!this.cubeGeo) {
       const cubeGeo = CubeGeoGenerator.generateLambertCubeGeo(
-        gl, this.lambertShader, vec3.fromValues(0.05, 0.05, 0.05));
+        gl, lambertShader, vec3.fromValues(0.05, 0.05, 0.05));
       this.cubeGeo = LambertGeo.create(gl, cubeGeo.vertexData, {BitWidth: 8, Data: cubeGeo.indices});
     }
     return this.cubeGeo;
   }
 
-  private getCubeTexture(gl: WebGL2RenderingContext) {
+  private getCubeTexture(gl: WebGL2RenderingContext, config: DebugBikeSystemConfig) {
     if (!this.bikeCornerTexture) {
       this.bikeCornerTexture = FlatTexture.create(
-        gl, this.config.BikeCollisionBoundsMarkerColor, 1, 1);
+        gl, config.BikeCollisionBoundsMarkerColor, 1, 1);
     }
     return this.bikeCornerTexture;
   }

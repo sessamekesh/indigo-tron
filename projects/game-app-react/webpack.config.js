@@ -44,6 +44,13 @@ module.exports = {
     "react-dom": "ReactDOM"
   },
   watch: true,
+  entry: {
+    'main': './src/index.tsx',
+  },
+  output: {
+    filename: '[name].bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+  },
   devServer: {
     contentBase: ['./', path.join(__dirname, '../')],
   }

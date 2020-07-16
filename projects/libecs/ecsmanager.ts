@@ -1,10 +1,11 @@
 import { Entity } from './entity';
 import { Klass, Klass0 } from './klass';
 import { ECSSystem } from './ecssystem';
+import { EventManager } from '@libutil/eventmanager';
 
 // Helpers, for use in ECS query types later
 // Notice they use some ugly type transformations - this is, unfortunately, necessary for now.
-interface KlassObjBase {[name: string]: Klass<any>};
+export interface KlassObjBase {[name: string]: Klass<any>};
 function mapObject<A extends O[keyof O], B, O extends {[key: string]: any}>(o: O, f: (a: A)=>B) {
   return Object.keys(o).reduce(((ret: {[key: string]: any}, key: string) => {
     ret[key] = f(o[key]);
@@ -34,8 +35,12 @@ function unwrapPartial<T>(partial: Partial<T>): T|null {
   return null;
 }
 
+interface ECSManagerEventMap {
+  'afterUpdate': void,
+}
+
 // Actual ECS manager implementation
-export class ECSManager {
+export class ECSManager extends EventManager<ECSManagerEventMap> {
   private nextId_ = 0;
   private entities_ = new Map<number, Entity>();
   private indices_ = new Map<Klass<any>, Set<number>>();
@@ -70,7 +75,9 @@ export class ECSManager {
   }
 
   addSystem2<T extends ECSSystem>(klass: Klass0<T>) {
-    this.systems_.push(new klass());
+    const system = new klass();
+    this.systems_.push(system);
+    return system;
   }
 
   getSystem<T extends ECSSystem>(klass: Klass<T>): T|null {
@@ -121,6 +128,8 @@ export class ECSManager {
     for (let i = 0; i < this.systems_.length; i++) {
       this.systems_[i].update(this, msDt);
     }
+
+    this.fireEvent('afterUpdate', undefined);
   }
 
   clearAllEntities() {
@@ -183,6 +192,7 @@ export class ECSManager {
     });
   }
 
+  // TODO (sessamekesh): This should return an iterator instead (generator?)
   iterateComponents2<KlassObj extends KlassObjBase, SingletonKlassObj extends KlassObjBase>(
       singletonQuery: SingletonKlassObj,
       query: KlassObj,
@@ -218,6 +228,38 @@ export class ECSManager {
     });
   }
 
+  *iterateComponents3<SingletonObj extends KlassObjBase, ComponentObj extends KlassObjBase>(
+      singletonQuery: SingletonObj,
+      query: ComponentObj) {
+    // Gross type avoidance thing here
+    const partialSingletons =
+    mapObject(
+      singletonQuery,
+      klass => this.getSingletonComponent(klass)) as unknown as Partial<MappedKlassObjType<SingletonObj>>;
+    const singletons = unwrapPartial(partialSingletons);
+    if (!singletons) return;
+
+    const klassList = Object.values(query);
+    const idSets = klassList.map(klass => this.getOrCreateIndex(klass)).sort((a, b)=>a.size - b.size);
+
+    const firstIdSet = idSets[0];
+    for (let id of firstIdSet) {
+      // Skip this entity if it does not appear in all component indices
+      for (let i = 1; i < idSets.length; i++) {
+        if (!idSets[i].has(id)) continue;
+      }
+
+      const entity = this.entities_.get(id);
+      if (!entity) continue;
+
+      const componentInstances = mapKlassObj(entity, query);
+      if (!componentInstances) continue;
+
+      yield {entity, singletons, componentInstances};
+    };
+  }
+
+  // TODO (sessamekesh): This should be "querySingletons" instead
   withSingletons<SingletonKlassObj extends KlassObjBase>(
       singletonQuery: SingletonKlassObj,
       cb: (singletons: MappedKlassObjType<SingletonKlassObj>)=>void): string[] {

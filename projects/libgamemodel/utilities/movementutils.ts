@@ -1,5 +1,5 @@
 import { TempGroupAllocator } from "@libutil/allocator";
-import { vec3 } from "gl-matrix";
+import { vec3, vec2 } from "gl-matrix";
 import { SceneNode2 } from '@libscenegraph/scenenode2';
 import { Mat4TransformAddon } from '@libscenegraph/scenenodeaddons/mat4transformaddon';
 
@@ -20,9 +20,20 @@ export class MovementUtils {
     });
   }
 
+  static moveVec2Forward(v2: vec2, distanceTravelled: number, rotation: number) {
+    v2[0] += distanceTravelled * Math.sin(rotation);
+    v2[1] += distanceTravelled * Math.cos(rotation);
+  }
+
   static findOrientationBetweenPoints(a: vec3, b: vec3) {
     const x = b[0] - a[0];
     const z = b[2] - a[2];
+    return Math.atan2(x, z);
+  }
+
+  static findOrientationBetweenPoints2(a: vec2, b: vec2) {
+    const x = b[0] - a[0];
+    const z = b[1] - a[1];
     return Math.atan2(x, z);
   }
 }

@@ -73,9 +73,9 @@ export class ArenaWall2RenderSystem extends ECSSystem {
       const sceneNode = sceneGraph.createSceneNode();
 
       const baseColor = vec4Allocator.get();
-      vec4.set(baseColor.Value, 0.88, 0.88, 0.88, 0.45);
+      vec4.set(baseColor.Value, 0.45, 0.25, 0.88, 0.45);
       const wispColor = vec3Allocator.get();
-      vec3.set(wispColor.Value, 0.1, 0.1, 0.95);
+      vec3.set(wispColor.Value, 0.35, 0.8, 0.15);
       const wispMovement1 = vec2Allocator.get();
       vec2.set(wispMovement1.Value, 0, 0);
       const wispMovement2 = vec2Allocator.get();

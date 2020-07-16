@@ -5,7 +5,7 @@ import { LightcycleComponent2 } from "./lightcycle.component";
 import { BikeInputManagerComponent } from "@libgamemodel/components/gameappuicomponents";
 import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 import { MainPlayerComponent } from "@libgamemodel/components/commoncomponents";
-import { LightcycleSteeringStateComponent } from "./lightcyclesteeringstate.component";
+import { LightcycleSteeringStateComponent } from "../lightcycle3/lightcyclesteeringstate.component";
 
 export class LightcycleSteeringSystem extends ECSSystem {
   static setMainPlayer(ecs: ECSManager, newMainPlayer: Entity) {

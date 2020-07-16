@@ -44,4 +44,8 @@ export class SceneGraph2 {
     mod.__extendSceneNode(sceneNode);
     sceneNode.onEachChild(child => this.extendAllSceneNodes(mod, child));
   }
+
+  destroy() {
+    this.rootNode.destroy();
+  }
 }

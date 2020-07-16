@@ -10,16 +10,16 @@ TODO (sessamekesh): Put in better notes here, this is all for you right now!
 
 ## General TODO
 Here's a list of things I still need to do before launching this:
-- [ ] Revamp physics
-  - Create a traditional physics engine - simple force / constraints
-  - Lightcycles are moved forward with a LightcycleDrivingForce
-    - Drag increases linearly with velocity
-    - Driving force is a constant
-    - This should result in a smooth speed up to top speed when slowed / starting
-  - Wall collisions are traditional constraint-based. No destruction of walls for collisions.
-  - Vitality loss is a function of impact strength and wheel rotation adjustment
+- [ ] Lightcycle model refactor
+  - [x] Collision system that...
+    - [x] Attaches collision bounds component to the lightcycle
+    - [x] Checks for, and resolves, collisions against the wall
+    - [x] In doing so, generate collision objects for the frame that can be used by downstream systems
+      - [x] Collisions can probably be kept on the lightcycle, but might want to do on global singleton?
+  - [x] Damage system - use upstream collision data, apply damage to lightcycle based on velocity impulses
+  - [ ] Migrate AI to using the new system
 - [ ] Music
-- [ ] Minimap rendering
+- [ ] UI rendering (health bar, minimap?, steering indication)
 - [ ] Game start state (button to begin game, start screen with AI wanderin around no collisions)
 - [ ] Game victory state (victory - stop bike, show fireworks)
 - [ ] Game loss state (follow another lightcycle, "restart game" button)
@@ -27,7 +27,6 @@ Here's a list of things I still need to do before launching this:
 - [ ] Floor grid (soft white line - can just be quads across floor, maybe pulsing softly)
 - [ ] Asynchronously load all resources (right now it's serial, and takes awhile)
 - [ ] Create a joystick for mobile use (right hand side)
-- [ ] Make arena wall a more pretty thing to look at - moderate value, instead of dark
 
 ## Possible improvements?
 - [ ] Rendering takes a long time - perhaps in making so many draw calls, especially on the walls.
@@ -36,4 +35,4 @@ Here's a list of things I still need to do before launching this:
 Note: Object pool for temporary math objects (vec3 etc) is somewhat worth it to use, it seems to reduce frame memory increase by somewhere in the 10s KB range (~25% it seems like!)
 Owned math resources, it is less clear if it helps or not.
 
-ng build --prod --base-href /game-app/
+npm start

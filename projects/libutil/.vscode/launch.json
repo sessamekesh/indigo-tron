@@ -5,13 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-          "name": "Debug Tests",
+          "name": "Jasmine Current File",
           "type": "node",
           "request": "launch",
-          "args": ["${workspaceRoot}/debug.js"],
+          "args": ["-r", "ts-node/register", "-r", "tsconfig-paths/register", "node_modules/jasmine/bin/jasmine.js", "--config=jasmine.json", "${file}"],
           "sourceMaps": true,
-          "cwd": "${workspaceRoot}",
-          "protocol": "inspector",
+          "console": "integratedTerminal",
         }
     ]
 }
