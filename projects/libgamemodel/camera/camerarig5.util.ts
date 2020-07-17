@@ -1,6 +1,6 @@
 import { Entity } from "@libecs/entity";
 import { ECSManager } from "@libecs/ecsmanager";
-import { CameraRig5Component } from "./camerarig5.component";
+import { CameraRig5Component, CameraRig5TargetTag } from "./camerarig5.component";
 
 export class CameraRig5Util {
   static moveCameraRig(ecs: ECSManager, fromPlayer: Entity, toPlayer: Entity) {
@@ -10,6 +10,8 @@ export class CameraRig5Util {
       }
 
       cameraRigComponent.CarEntity = toPlayer;
+      toPlayer.addComponent(CameraRig5TargetTag);
+      fromPlayer.removeComponent(CameraRig5TargetTag);
     });
   }
 }

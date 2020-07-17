@@ -364,8 +364,8 @@ export class LightcycleUtils {
 
     // TODO (sessamekesh): Should it be this, or the front wheel angle? I think this, no?
     const rot = MovementUtils.findOrientationBetweenPoints2(
-      lightcycle.FrontWheelPosition.Value,
-      lightcycle.RearWheelPosition.Value);
+      lightcycle.RearWheelPosition.Value,
+      lightcycle.FrontWheelPosition.Value);
     if (actualAngularVelocity > 0) {
       return rot + glMatrix.toRadian(90);
     } else {

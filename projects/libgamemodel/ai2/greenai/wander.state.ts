@@ -6,9 +6,9 @@ import { OwnedResource } from "@libutil/allocator";
 import { vec2 } from "gl-matrix";
 import { OwnedMathAllocatorsComponent, MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
 import { GreenAiComponent2 } from "./greenai2.component";
-import { LightcycleUtils } from "@libgamemodel/lightcycle/lightcycleutils";
 import { AiControlComponent } from "@libgamemodel/ai/aicontrol.component";
 import { MathUtils } from "@libutil/mathutils";
+import { LightcycleComponent3 } from "@libgamemodel/lightcycle3/lightcycle3.component";
 
 export class WanderState extends AIState {
   transition(ecs: ECSManager, entity: Entity, dt: number) {
@@ -20,20 +20,19 @@ export class WanderState extends AIState {
     const location = this.getWanderLocation(ecs, entity);
     const ai = entity.getComponent(GreenAiComponent2);
     const control = entity.getComponent(AiControlComponent);
-    if (!ai || !control) throw new Error('Failed to execute action, AI not defined');
+    const lightcycleComponent = entity.getComponent(LightcycleComponent3);
+    if (!ai || !control || !lightcycleComponent)
+      throw new Error('Failed to execute action, AI not defined');
     const blackboard = GreenAiBlackboardComponent.get(entity).Blackboard;
 
     // If we are currently close to the goal location, find a new one, but don't use another
     // close by point.
     let isNearGoal = false;
     do {
-      isNearGoal = Vec2.get(1, (currentPos) => {
-        if (!LightcycleUtils.currentPosition2(currentPos, entity, ecs)) {
-          throw new Error('Failed to get location');
-        }
-
-        return vec2.sqrDist(currentPos, location!.Value) <= (ai.WanderGoalTolerance ** 2);
-      });
+      isNearGoal =
+        vec2.sqrDist(
+          location.Value,
+          lightcycleComponent.FrontWheelPosition.Value) <= (ai.WanderGoalTolerance ** 2);
 
       if (isNearGoal) {
         this.generateNewWanderLocation(location, blackboard, ai.WallGenRandFn);
@@ -43,7 +42,7 @@ export class WanderState extends AIState {
     // Once goal location has been decided, find the angle required to get from self to there, and
     // steer towards that goal.
     Vec2.get(1, (currentPos) => {
-      LightcycleUtils.currentPosition2(currentPos, entity, ecs);
+      vec2.copy(currentPos, lightcycleComponent.FrontWheelPosition.Value);
 
       const toGoalX = location.Value[0] - currentPos[0];
       const toGoalZ = location.Value[1] - currentPos[1];

@@ -11,6 +11,7 @@ import { WanderState } from "./wander.state";
 import { AIStateManager, AIStateManagerMap } from "../aistatemanager";
 import { AIStateManagerComponent } from "../aistatemanager.component";
 import { AvoidWallState, AvoidWallDecoratorState } from "./avoidwall.state";
+import { Lightcycle3SpawnerUtil, LightcycleInitialSpawnConfig } from "@libgamemodel/lightcycle3/lightcycle3spawner.util";
 
 /**
  * Utility class for attaching a green AI to an entity
@@ -40,6 +41,42 @@ export class GreenAiUtil2 {
     entity.addComponent(LightcycleColorComponent, color);
 
     // Initialize blackboard
+    const blackboard = GreenAiBlackboardComponent.get(entity);
+    const arena = ecs.getSingletonComponentOrThrow(FloorComponent);
+    blackboard.Blackboard.set('WanderBounds', {
+      minX: -arena.Width/2,
+      maxX: arena.Width/2,
+      minZ: -arena.Height/2,
+      maxZ: arena.Height/2,
+    });
+    blackboard.Blackboard.set('WallScanDistance', wallScanDistance);
+    blackboard.Blackboard.set('OversteerTimeTotal', 0.05);
+
+    // Setup state machine
+    const stateMap: AIStateManagerMap = new Map();
+    stateMap.set(WanderState, new AvoidWallDecoratorState(new WanderState()));
+    stateMap.set(AvoidWallState, new AvoidWallState());
+    const stateManager = new AIStateManager(stateMap, stateMap.get(WanderState)!);
+    entity.addComponent(AIStateManagerComponent, stateManager);
+
+    return entity;
+  }
+
+  static createAiPlayer2(
+      ecs: ECSManager,
+      lightcycleConfig: LightcycleInitialSpawnConfig,
+      wallScanDistance: number,
+      wanderRandFn: ()=>number): Entity {
+    const entity = Lightcycle3SpawnerUtil.spawnLightcycle(ecs, lightcycleConfig);
+
+    // General AI configuration
+    entity.addComponent(GreenAiComponent2, wanderRandFn, /* Wander threshold */ 25);
+    entity.addComponent(
+      AiControlComponent,
+      /* angularVelocity */ lightcycleConfig.MaxSteeringAngularVelocity,
+      /* goalOrientation */ lightcycleConfig.BodyOrientation);
+
+    // Blackboard initialization
     const blackboard = GreenAiBlackboardComponent.get(entity);
     const arena = ecs.getSingletonComponentOrThrow(FloorComponent);
     blackboard.Blackboard.set('WanderBounds', {

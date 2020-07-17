@@ -82,14 +82,14 @@ Open a browser to localhost:8080
 
 ## General TODO
 Here's a list of things I still need to do before launching this:
-- [ ] Lightcycle model refactor
+- [x] Lightcycle model refactor
   - [x] Collision system that...
     - [x] Attaches collision bounds component to the lightcycle
     - [x] Checks for, and resolves, collisions against the wall
     - [x] In doing so, generate collision objects for the frame that can be used by downstream systems
       - [x] Collisions can probably be kept on the lightcycle, but might want to do on global singleton?
   - [x] Damage system - use upstream collision data, apply damage to lightcycle based on velocity impulses
-  - [ ] Migrate AI to using the new system
+  - [x] Migrate AI to using the new system
 - [ ] Cleanup old iterations of core systems (physics, physics2, physics3, lightcycle2...)
 - [ ] Music
 - [ ] UI rendering (health bar, minimap?, steering indication)

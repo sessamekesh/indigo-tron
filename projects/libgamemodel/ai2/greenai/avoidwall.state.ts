@@ -7,6 +7,8 @@
  *
  * Also provide a decorator class AvoidWallDecoratorState, that simply takes over the wrapped state
  * by returning to avoid a wall if it detects one nearby.
+ *
+ * TODO (sessamekesh): This needs to be improved before final launch will work
  */
 
 import { AIState } from "../aistate";
@@ -14,15 +16,14 @@ import { ECSManager } from "@libecs/ecsmanager";
 import { Entity } from "@libecs/entity";
 import { ArenaCollisionUtil } from "@libgamemodel/arena/arenacollisionutil";
 import { GreenAiBlackboardComponent } from "./greenai.blackboard.component";
-import { LightcycleUtils } from "@libgamemodel/lightcycle/lightcycleutils";
 import { MathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
 import { vec2 } from "gl-matrix";
-import { LightcycleComponent2 } from "@libgamemodel/lightcycle/lightcycle.component";
 import { LineSegment2D } from "@libutil/math/linesegment";
 import { WanderState } from "./wander.state";
 import { AiControlComponent } from "@libgamemodel/ai/aicontrol.component";
 import { MathUtils } from "@libutil/mathutils";
-import { Mat4TransformAddon } from "@libgamemodel/../libscenegraph/scenenodeaddons/mat4transformaddon";
+import { LightcycleComponent3 } from "@libgamemodel/lightcycle3/lightcycle3.component";
+import { MovementUtils } from "@libgamemodel/utilities/movementutils";
 
 export class AvoidWallState extends AIState {
   transition(ecs: ECSManager, entity: Entity, dt: number) {
@@ -59,13 +60,13 @@ export class AvoidWallState extends AIState {
     const steerDir = this.getSteerDir(ecs, entity, wall);
     GreenAiBlackboardComponent.get(entity).Blackboard.set('OversteerDirection', steerDir);
     const control = entity.getComponent(AiControlComponent);
-    const lightcycleComponent = entity.getComponent(LightcycleComponent2);
+    const lightcycleComponent = entity.getComponent(LightcycleComponent3);
     if (!lightcycleComponent || !control) {
       throw new Error('Failed to execute action, control not defined on entity');
     }
 
-    const lightcycleOrientation =
-      lightcycleComponent.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
+    const lightcycleOrientation = MovementUtils.findOrientationBetweenPoints2(
+      lightcycleComponent.RearWheelPosition.Value, lightcycleComponent.FrontWheelPosition.Value);
     // TODO (sessamekesh): Is this arbitrary value a good enough one to use? I think so...
     if (steerDir === 'left') {
       control.GoalOrientation = MathUtils.clampAngle(lightcycleOrientation + 0.5);
@@ -80,17 +81,17 @@ export class AvoidWallState extends AIState {
       Vec3: tempVec3,
     } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
 
-    const lightcycleComponent = entity.getComponent(LightcycleComponent2);
+    const lightcycleComponent = entity.getComponent(LightcycleComponent3);
     if (!lightcycleComponent) {
       throw new Error('Failed to execute action, control not defined on entity');
     }
 
-    const lightcycleOrientation =
-      lightcycleComponent.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
+    const lightcycleOrientation = MovementUtils.findOrientationBetweenPoints2(
+      lightcycleComponent.RearWheelPosition.Value, lightcycleComponent.FrontWheelPosition.Value);
     return tempVec2.get(
       5,
       (lineSegmentDir, cycleForward, lightcyclePos2, farWallPoint, nearWallPoint) => {
-        LightcycleUtils.currentPosition2(lightcyclePos2, entity, ecs);
+        vec2.copy(lightcyclePos2, lightcycleComponent.FrontWheelPosition.Value);
         vec2.sub(lineSegmentDir, farWallPoint, nearWallPoint);
         vec2.set(cycleForward, Math.sin(lightcycleOrientation), Math.cos(lightcycleOrientation));
         vec2.set(nearWallPoint, wall.x0, wall.y0);
@@ -131,10 +132,10 @@ function getWallToAvoid(ecs: ECSManager, entity: Entity): LineSegment2D|null {
   const blackboard = GreenAiBlackboardComponent.get(entity).Blackboard;
   const { Vec2: tempVec2 } = ecs.getSingletonComponentOrThrow(MathAllocatorsComponent);
   return tempVec2.get(2, (lightcyclePos2, lightcycleDir2) => {
-    LightcycleUtils.currentPosition2(lightcyclePos2, entity, ecs);
-    const lightcycleComponent = entity.getComponent(LightcycleComponent2)!;
-    const lightcycleOrientation =
-      lightcycleComponent.BodySceneNode.getAddon(Mat4TransformAddon).getSelfRotAngle();
+    const lightcycleComponent = entity.getComponent(LightcycleComponent3)!;
+    vec2.copy(lightcyclePos2, lightcycleComponent.FrontWheelPosition.Value);
+    const lightcycleOrientation = MovementUtils.findOrientationBetweenPoints2(
+      lightcycleComponent.RearWheelPosition.Value, lightcycleComponent.FrontWheelPosition.Value);
     vec2.set(lightcycleDir2, Math.sin(lightcycleOrientation), Math.cos(lightcycleOrientation));
     return ArenaCollisionUtil.getClosestWallInPath(
       ecs, lightcyclePos2, lightcycleDir2, blackboard.forceGet('WallScanDistance'));

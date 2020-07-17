@@ -16,3 +16,5 @@ export class CameraRig5Component {
     public GoalApproachMaxVelocity: number,
     public GoalApproachMaxDistance: number) {}
 }
+
+export class CameraRig5TargetTag {}

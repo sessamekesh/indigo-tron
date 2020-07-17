@@ -26,6 +26,7 @@ import { ArenaWall2RenderResourcesSingleton } from '@libgamerender/arena/arenawa
 import { BasicWallGeometryGenerator } from '@libgamerender/wall/basicwallgeometry.generator';
 import { ArenaWall2GeoGenerator } from '@librender/geo/generators/arenawall2geogenerator';
 import { LightcycleHealthSystem } from '@libgamemodel/lightcycle/lightcyclehealthsystem';
+import { GreenAiUtil2 } from '@libgamemodel/ai2/greenai/greenai2.util';
 import { LightcycleLambertSystem2 } from '@libgamerender/lightcycle/lightcycle.lambertsystem2';
 import { GameAppRenderSystem } from '@libgamerender/systems/gameapp.rendersystem';
 import { AIStateManagerSystem } from '@libgamemodel/ai2/aistatemanager.system';
@@ -46,7 +47,7 @@ import { UpdatePhysicsSystemConfigComponent, UpdatePhysicsSystem } from '@libgam
 import { LightcycleDrivingSystem3 } from '@libgamemodel/lightcycle3/lightcycle3driving.system';
 import { Lightcycle3WallGeneratorSystem } from '@libgamemodel/lightcycle3/lightcycle3wallgenerator.system';
 import { Lightcycle3SteeringSystem } from '@libgamemodel/lightcycle3/lightcycle3steering.system';
-import { CameraRig5Component } from '@libgamemodel/camera/camerarig5.component';
+import { CameraRig5Component, CameraRig5TargetTag } from '@libgamemodel/camera/camerarig5.component';
 import { ArenaFloor3RenderSystem } from '@libgamerender/arena/arenafloor3.rendersystem';
 import { CameraRig5System } from '@libgamemodel/camera/camerarig5.system';
 import { CameraRig6System } from '@libgamemodel/camera/camerarig6.system';
@@ -127,6 +128,8 @@ export class GameAppService2 {
     // Logical Systems. Notice: Order is often important, get that right.
     //
     ecs.addSystem2(Lightcycle3SteeringSystem);
+    ecs.addSystem2(AIStateManagerSystem);
+    ecs.addSystem2(AiSteeringSystem);
     ecs.addSystem2(LightcycleDrivingSystem3);
     ecs.addSystem2(Lightcycle3ArenaCollisionSystem);
     ecs.addSystem2(Lightcycle3CollisionDamageSystem);
@@ -135,8 +138,6 @@ export class GameAppService2 {
     ecs.addSystem2(WallSpawnerSystem2);
     ecs.addSystem2(CameraRig5System);
     ecs.addSystem2(CameraRig6System);
-    ecs.addSystem2(AIStateManagerSystem);
-    ecs.addSystem2(AiSteeringSystem);
 
     //
     // Physics System... belongs on its own. Only one here, but really it could/should be many.
@@ -329,14 +330,6 @@ export class GameAppService2 {
     // Initial game state
     //
     EnvironmentUtils.spawnArenaFloor(ecs, 250, 250);
-    // const mainPlayerEntity = LightcycleSpawner.spawnLightcycle(ecs, {
-    //   Position: vec3.fromValues(5, 0, 0),
-    //   Orientation: glMatrix.toRadian(180),
-    //   Velocity: 38.5,
-    //   AngularVelocity: 1.85,
-    // });
-    // mainPlayerEntity.addComponent(LightcycleColorComponent, 'blue');
-    // mainPlayerEntity.addComponent(MainPlayerComponent);
     const mainPlayerEntity = Lightcycle3SpawnerUtil.spawnLightcycle(ecs, {
       Position: vec2.fromValues(5, 0),
       BodyOrientation: glMatrix.toRadian(180),
@@ -363,12 +356,35 @@ export class GameAppService2 {
       /* GoalApproachMinVelocity */ 50,
       /* GoalApproachMaxVelocity */ 250,
       /* GoalApproachMaxDistance */ 70);
+    mainPlayerEntity.addComponent(CameraRig5TargetTag);
 
     // TODO (sessamekesh): Create this! Create lightcycle and then attach AI player, eh?
-    // GreenAiUtil2.createAiPlayer(
-    //   ecs, vec2.fromValues(8, -50), glMatrix.toRadian(180), 'green', 25, Math.random);
-    // GreenAiUtil2.createAiPlayer(
-    //   ecs, vec2.fromValues(8, 50), glMatrix.toRadian(270), 'red', 75, Math.random);
+    GreenAiUtil2.createAiPlayer2(
+      ecs,
+      {
+        BodyOrientation: glMatrix.toRadian(180),
+        Color: 'green',
+        MaxSteeringAngularVelocity: 25,
+        Position: vec2.fromValues(8, -50),
+        SpawnHealth: 125,
+        Velocity: 38.5,
+        WallSpawnHealth: 10
+      },
+      /* wallScanDistance */ 25,
+      /* wanderRandFn */ Math.random);
+    GreenAiUtil2.createAiPlayer2(
+      ecs,
+      {
+        BodyOrientation: glMatrix.toRadian(270),
+        Color: 'red',
+        MaxSteeringAngularVelocity: 25,
+        Position: vec2.fromValues(8, 50),
+        SpawnHealth: 125,
+        Velocity: 38.5,
+        WallSpawnHealth: 10
+      },
+      /* wallScanDistance */ 85,
+      /* wanderRandFn */ Math.random);
 
     //
     // HUD

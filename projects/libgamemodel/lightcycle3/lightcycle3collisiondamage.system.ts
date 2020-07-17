@@ -6,6 +6,9 @@ import { HealthComponent } from "@libgamemodel/components/healthcomponent";
 import { MathAllocatorsComponent, MainPlayerComponent } from "@libgamemodel/components/commoncomponents";
 import { vec2 } from "gl-matrix";
 import { UIEventEmitterComponent } from "@libgamemodel/components/gameui";
+import { Entity } from "@libecs/entity";
+import { LightcycleColorComponent } from "@libgamemodel/lightcycle/lightcyclecolor.component";
+import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 
 const SINGLETON_QUERY = {
   collisions: LightcycleCollisionsListSingleton,
@@ -30,6 +33,10 @@ export class Lightcycle3CollisionDamageSystem extends ECSSystem {
       const tempVec2 = s.tempAlloc.Vec2;
       const lightcycleCollisions =
         s.collisions.Collisions.filter(collision => collision.LightcycleEntity === e);
+
+      if (lightcycleCollisions.length === 0) {
+        return;
+      }
 
       // Apply collision damage based on the collisions present: use velocity into the thing
       //  to determine damage. In a later iteration, it may be worth adding some amount
@@ -58,7 +65,7 @@ export class Lightcycle3CollisionDamageSystem extends ECSSystem {
         if (e.hasComponent(MainPlayerComponent)) {
           s.uiEventEmitter.EventEmitter.fireEvent('player-death', true);
         }
-        e.destroy();
+        SceneModeUtil.killPlayer(ecs, e);
       }
     });
   }

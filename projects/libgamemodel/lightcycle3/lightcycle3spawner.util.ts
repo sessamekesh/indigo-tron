@@ -11,7 +11,7 @@ import { LightcycleColor, LightcycleColorComponent } from "@libgamemodel/lightcy
 
 export const BACK_WHEEL_OFFSET = 3.385;
 
-type LightcycleInitialSpawnConfig = {
+export type LightcycleInitialSpawnConfig = {
   Position: vec2,
   BodyOrientation: number,
   Velocity: number,

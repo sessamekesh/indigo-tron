@@ -3,9 +3,10 @@ import { PauseStateComponent, GameEndStateComponent, MainPlayerComponent, Player
 import { LightcycleColorComponent, LightcycleColor } from "@libgamemodel/lightcycle/lightcyclecolor.component";
 import { LightcycleComponent2 } from "@libgamemodel/lightcycle/lightcycle.component";
 import { Entity } from "@libecs/entity";
-import { LightcycleUtils } from "@libgamemodel/lightcycle/lightcycleutils";
 import { WallComponent2 } from "@libgamemodel/wall/wallcomponent";
 import { CameraRig5Util } from "@libgamemodel/camera/camerarig5.util";
+import { LightcycleComponent3 } from "@libgamemodel/lightcycle3/lightcycle3.component";
+import { CameraRig5TargetTag } from "@libgamemodel/camera/camerarig5.component";
 
 /**
  * Scene Mode Utility
@@ -70,7 +71,7 @@ export class SceneModeUtil {
 
     // Enumerate the remaining players
     let remainingPlayers: Entity[] = [];
-    ecs.iterateComponents([LightcycleComponent2, LightcycleColorComponent], (entity) => {
+    ecs.iterateComponents([LightcycleComponent3, LightcycleColorComponent], (entity) => {
       if (entity !== player) {
         remainingPlayers.push(entity);
       }
@@ -81,7 +82,7 @@ export class SceneModeUtil {
     if (remainingPlayers.length === 0) return;
 
     // On main player death, start following another player with the camera
-    if (player.hasComponent(MainPlayerComponent)) {
+    if (player.hasComponent(CameraRig5TargetTag)) {
       const nextPlayer = remainingPlayers[Math.floor(Math.random() * remainingPlayers.length)];
 
       if (nextPlayer) {
@@ -100,11 +101,11 @@ export class SceneModeUtil {
       if (player.hasComponent(MainPlayerComponent)) {
         // TODO (sessamekesh): Create the victory condition here! Bike slows to a halt, and
         //  fireworks appear around the player.
+        console.log('GAME END - victory!');
       } else {
         // TODO (sessamekesh): Show a computer victory state, something real skynet-y
+        console.log('GAME END - defeat!');
       }
-
-      return;
     }
 
     // Finally, once everything has been considered, destroy the player themselves.
