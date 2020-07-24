@@ -90,10 +90,11 @@ Here's a list of things I still need to do before launching this:
       - [x] Collisions can probably be kept on the lightcycle, but might want to do on global singleton?
   - [x] Damage system - use upstream collision data, apply damage to lightcycle based on velocity impulses
   - [x] Migrate AI to using the new system
-- [ ] Cleanup old iterations of core systems (physics, physics2, physics3, lightcycle2...)
+- [ ] Move UI rendering to WebGL, instead of relying on DOM rendering
+- [ ] Game start state (button to begin game, start screen with AI wandering around no collisions)
 - [ ] Music
-- [ ] UI rendering (health bar, minimap?, steering indication)
-- [ ] Game start state (button to begin game, start screen with AI wanderin around no collisions)
+- [ ] Cleanup old iterations of core systems (physics, physics2, physics3, lightcycle2...)
+- [ ] UI rendering (health bar, minimap?, steering indication, enemy health indication)
 - [ ] Game victory state (victory - stop bike, show fireworks)
 - [ ] Game loss state (follow another lightcycle, "restart game" button)
 - [ ] Wall collision particle effect, lightcycle death particle effect

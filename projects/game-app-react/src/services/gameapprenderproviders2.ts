@@ -8,7 +8,6 @@ import { Texture } from '@librender/texture/texture';
 import { Framebuffer } from '@librender/texture/framebuffer';
 import { TempGroupAllocator, LifecycleOwnedAllocator } from '@libutil/allocator';
 import { vec3, mat4, quat, vec2, vec4 } from 'gl-matrix';
-import { FloorTileTexture } from '@librender/texture/floortiletexture';
 import { Plane } from '@libgamemodel/physics/plane';
 import { Circle3 } from '@libutil/math/circle3';
 
@@ -48,6 +47,10 @@ export class GameAppRenderProviders2 {
     (gl) => Texture.createFromURL(gl, 'assets/models/lightcycle_wheel_diffuse.png'));
   readonly FlatBumpmapDebugTexture = new RenderProvider(
     (gl) => Texture.createFromData(gl, 1, 1, new Uint8Array([127, 127, 255, 255])));
+  readonly CloudWispTexture1 = new AsyncRenderProvider(
+    (gl) => Texture.createFromURL(gl, 'assets/particles/gimp_cloud_1.png', Texture.REPEAT_LINEAR));
+  readonly CloudWispTexture2 = new AsyncRenderProvider(
+    (gl) => Texture.createFromURL(gl, 'assets/particles/gimp_cloud_2.png', Texture.REPEAT_LINEAR));
 
   //
   // Framebuffers (and associated textures)
