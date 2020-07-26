@@ -1,5 +1,5 @@
 import { ECSManager } from '@libecs/ecsmanager';
-import { ShaderSingletonTag, LambertShaderComponent, FlatColorLambertShaderComponent, Solid2DShaderComponent, ArenaFloor2ShaderComponent, ArenaFloor3ShaderSingleton, ArenaWallShader2Singleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { ShaderSingletonTag, LambertShaderComponent, FlatColorLambertShaderComponent, Solid2DShaderComponent, ArenaFloor2ShaderComponent, ArenaFloor3ShaderSingleton, ArenaWallShader2Singleton, MsdfGlyphShaderSingleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { LambertShader } from '@librender/shader/lambertshader';
 import { assert } from '@libutil/loadutils';
 import { FlatColorLambertShader } from '@librender/shader/flatcolorlambertshader';
@@ -9,9 +9,11 @@ import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 import { ArenaWallShader2 } from '@librender/shader/arenawallshader2';
 import { Entity } from '@libecs/entity';
 import { Klass } from '@libecs/klass';
+import { MsdfGlyphShader } from '@librender/text/msdfglyphshader';
 
 type ShaderType = typeof LambertShader | typeof ArenaFloorShader2 | typeof FlatColorLambertShader
-    | typeof Solid2DShader | typeof ArenaFloorShader3 | typeof ArenaWallShader2;
+    | typeof Solid2DShader | typeof ArenaFloorShader3 | typeof ArenaWallShader2
+    | typeof MsdfGlyphShader;
 
 export class ShaderBuilderUtil {
   static createShaders(
@@ -53,6 +55,11 @@ export class ShaderBuilderUtil {
           this.load(
             gl, shadersEntity, ArenaWallShader2Singleton, c=>c.ArenaWallShader2,
             ArenaWallShader2.create, 'ArenaWallShader2', oldEcs);
+          break;
+        case MsdfGlyphShader:
+          this.load(
+            gl, shadersEntity, MsdfGlyphShaderSingleton, c=>c.MsdfGlyphShader,
+            MsdfGlyphShader.create, 'MsdfGlyphShader', oldEcs);
           break;
         default:
           throw new Error('Failed to create unsupported shader type: ' + klass.name);

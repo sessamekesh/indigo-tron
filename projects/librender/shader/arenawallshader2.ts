@@ -59,6 +59,8 @@ const Attribs = {
   uv: 'uv',
 };
 
+export type ArenaWall2AttribType = typeof Attribs;
+
 const Uniforms = {
   matWorld: 'matWorld',
   matView: 'matView',
@@ -75,7 +77,7 @@ const Uniforms = {
 };
 
 export type ArenaWall2RenderCall = {
-  geo: GeoBase,
+  geo: GeoBase<ArenaWall2AttribType>,
 
   matWorld: mat4,
   matView: mat4,

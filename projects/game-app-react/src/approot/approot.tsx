@@ -4,7 +4,6 @@ import './approot.scss';
 import { GameAppService2 } from 'src/services/gameappservice2';
 import { CachingEventManager } from '@libutil/cachingeventmanager';
 import { GameAppUIEvents } from '../services/gameappuieventmanager';
-import { HUD } from '../hud/hud';
 
 interface State {
   isLoaded: boolean,
@@ -52,9 +51,6 @@ export class AppRoot extends React.Component<Props, State> {
     this.onDestroy.push(
       () => this.gameAppUiEventManager.removeListener('player-death', deathListener));
 
-    const pausedListener = this.gameAppUiEventManager.addListener('apppaused', (paused) => {
-      this.setState({...this.state, isPaused: paused});
-    });
     this.onDestroy.push(
       () => this.gameAppUiEventManager.removeListener('player-death', deathListener));
 
@@ -77,9 +73,6 @@ export class AppRoot extends React.Component<Props, State> {
       <canvas id="game-canvas" ref={(e)=>{this.canvas_ = e}}>
         HTML5 Canvas is not available. Please get a better browser.
       </canvas>
-      <div className={'hud'}>
-        <HUD uiEventManager={this.gameAppUiEventManager!}></HUD>
-      </div>
     </div>;
   }
 

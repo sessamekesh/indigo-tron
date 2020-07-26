@@ -40,8 +40,10 @@ const UniformNames = {
   Color: 'iColor',
 };
 
+export type Solid2DShaderAttribNames = typeof AttribNames;
+
 export type Solid2DRenderCall = {
-  Geo: GeoBase,
+  Geo: GeoBase<Solid2DShaderAttribNames>,
 
   Scale: vec2,
   Rotation: number,

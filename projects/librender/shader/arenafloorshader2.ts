@@ -91,6 +91,8 @@ const AttribNames = {
   texcoord: 'v_texcoord',
 };
 
+export type ArenaFloorShader2AttribType = typeof AttribNames;
+
 const UniformNames = {
   matProj: 'matProj',
   matView: 'matView',
@@ -106,7 +108,7 @@ const UniformNames = {
 };
 
 export type ArenaFloorRenderCall = {
-  geo: GeoBase,
+  geo: GeoBase<ArenaFloorShader2AttribType>,
 
   matWorld: mat4,
   matView: mat4,

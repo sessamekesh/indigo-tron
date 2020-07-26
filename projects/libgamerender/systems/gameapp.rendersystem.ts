@@ -5,7 +5,7 @@ import { LightSettingsComponent } from '@libgamerender/components/lightsettings.
 import { CameraComponent, ReflectionCameraComponent } from '@libgamemodel/components/gameappuicomponents';
 import { WallComponent2 } from '@libgamemodel/wall/wallcomponent';
 import { MathAllocatorsComponent } from '@libgamemodel/components/commoncomponents';
-import { mat4, glMatrix, vec2 } from 'gl-matrix';
+import { mat4, glMatrix, vec2, vec4 } from 'gl-matrix';
 import { LambertRenderableUtil } from '@libgamerender/utils/lambertrenderable.util';
 import { ArenaWallComponent } from '@libgamemodel/arena/arenawall.component';
 import { DebugRenderTag } from '@libgamemodel/debug/debugrendertag';
@@ -16,6 +16,9 @@ import { ArenaFloor3RenderUtil } from '@libgamerender/utils/arenafloor3renderuti
 import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { ColorUtil } from '@libutil/colorutil';
 import { ArenaWall2RenderableUtil } from '@libgamerender/utils/arenawall2renderable.util';
+import { MsdfGlyphShaderSingleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { PlayerHealthUiComponent } from '@libgamerender/hud/playerhealth/playerhealthui.component';
+import { OpenSansFontSingleton } from '@libgamerender/components/opensansfont.singleton';
 
 export class GameAppRenderSystem extends ECSSystem {
   start() { return true; }
@@ -110,17 +113,34 @@ export class GameAppRenderSystem extends ECSSystem {
     gl.clear(gl.DEPTH_BUFFER_BIT);
     Solid2DRenderableUtil.renderEntitiesMatchingTags(ecs, [MinimapComponent]);
 
-    // TODO (sessamekesh): Continue here
-    // You'll need to draw the circle on the screen, according to configuration given as part of the
-    // main system - draw a flat circle in (0.0, 1.0) space. Stencil buffer against it here too.
-    // The rest of things can reasonably be drawn with some sort of camera bound - which is defined
-    // in 2d world space, the dimensions covered by the minimap - against that stencil.
-    // So, drawing that gray circle is the next step! Do that. Do that do that do that do that.
+    // TODO (sessamekesh): Remove this experiment in favor of something correct
+    // TODO (sessamekesh): Is there a way to go from concept to implementation faster? This is a
+    //  painful step, having to implement some sort of batched shader for everything...
+    // TODO (sessamekesh): Continue here, based on mocks:
+    // https://www.figma.com/file/rK8HI9fw4fyZ0ttUEmUMme/Indigo-Tron-UI-Mocks?node-id=0%3A1
+    gl.enable(gl.BLEND);
+    ecs.iterateComponents2({
+      gl: GLContextComponent,
+      shader: MsdfGlyphShaderSingleton,
+      font: OpenSansFontSingleton,
+    }, {
+      playerHealth: PlayerHealthUiComponent,
+    }, (e, s, c) => {
+      const shader = s.shader.MsdfGlyphShader;
+      const gl = s.gl.gl;
 
-    // After that, you'll need to set up the minimap rendering in the render system - you'll have
-    //  to render to a specific area of the screen, and only entities that are in a certain range.
-    // You'll want to use a stencil mask to make sure you only render to the affected area?
-    // You'll also want to render a blank polygon in that area of a greyish color?
-    // You'll also want to render a ring around the minimap to distinguish it on the screen?
+      shader.activate(gl);
+      shader.render(gl, {
+        AlphaThreshold: 0.05,
+        Geo: c.playerHealth.Geo.geo,
+        GlyphColor: vec4.fromValues(1, 1, 1, 1),
+        GlyphTexture: s.font.OpenSans.texture,
+        scale: vec2.fromValues(1, -1),
+        topLeftOffset: vec2.fromValues(gl.canvas.width / 2, 85),
+        viewportSize: vec2.fromValues(gl.canvas.width, gl.canvas.height),
+        z: 0.2,
+      });
+    });
+    gl.disable(gl.BLEND);
   }
 }

@@ -34,7 +34,6 @@ export class GameAppService2 {
     });
   }
 
-  private frameCapture: number|null = null;
   private beginRendering() {
     let lastFrame = performance.now();
     const frame = () => {
@@ -47,12 +46,8 @@ export class GameAppService2 {
         this.activeScene.update(msDt);
       }
 
-      this.frameCapture = requestAnimationFrame(frame);
+      requestAnimationFrame(frame);
     }
-    this.frameCapture = requestAnimationFrame(frame);
-  }
-
-  private stopRendering() {
-    if (this.frameCapture) cancelAnimationFrame(this.frameCapture);
+    requestAnimationFrame(frame);
   }
 }

@@ -2,9 +2,10 @@ import { GeoBase, AttribBuffersType } from '@librender/geo/geobase';
 import { ECSManager } from '@libecs/ecsmanager';
 import { GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { ArenaFloor3ShaderSingleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { ArenaFloorShader3AttribType } from '@librender/shader/arenafloorshader3';
 
 export class ArenaFloor3GeometrySingleton {
-  constructor(public Geo: GeoBase) {}
+  constructor(public Geo: GeoBase<ArenaFloorShader3AttribType>) {}
 
   static generate(ecs: ECSManager) {
     const singletonQuery = {GLContextComponent, ArenaFloor3ShaderSingleton};

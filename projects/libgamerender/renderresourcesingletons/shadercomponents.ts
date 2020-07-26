@@ -4,6 +4,7 @@ import { Solid2DShader } from '@librender/shader/solid2dshader';
 import { ArenaFloorShader2 } from '@librender/shader/arenafloorshader2';
 import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 import { ArenaWallShader2 } from '@librender/shader/arenawallshader2';
+import { MsdfGlyphShader } from '@librender/text/msdfglyphshader';
 
 export class ShaderSingletonTag {}
 
@@ -29,4 +30,8 @@ export class ArenaFloor3ShaderSingleton {
 
 export class ArenaWallShader2Singleton {
   constructor(public readonly ArenaWallShader2: ArenaWallShader2) {}
+}
+
+export class MsdfGlyphShaderSingleton {
+  constructor(public readonly MsdfGlyphShader: MsdfGlyphShader) {}
 }

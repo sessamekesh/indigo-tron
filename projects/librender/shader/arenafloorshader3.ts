@@ -70,6 +70,8 @@ const AttribNames = {
   pos: 'v_pos',
 };
 
+export type ArenaFloorShader3AttribType = typeof AttribNames;
+
 const UniformNames = {
   matProj: 'matProj',
   matView: 'matView',
@@ -83,7 +85,7 @@ const UniformNames = {
 };
 
 export type ArenaFloor3RenderCall = {
-  geo: GeoBase,
+  geo: GeoBase<ArenaFloorShader3AttribType>,
   matWorld: mat4,
   matView: mat4,
   matProj: mat4,

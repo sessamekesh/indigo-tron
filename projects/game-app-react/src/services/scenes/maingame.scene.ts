@@ -61,8 +61,10 @@ import { ArenaFloor3RenderSystem } from "@libgamerender/arena/arenafloor3.render
 import { ArenaWall2RenderSystem } from "@libgamerender/arena/arenawall2.rendersystem";
 import { Lightcycle3LambertGeoRenderSystem } from "@libgamerender/lightcycle/lightcycle3lambertgeo.rendersystem";
 import { HudConfigUpdateSystem } from "@libgamerender/hud/hudconfigupdate.system";
-import { MinimapRenderSystem } from "@libgamerender/hud/minimap.rendersystem";
+import { PlayerHealthUiSystem } from '@libgamerender/hud/playerhealth/playerhealthui.system';
+import { OpenSansFontSingleton } from '@libgamerender/components/opensansfont.singleton';
 import { GameAppRenderSystem } from "@libgamerender/systems/gameapp.rendersystem";
+import { MsdfGlyphShader } from "@librender/text/msdfglyphshader";
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -89,7 +91,7 @@ export class MainGameScene extends SceneBase {
     ShaderBuilderUtil.createShaders(
       ecs,
       gl,
-      [ LambertShader, Solid2DShader, ArenaFloorShader3, ArenaWallShader2 ]);
+      [ LambertShader, Solid2DShader, ArenaFloorShader3, ArenaWallShader2, MsdfGlyphShader ]);
 
     //
     // Geometry
@@ -125,6 +127,7 @@ export class MainGameScene extends SceneBase {
     //
     ArenaFloor3GeometrySingleton.generate(ecs);
     ArenaFloor3GlResourcesSingleton.attach(ecs, rp.FloorReflectionTexture.getOrThrow(gl));
+    OpenSansFontSingleton.attach(ecs, await rp.OpenSansBMFont.getOrThrow(gl));
 
     //
     // Miscelaneous Render Objects
@@ -377,7 +380,7 @@ export class MainGameScene extends SceneBase {
     // HUD
     //
     ecs.addSystem2(HudConfigUpdateSystem);
-    ecs.addSystem2(MinimapRenderSystem);
+    ecs.addSystem2(PlayerHealthUiSystem);
 
     //
     // Debug systems (and debug renderable generation)

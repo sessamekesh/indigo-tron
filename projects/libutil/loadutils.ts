@@ -21,6 +21,10 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+export function loadJson<T>(src: string, parser: (json: any)=>T): Promise<T> {
+  return fetch(src).then(data=>data.json());
+}
+
 export function assert<T>(name: string, t: T|null|undefined): T {
   if (t == null) {
     throw new Error(`Failed to create element ${name}`);

@@ -3,9 +3,10 @@ import { GeoBase } from '@librender/geo/geobase';
 import { vec3, vec2, vec4 } from 'gl-matrix';
 import { OwnedResource } from '@libutil/allocator';
 import { Texture } from '@librender/texture/texture';
+import { ArenaWall2AttribType } from '@librender/shader/arenawallshader2';
 
 type PerObjectData = {
-  geo: GeoBase,
+  geo: GeoBase<ArenaWall2AttribType>,
 
   baseColor: OwnedResource<vec4>,
   wispMaxIntensity: number,

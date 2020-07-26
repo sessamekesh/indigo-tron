@@ -10,6 +10,7 @@ import { TempGroupAllocator, LifecycleOwnedAllocator } from '@libutil/allocator'
 import { vec3, mat4, quat, vec2, vec4 } from 'gl-matrix';
 import { Plane } from '@libgamemodel/physics/plane';
 import { Circle3 } from '@libutil/math/circle3';
+import { BMFont } from '@librender/text/bmfont';
 
 //
 // Configuration Constants
@@ -51,6 +52,16 @@ export class GameAppRenderProviders2 {
     (gl) => Texture.createFromURL(gl, 'assets/particles/gimp_cloud_1.png', Texture.REPEAT_LINEAR));
   readonly CloudWispTexture2 = new AsyncRenderProvider(
     (gl) => Texture.createFromURL(gl, 'assets/particles/gimp_cloud_2.png', Texture.REPEAT_LINEAR));
+
+  //
+  // Fonts (and associated textures)
+  //
+  readonly OpenSansBMFont = new AsyncRenderProvider(
+    (gl) => BMFont.loadFromFile(
+      gl,
+      'assets/msdffonts/open-sans/OpenSans-Regular-msdf.json',
+      'assets/msdffonts/open-sans/OpenSans-Regular.png',
+      '!'));
 
   //
   // Framebuffers (and associated textures)

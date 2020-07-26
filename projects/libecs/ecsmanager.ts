@@ -12,7 +12,7 @@ function mapObject<A extends O[keyof O], B, O extends {[key: string]: any}>(o: O
     return ret;
   }) as any, {} as any);
 }
-type MappedKlassObjType<T extends KlassObjBase> = {
+export type MappedKlassObjType<T extends KlassObjBase> = {
   [KlassKey in keyof T]: T[KlassKey] extends Klass<infer KlassT> ? KlassT : never;
 }
 function mapKlassObj<KlassObj extends KlassObjBase>(

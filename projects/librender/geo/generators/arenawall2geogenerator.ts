@@ -1,8 +1,8 @@
-import { ArenaWallShader2 } from '@librender/shader/arenawallshader2';
+import { ArenaWallShader2, ArenaWall2AttribType } from '@librender/shader/arenawallshader2';
 import { GeoBase } from '../geobase';
 
 export class ArenaWall2GeoGenerator {
-  static createUnitWall(gl: WebGL2RenderingContext, shader: ArenaWallShader2): GeoBase|null {
+  static createUnitWall(gl: WebGL2RenderingContext, shader: ArenaWallShader2): GeoBase<ArenaWall2AttribType>|null {
     const attribs = shader.getAttribLocations();
     return GeoBase.create(gl, attribs, {
       pos: {

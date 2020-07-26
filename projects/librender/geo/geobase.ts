@@ -4,6 +4,14 @@ export type AttribLocationsType<AttribNamesType extends BasicMapType> = {
   [Key in keyof AttribNamesType]: number;
 };
 
+type GLBuffersType<AttribTypesName extends BasicMapType> = {
+  [Key in keyof AttribTypesName]: WebGLBuffer
+};
+
+type PartialNull<T> = {
+  [P in keyof T]: T[P]|null;
+};
+
 type VertexInputType = {
   data: Float32Array|ArrayBuffer,
   dataType: 'float',
@@ -23,33 +31,43 @@ function getGlTypeFromVert(t: VertexInputType) {
   }
 }
 
-export class GeoBase {
+function isFullBuffersObject<AttribNamesType extends BasicMapType>(
+    obj: GLBuffersType<AttribNamesType>|PartialNull<GLBuffersType<AttribNamesType>>)
+    : obj is GLBuffersType<AttribNamesType> {
+  return Object.keys(obj).every(buffer => buffer != null);
+}
+
+export class GeoBase<AttribNamesType extends BasicMapType> {
   protected constructor(
     public readonly vao: WebGLVertexArrayObject,
+    public readonly buffers: GLBuffersType<AttribNamesType>,
     public readonly ib: WebGLBuffer,
-    public readonly numIndices: number,
+    public numIndices: number,
     public readonly ibDesc: IBDesc) {}
 
   static create<AttribNamesType extends BasicMapType>(
       gl: WebGL2RenderingContext,
       attribLocations: AttribLocationsType<AttribNamesType>,
       attribBuffers: AttribBuffersType<AttribNamesType>,
-      ibData: IBData): GeoBase|null {
+      ibData: IBData): GeoBase<AttribNamesType>|null {
     const attribNames = Object.keys(attribLocations);
-    const buffers: {[i: string]: (WebGLBuffer|null)} = {};
+    const buffers = {} as PartialNull<GLBuffersType<AttribNamesType>>|GLBuffersType<AttribNamesType>;
     attribNames.forEach((attribName) => {
-      buffers[attribName] = gl.createBuffer();
+      (buffers as any)[attribName] = gl.createBuffer();
     });
     const vao = gl.createVertexArray();
     const ib = gl.createBuffer();
-    if (Object.values(buffers).some(buffer => buffer == null) || !vao || !ib) {
+    if (!isFullBuffersObject(buffers) || !vao || !ib) {
       console.error('Could not create all WebGL objects for geo, aborting');
       return null;
     }
 
     attribNames.forEach((attribName) => {
       gl.bindBuffer(gl.ARRAY_BUFFER, buffers[attribName]);
-      gl.bufferData(gl.ARRAY_BUFFER, attribBuffers[attribName].data, gl.STATIC_DRAW);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        attribBuffers[attribName].data,
+        gl.STATIC_DRAW);
     });
 
     gl.bindVertexArray(vao);
@@ -71,6 +89,6 @@ export class GeoBase {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ibData.Data, gl.STATIC_DRAW);
 
     const ibDesc = { BitWidth: ibData.BitWidth };
-    return new GeoBase(vao, ib, ibData.Data.length, ibDesc);
+    return new GeoBase(vao, buffers, ib, ibData.Data.length, ibDesc);
   }
 }

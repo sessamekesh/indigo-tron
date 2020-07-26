@@ -38,6 +38,13 @@ export class Texture {
     WrapV: 'repeat',
   };
 
+  static FONT_ATLAS: SamplerState = {
+    MagFilter: 'linear',
+    MinFilter: 'linear',
+    WrapU: 'clamp-to-edge',
+    WrapV: 'clamp-to-edge',
+  };
+
   static getTextureWrapGL(type: TextureWrapType) {
     switch (type) {
       case 'repeat': return WebGL2RenderingContext.REPEAT;
