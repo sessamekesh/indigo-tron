@@ -91,16 +91,20 @@ Here's a list of things I still need to do before launching this:
   - [x] Damage system - use upstream collision data, apply damage to lightcycle based on velocity impulses
   - [x] Migrate AI to using the new system
 - [ ] Move UI rendering to WebGL, instead of relying on DOM rendering
-- [ ] Game start state (button to begin game, start screen with AI wandering around no collisions)
+  - [x] MSDF rendering for text
+  - [ ] Adjust solid color rendering vertical
+  - [ ] Implement UI features
+    - [x] Health text
+    - [ ] Red / green health bar
+    - [ ] Steering indicator
+- [ ] Game start scene (button to begin game, start screen with AI wandering around no collisions)
 - [ ] Music
 - [ ] Cleanup old iterations of core systems (physics, physics2, physics3, lightcycle2...)
 - [ ] UI rendering (health bar, minimap?, steering indication, enemy health indication)
 - [ ] Game victory state (victory - stop bike, show fireworks)
 - [ ] Game loss state (follow another lightcycle, "restart game" button)
 - [ ] Wall collision particle effect, lightcycle death particle effect
-- [ ] Floor grid (soft white line - can just be quads across floor, maybe pulsing softly)
 - [ ] Asynchronously load all resources (right now it's serial, and takes awhile)
-- [ ] Create a joystick for mobile use (right hand side)
 
 ## Possible improvements?
 - [ ] Rendering takes a long time - perhaps in making so many draw calls, especially on the walls.

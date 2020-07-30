@@ -5,6 +5,7 @@ import { ArenaFloorShader2 } from '@librender/shader/arenafloorshader2';
 import { ArenaFloorShader3 } from '@librender/shader/arenafloorshader3';
 import { ArenaWallShader2 } from '@librender/shader/arenawallshader2';
 import { MsdfGlyphShader } from '@librender/text/msdfglyphshader';
+import { SolidColorUiShader } from '@librender/ui/solidcolorui.shader';
 
 export class ShaderSingletonTag {}
 
@@ -34,4 +35,8 @@ export class ArenaWallShader2Singleton {
 
 export class MsdfGlyphShaderSingleton {
   constructor(public readonly MsdfGlyphShader: MsdfGlyphShader) {}
+}
+
+export class SolidColorUiShaderSingleton {
+  constructor(public readonly Shader: SolidColorUiShader) {}
 }

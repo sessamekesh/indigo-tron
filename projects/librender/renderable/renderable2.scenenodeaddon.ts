@@ -36,6 +36,7 @@ export class Renderable2SceneNodeAddon extends SceneNode2Addon {
     } else {
       this.renderables.set(key, [renderable]);
     }
+    return this;
   }
 
   removeRenderable<T>(key: Klass<Renderable2<T>>, renderable: Renderable2<T>) {

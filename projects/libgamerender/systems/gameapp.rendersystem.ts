@@ -16,9 +16,9 @@ import { ArenaFloor3RenderUtil } from '@libgamerender/utils/arenafloor3renderuti
 import { FloorComponent } from '@libgamemodel/components/floor.component';
 import { ColorUtil } from '@libutil/colorutil';
 import { ArenaWall2RenderableUtil } from '@libgamerender/utils/arenawall2renderable.util';
-import { MsdfGlyphShaderSingleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
-import { PlayerHealthUiComponent } from '@libgamerender/hud/playerhealth/playerhealthui.component';
-import { OpenSansFontSingleton } from '@libgamerender/components/opensansfont.singleton';
+import { UiTextRenderTag, UiHealthBarRenderTag } from '@libgamerender/hud/playerhealth/rendertags';
+import { MsdfStringRenderable2 } from '@librender/text/msdfstring.renderable2';
+import { SolidColorUiRenderable2 } from '@librender/ui/solidcolorui.renderable2';
 
 export class GameAppRenderSystem extends ECSSystem {
   start() { return true; }
@@ -108,7 +108,7 @@ export class GameAppRenderSystem extends ECSSystem {
     });
 
     //
-    // Minimap rendering
+    // HUD rendering
     //
     gl.clear(gl.DEPTH_BUFFER_BIT);
     Solid2DRenderableUtil.renderEntitiesMatchingTags(ecs, [MinimapComponent]);
@@ -118,29 +118,14 @@ export class GameAppRenderSystem extends ECSSystem {
     //  painful step, having to implement some sort of batched shader for everything...
     // TODO (sessamekesh): Continue here, based on mocks:
     // https://www.figma.com/file/rK8HI9fw4fyZ0ttUEmUMme/Indigo-Tron-UI-Mocks?node-id=0%3A1
-    gl.enable(gl.BLEND);
-    ecs.iterateComponents2({
-      gl: GLContextComponent,
-      shader: MsdfGlyphShaderSingleton,
-      font: OpenSansFontSingleton,
-    }, {
-      playerHealth: PlayerHealthUiComponent,
-    }, (e, s, c) => {
-      const shader = s.shader.MsdfGlyphShader;
-      const gl = s.gl.gl;
 
-      shader.activate(gl);
-      shader.render(gl, {
-        AlphaThreshold: 0.05,
-        Geo: c.playerHealth.Geo.geo,
-        GlyphColor: vec4.fromValues(1, 1, 1, 1),
-        GlyphTexture: s.font.OpenSans.texture,
-        scale: vec2.fromValues(1, -1),
-        topLeftOffset: vec2.fromValues(gl.canvas.width / 2, 85),
-        viewportSize: vec2.fromValues(gl.canvas.width, gl.canvas.height),
-        z: 0.2,
-      });
-    });
+    SolidColorUiRenderable2.renderMatchingTag(ecs, [[UiHealthBarRenderTag]]);
+
+    // Render text after solid UI elements
+    gl.enable(gl.BLEND);
+    gl.disable(gl.DEPTH_TEST);
+    MsdfStringRenderable2.renderMatchingTag(ecs, [[UiTextRenderTag]]);
+    gl.enable(gl.DEPTH_TEST);
     gl.disable(gl.BLEND);
   }
 }

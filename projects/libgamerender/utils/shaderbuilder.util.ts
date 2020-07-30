@@ -1,5 +1,5 @@
 import { ECSManager } from '@libecs/ecsmanager';
-import { ShaderSingletonTag, LambertShaderComponent, FlatColorLambertShaderComponent, Solid2DShaderComponent, ArenaFloor2ShaderComponent, ArenaFloor3ShaderSingleton, ArenaWallShader2Singleton, MsdfGlyphShaderSingleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
+import { ShaderSingletonTag, LambertShaderComponent, FlatColorLambertShaderComponent, Solid2DShaderComponent, ArenaFloor2ShaderComponent, ArenaFloor3ShaderSingleton, ArenaWallShader2Singleton, MsdfGlyphShaderSingleton, SolidColorUiShaderSingleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
 import { LambertShader } from '@librender/shader/lambertshader';
 import { assert } from '@libutil/loadutils';
 import { FlatColorLambertShader } from '@librender/shader/flatcolorlambertshader';
@@ -10,10 +10,11 @@ import { ArenaWallShader2 } from '@librender/shader/arenawallshader2';
 import { Entity } from '@libecs/entity';
 import { Klass } from '@libecs/klass';
 import { MsdfGlyphShader } from '@librender/text/msdfglyphshader';
+import { SolidColorUiShader } from '@librender/ui/solidcolorui.shader';
 
 type ShaderType = typeof LambertShader | typeof ArenaFloorShader2 | typeof FlatColorLambertShader
     | typeof Solid2DShader | typeof ArenaFloorShader3 | typeof ArenaWallShader2
-    | typeof MsdfGlyphShader;
+    | typeof MsdfGlyphShader | typeof SolidColorUiShader;
 
 export class ShaderBuilderUtil {
   static createShaders(
@@ -60,6 +61,11 @@ export class ShaderBuilderUtil {
           this.load(
             gl, shadersEntity, MsdfGlyphShaderSingleton, c=>c.MsdfGlyphShader,
             MsdfGlyphShader.create, 'MsdfGlyphShader', oldEcs);
+          break;
+        case SolidColorUiShader:
+          this.load(
+            gl, shadersEntity, SolidColorUiShaderSingleton, c=>c.Shader,
+            SolidColorUiShader.create, 'SolidColorUiShader', oldEcs);
           break;
         default:
           throw new Error('Failed to create unsupported shader type: ' + klass.name);

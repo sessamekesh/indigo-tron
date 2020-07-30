@@ -2,6 +2,7 @@ import { ECSSystem } from '@libecs/ecssystem';
 import { ECSManager } from '@libecs/ecsmanager';
 import { GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { HudViewportSingleton } from './hudviewport.singleton';
+import { vec2 } from 'gl-matrix';
 
 export class HudConfigUpdateSystem extends ECSSystem {
   start() { return true; }
@@ -14,5 +15,8 @@ export class HudConfigUpdateSystem extends ECSSystem {
 
     hudViewportSingleton.ViewportHeightPx = glSingleton.gl.canvas.height;
     hudViewportSingleton.ViewportWidthPx = glSingleton.gl.canvas.width;
+    vec2.set(
+      hudViewportSingleton.ViewportDimensionsVec,
+      hudViewportSingleton.ViewportWidthPx, hudViewportSingleton.ViewportHeightPx);
   }
 }

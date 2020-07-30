@@ -65,6 +65,7 @@ import { PlayerHealthUiSystem } from '@libgamerender/hud/playerhealth/playerheal
 import { OpenSansFontSingleton } from '@libgamerender/components/opensansfont.singleton';
 import { GameAppRenderSystem } from "@libgamerender/systems/gameapp.rendersystem";
 import { MsdfGlyphShader } from "@librender/text/msdfglyphshader";
+import { SolidColorUiShader } from "@librender/ui/solidcolorui.shader";
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -91,7 +92,10 @@ export class MainGameScene extends SceneBase {
     ShaderBuilderUtil.createShaders(
       ecs,
       gl,
-      [ LambertShader, Solid2DShader, ArenaFloorShader3, ArenaWallShader2, MsdfGlyphShader ]);
+      [
+        LambertShader, Solid2DShader, ArenaFloorShader3,
+        ArenaWallShader2, MsdfGlyphShader, SolidColorUiShader
+      ]);
 
     //
     // Geometry
