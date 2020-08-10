@@ -91,8 +91,8 @@ export class FontGeoUtil {
 
       // Lower-left is penx, peny at this point
 
-      const x = penX + glyph.xoffset;
-      const y = penY + glyph.yoffset;
+      const x = (penX + glyph.xoffset) * scale;
+      const y = (penY + glyph.yoffset) * scale;
       const w = glyph.width * scale;
       const h = glyph.height * scale;
 

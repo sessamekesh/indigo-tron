@@ -2,16 +2,21 @@ import { IEventManager } from '@libutil/eventmanager';
 import { GameAppUIEvents } from './gameappuieventmanager';
 import { GameAppRenderProviders2 } from './gameapprenderproviders2';
 import { SceneBase } from './scenes/scenebase';
-import { MainGameScene } from './scenes/maingame.scene';
+import { MenuScene } from './scenes/menu.scene';
+import { MouseStateManager } from '@io/mousestatemanager';
 
 export class GameAppService2 {
   private constructor(private activeScene: SceneBase) {}
 
   static async create(
-      gl: WebGL2RenderingContext, gameAppUiEventManager: IEventManager<GameAppUIEvents>) {
+      gl: WebGL2RenderingContext,
+      gameAppUiEventManager: IEventManager<GameAppUIEvents>,
+      mouseStateManager: MouseStateManager) {
 
     const scene =
-      await MainGameScene.createFresh(gl, new GameAppRenderProviders2(), gameAppUiEventManager);
+      //await MainGameScene.createFresh(gl, new GameAppRenderProviders2(), gameAppUiEventManager);
+      await MenuScene.createMenu(
+        gl, new GameAppRenderProviders2(), gameAppUiEventManager, mouseStateManager);
 
     const gameAppService = new GameAppService2(scene);
     gameAppService.listenForNewScene();

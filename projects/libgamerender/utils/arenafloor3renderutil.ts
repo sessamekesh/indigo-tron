@@ -7,7 +7,6 @@ import { SceneGraphComponent } from '@libgamemodel/components/commoncomponents';
 import { Renderable2SceneGraphModule } from '@librender/renderable/renderable2.scenegraphmodule';
 import { ArenaFloor3Renderable2 } from '@librender/renderable/arenafloor3.renderable2';
 import { TempGroupAllocator } from '@libutil/allocator';
-import { QueryResult } from '@librender/renderable/renderable2.scenenodeaddon';
 
 export class ArenaFloor3RenderUtil {
   static renderEntitiesMatchingTags(

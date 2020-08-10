@@ -19,6 +19,7 @@ import { ArenaWall2RenderableUtil } from '@libgamerender/utils/arenawall2rendera
 import { UiTextRenderTag, UiHealthBarRenderTag } from '@libgamerender/hud/playerhealth/rendertags';
 import { MsdfStringRenderable2 } from '@librender/text/msdfstring.renderable2';
 import { SolidColorUiRenderable2 } from '@librender/ui/solidcolorui.renderable2';
+import { MenuButtonRenderTag } from '@libgamerender/hud/menu/btnstartgame.component';
 
 export class GameAppRenderSystem extends ECSSystem {
   start() { return true; }
@@ -119,7 +120,7 @@ export class GameAppRenderSystem extends ECSSystem {
     // TODO (sessamekesh): Continue here, based on mocks:
     // https://www.figma.com/file/rK8HI9fw4fyZ0ttUEmUMme/Indigo-Tron-UI-Mocks?node-id=0%3A1
 
-    SolidColorUiRenderable2.renderMatchingTag(ecs, [[UiHealthBarRenderTag]]);
+    SolidColorUiRenderable2.renderMatchingTag(ecs, [[UiHealthBarRenderTag], [MenuButtonRenderTag]]);
 
     // Render text after solid UI elements
     gl.enable(gl.BLEND);

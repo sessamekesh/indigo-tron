@@ -90,13 +90,12 @@ Here's a list of things I still need to do before launching this:
       - [x] Collisions can probably be kept on the lightcycle, but might want to do on global singleton?
   - [x] Damage system - use upstream collision data, apply damage to lightcycle based on velocity impulses
   - [x] Migrate AI to using the new system
-- [ ] Move UI rendering to WebGL, instead of relying on DOM rendering
+- [x] Move UI rendering to WebGL, instead of relying on DOM rendering
   - [x] MSDF rendering for text
-  - [ ] Adjust solid color rendering vertical
-  - [ ] Implement UI features
+  - [x] Adjust solid color rendering vertical
+  - [x] Implement UI features
     - [x] Health text
-    - [ ] Red / green health bar
-    - [ ] Steering indicator
+    - [x] Red / green health bar
 - [ ] Game start scene (button to begin game, start screen with AI wandering around no collisions)
 - [ ] Music
 - [ ] Cleanup old iterations of core systems (physics, physics2, physics3, lightcycle2...)

@@ -59,7 +59,7 @@ export class PlayerHealthUiSystem extends ECSSystem {
       vec2.set(
         playerHealthComponent.TextRenderable.perObjectData.TopLeftOffset.Value,
         s.hud.ViewportWidthPx / 2,
-        85);
+        95);
       vec2.set(
         playerHealthComponent.OutlineLeftHalfCircle.perObjectData.TopLeftOffset.Value,
         s.hud.ViewportWidthPx * 0.25,

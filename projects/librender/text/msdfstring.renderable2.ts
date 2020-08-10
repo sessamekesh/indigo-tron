@@ -7,7 +7,6 @@ import { Klass } from '@libecs/klass';
 import { GLContextComponent } from '@libgamerender/components/renderresourcecomponents';
 import { SceneGraphComponent } from '@libgamemodel/components/commoncomponents';
 import { MsdfGlyphShaderSingleton } from '@libgamerender/renderresourcesingletons/shadercomponents';
-import { Renderable2SceneNodeAddon } from '@librender/renderable/renderable2.scenenodeaddon';
 import { Renderable2SceneGraphModule } from '@librender/renderable/renderable2.scenegraphmodule';
 import { BMFont } from './bmfont';
 import { HudViewportSingleton } from '@libgamerender/hud/hudviewport.singleton';
