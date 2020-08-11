@@ -96,14 +96,9 @@ Here's a list of things I still need to do before launching this:
   - [x] Implement UI features
     - [x] Health text
     - [x] Red / green health bar
-- [ ] Game start scene (button to begin game, start screen with AI wandering around no collisions)
-- [ ] Music
-- [ ] Cleanup old iterations of core systems (physics, physics2, physics3, lightcycle2...)
-- [ ] UI rendering (health bar, minimap?, steering indication, enemy health indication)
+- [x] Game start scene (button to begin game, start screen with AI wandering around no collisions)
 - [ ] Game victory state (victory - stop bike, show fireworks)
 - [ ] Game loss state (follow another lightcycle, "restart game" button)
-- [ ] Wall collision particle effect, lightcycle death particle effect
-- [ ] Asynchronously load all resources (right now it's serial, and takes awhile)
 
 ## Possible improvements?
 - [ ] Rendering takes a long time - perhaps in making so many draw calls, especially on the walls.

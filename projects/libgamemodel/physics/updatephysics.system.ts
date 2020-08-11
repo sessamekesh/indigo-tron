@@ -59,9 +59,7 @@ export class UpdatePhysicsSystem extends ECSSystem {
   }
 
   update(ecs: ECSManager, msDt: number) {
-    if (SceneModeUtil.isPaused(ecs)) {
-      return;
-    }
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
 
     const dt = msDt / 1000;
 

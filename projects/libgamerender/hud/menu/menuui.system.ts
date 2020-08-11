@@ -18,6 +18,9 @@ import { RectangleGeoGenerator } from '@librender/ui/rectangle.geogenerator';
 import { Renderable2SceneNodeAddon } from '@librender/renderable/renderable2.scenenodeaddon';
 import { UiTextRenderTag } from '../playerhealth/rendertags';
 
+// TODO (sessamekesh): Integrate instead with a PlayerInputSystem facade model so that mouse clicks
+//  aren't necessary.
+
 const SINGLETON_QUERY = {
   glc: GLContextComponent,
   fontShader: MsdfGlyphShaderSingleton,

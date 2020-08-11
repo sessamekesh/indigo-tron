@@ -24,7 +24,7 @@ export class LightcycleDrivingSystem3 extends ECSSystem {
   }
 
   update(ecs: ECSManager, msDt: number) {
-    if (SceneModeUtil.isPaused(ecs)) return;
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
 
     const dt = msDt / 1000;
     ecs.iterateComponents2(SINGLETON_QUERY, COMPONENT_QUERY, (e, s, c) => {

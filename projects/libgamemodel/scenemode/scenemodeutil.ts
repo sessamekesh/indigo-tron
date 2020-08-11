@@ -21,6 +21,8 @@ export class SceneModeUtil {
     const gameEndState = ecs.getSingletonComponent(GameEndStateComponent);
     if (gameEndState) return false;
 
+    if (SceneModeUtil.isPaused(ecs)) return false;
+
     return true;
   }
 

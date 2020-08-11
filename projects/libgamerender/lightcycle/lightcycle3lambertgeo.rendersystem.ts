@@ -45,7 +45,7 @@ export class Lightcycle3LambertGeoRenderSystem extends ECSSystem {
         vec3.set(
           newPos,
           c.lightcycle.FrontWheelPosition.Value[0],
-          0,
+          0.12,
           c.lightcycle.FrontWheelPosition.Value[1]);
         renderableComponent.FrontWheelLogicalSceneNode.getAddon(Mat4TransformAddon).update({
           pos: newPos,

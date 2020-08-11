@@ -4,7 +4,7 @@ import './approot.scss';
 import { GameAppService2 } from 'src/services/gameappservice2';
 import { CachingEventManager } from '@libutil/cachingeventmanager';
 import { GameAppUIEvents } from '../services/gameappuieventmanager';
-import { MouseStateManager, MouseMoveEvent } from '@io/mousestatemanager';
+import { MouseStateManager } from '@io/mousestatemanager';
 
 interface State {
   isLoaded: boolean,
@@ -72,22 +72,11 @@ export class AppRoot extends React.Component<Props, State> {
     if (this.state.isPaused) pauseIconClassName += ' paused';
 
     return <div className={viewContainerClassName}>
-      {this.maybeDeathMessage()}
       <canvas id="game-canvas" ref={(e)=>{this.canvas_ = e}}
               onMouseMove={this.moveMouse} onMouseDown={this.mouseDown} onMouseUp={this.mouseUp}>
         HTML5 Canvas is not available. Please get a better browser.
       </canvas>
     </div>;
-  }
-
-  maybeDeathMessage() {
-    if (this.state.showDeathMessage) {
-      return <div className='death-message-container'>
-        <p>Oh dear, you are dead!</p>
-      </div>;
-    }
-
-    return null;
   }
 
   private moveMouse = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {

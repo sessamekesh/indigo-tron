@@ -14,9 +14,7 @@ export class AiSteeringSystem extends ECSSystem {
   start() { return true; }
 
   update(ecs: ECSManager, msDt: number) {
-    if (SceneModeUtil.isPaused(ecs)) {
-      return;
-    }
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
 
     const dt = msDt / 1000;
 

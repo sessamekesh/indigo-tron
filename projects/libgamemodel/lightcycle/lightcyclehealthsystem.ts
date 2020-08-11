@@ -15,7 +15,7 @@ export class LightcycleHealthSystem extends ECSSystem {
     const {
       EventEmitter: uiEventEmitter,
     } = ecs.getSingletonComponentOrThrow(UIEventEmitterComponent);
-    if (!SceneModeUtil.isPlaying(ecs)) return;
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
 
     const dt = msDt / 1000;
 

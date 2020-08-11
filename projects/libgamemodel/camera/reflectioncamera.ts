@@ -9,6 +9,10 @@ export class ReflectionCamera implements Camera {
     private reflectionNormal: vec3,
     private vec3Allocator: TempGroupAllocator<vec3>) {}
 
+  setBaseCamera(camera: Camera) {
+    this.baseCamera = camera;
+  }
+
   pos(o: vec3) {
     this.vec3Allocator.get(1, (cameraPos) => {
       this.baseCamera.pos(cameraPos);

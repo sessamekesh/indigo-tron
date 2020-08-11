@@ -57,7 +57,8 @@ export class MenuScene extends SceneBase {
   constructor(
       ecs: ECSManager,
       private rp: GameAppRenderProviders2,
-      private gameAppUiManager: IEventManager<GameAppUIEvents>) {
+      private gameAppUiManager: IEventManager<GameAppUIEvents>,
+      private mouseStateManager: MouseStateManager) {
     super(ecs);
   }
 
@@ -77,7 +78,7 @@ export class MenuScene extends SceneBase {
 
     MenuScene.installSystems(ecs);
 
-    return new MenuScene(ecs, rp, gameAppUiManager);
+    return new MenuScene(ecs, rp, gameAppUiManager, mouseStateManager);
   }
 
   private static installSystems(ecs: ECSManager) {
@@ -223,7 +224,7 @@ export class MenuScene extends SceneBase {
         // TODO (sessamekesh): Start the actual game here!
         const gameScene = await MainGameScene.createFresh(
           this.ecs.getSingletonComponentOrThrow(GLContextComponent).gl,
-          this.rp, this.gameAppUiManager);
+          this.rp, this.gameAppUiManager, this.mouseStateManager);
         gameScene.start();
         this.switchScenes(gameScene);
       });

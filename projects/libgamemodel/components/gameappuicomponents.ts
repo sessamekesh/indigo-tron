@@ -30,6 +30,8 @@ export class CameraComponent {
   constructor(public Camera: Camera) {}
 }
 
+// TODO (sessamekesh): Reflection camera should not take a reference to the main camera, but should
+//  instead query the ECS manager. This is because we may swap out the main camera!
 export class ReflectionCameraComponent {
   constructor(public ReflectionCamera: ReflectionCamera) {}
 }

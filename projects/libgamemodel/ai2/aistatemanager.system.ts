@@ -14,7 +14,7 @@ export class AIStateManagerSystem extends ECSSystem {
   update(ecs: ECSManager, msDt: number) {
     const dt = msDt / 1000;
 
-    if (SceneModeUtil.isPaused(ecs) || SceneModeUtil.isGameEnd(ecs)) return;
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
 
     ecs.iterateComponents([AIStateManagerComponent], (entity, stateManager) => {
       const stateMachine = stateManager.StateMachine;

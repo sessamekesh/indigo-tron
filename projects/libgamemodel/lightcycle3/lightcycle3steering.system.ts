@@ -17,7 +17,7 @@ export class Lightcycle3SteeringSystem extends ECSSystem {
   }
 
   update(ecs: ECSManager) {
-    if (SceneModeUtil.isPaused(ecs)) return;
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
 
     ecs.iterateComponents2(SINGLETON_QUERY, COMPONENT_QUERY, (e, s, c) => {
       c.steering.SteeringStrength = -s.inputManager.BikeInputManager.turnDirection();

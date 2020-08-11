@@ -1,8 +1,8 @@
 import { SceneBase } from "./scenebase";
 import { ECSManager } from "@libecs/ecsmanager";
 import { GameAppRenderProviders2 } from "../gameapprenderproviders2";
-import { vec2, vec3, glMatrix } from "gl-matrix";
-import { MathAllocatorsComponent, MainPlayerComponent, PauseStateComponent } from "@libgamemodel/components/commoncomponents";
+import { vec2, vec3, glMatrix, vec4 } from "gl-matrix";
+import { MathAllocatorsComponent, MainPlayerComponent, PauseStateComponent, OwnedMathAllocatorsComponent } from "@libgamemodel/components/commoncomponents";
 import { Entity } from "@libecs/entity";
 import { BikeInputManager } from "@io/bikeinput/bikeinputmanager";
 import { KeyboardManager } from "@io/keyboardmanager";
@@ -14,7 +14,6 @@ import { BikeInputManagerComponent, CameraComponent, ReflectionCameraComponent }
 import { GameAppUIEvents } from "../gameappuieventmanager";
 import { IEventManager } from "@libutil/eventmanager";
 import { UIEventEmitterComponent } from "@libgamemodel/components/gameui";
-import { LightcycleCollisionsListSingleton } from "@libgamemodel/components/lightcyclecollisionslist.singleton";
 import { BasicCamera } from "@libgamemodel/camera/basiccamera";
 import { ReflectionCamera } from "@libgamemodel/camera/reflectioncamera";
 import { LightSettingsComponent } from "@libgamerender/components/lightsettings.component";
@@ -23,7 +22,6 @@ import { EnvironmentUtils } from "@libgamemodel/environment/environmentutils";
 import { Lightcycle3SpawnerUtil } from "@libgamemodel/lightcycle3/lightcycle3spawner.util";
 import { CameraRig5Component, CameraRig5TargetTag } from "@libgamemodel/camera/camerarig5.component";
 import { GreenAiUtil2 } from "@libgamemodel/ai2/greenai/greenai2.util";
-import { HudViewportSingleton } from "@libgamerender/hud/hudviewport.singleton";
 import { MinimapComponent } from "@libgamerender/hud/minimap.component";
 import { Lightcycle3SteeringSystem } from "@libgamemodel/lightcycle3/lightcycle3steering.system";
 import { AIStateManagerSystem } from "@libgamemodel/ai2/aistatemanager.system";
@@ -34,7 +32,6 @@ import { Lightcycle3CollisionDamageSystem } from "@libgamemodel/lightcycle3/ligh
 import { Lightcycle3WallGeneratorSystem } from "@libgamemodel/lightcycle3/lightcycle3wallgenerator.system";
 import { LightcycleHealthSystem } from "@libgamemodel/lightcycle/lightcyclehealthsystem";
 import { WallSpawnerSystem2 } from "@libgamemodel/wall/wallspawner2.system";
-import { CameraRig5System } from "@libgamemodel/camera/camerarig5.system";
 import { CameraRig6System } from "@libgamemodel/camera/camerarig6.system";
 import { LightcycleLambertSystem2 } from "@libgamerender/lightcycle/lightcycle.lambertsystem2";
 import { BasicWallRenderSystem2 } from "@libgamerender/wall/basicwall.rendersystem";
@@ -45,6 +42,15 @@ import { HudConfigUpdateSystem } from "@libgamerender/hud/hudconfigupdate.system
 import { PlayerHealthUiSystem } from '@libgamerender/hud/playerhealth/playerhealthui.system';
 import { GameAppRenderSystem } from "@libgamerender/systems/gameapp.rendersystem";
 import { BaseArenaLoadUtil } from "./basearena.loadutil";
+import { GameEndCameraRadialCameraPropertiesSingleton, GameEndCameraSystem } from '@libgamemodel/camera/gameendcamera.system';
+import { GameOverUiSystem } from '@libgamerender/hud/gameoverui/gameoverui.system';
+import { GameOverUiSettingsSingleton } from '@libgamerender/hud/gameoverui/gameoverui.component';
+import { MenuUiSystem } from "@libgamerender/hud/menu/menuui.system";
+import { StandardButtonComponent } from "@libgamerender/hud/menu/btnstartgame.component";
+import { MouseStateSingleton } from "@libgamerender/hud/menu/mousestate.singleton";
+import { MouseStateManager } from "@io/mousestatemanager";
+import { MenuScene } from "./menu.scene";
+import { GLContextComponent } from "@libgamerender/components/renderresourcecomponents";
 
 interface IDisposable { destroy(): void; }
 function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T): T {
@@ -53,16 +59,27 @@ function registerDisposable<T extends IDisposable>(entity: Entity, disposable: T
 }
 
 export class MainGameScene extends SceneBase {
+  constructor(
+      private rp: GameAppRenderProviders2,
+      ecs: ECSManager,
+      private gameAppUiManager: IEventManager<GameAppUIEvents>,
+      private mouseStateManager: MouseStateManager) {
+    super(ecs);
+  }
+
   static async createFresh(
       gl: WebGL2RenderingContext,
       rp: GameAppRenderProviders2,
-      gameAppUiManager: IEventManager<GameAppUIEvents>): Promise<MainGameScene> {
+      gameAppUiManager: IEventManager<GameAppUIEvents>,
+      mouseStateManager: MouseStateManager): Promise<MainGameScene> {
     const ecs = new ECSManager();
 
     BaseArenaLoadUtil.PopulateUtilitySingletons(ecs, gl, rp);
     await Promise.all([
       BaseArenaLoadUtil.LoadGameGeometryObjects(ecs, gl, rp),
       await BaseArenaLoadUtil.LoadArenaFloorResources(ecs, gl, rp)]);
+
+    MouseStateSingleton.upsert(ecs, mouseStateManager);
 
     //
     // Web-specific I/O resources
@@ -100,7 +117,7 @@ export class MainGameScene extends SceneBase {
 
     MainGameScene.installSystems(ecs);
 
-    return new MainGameScene(ecs);
+    return new MainGameScene(rp, ecs, gameAppUiManager, mouseStateManager);
   }
 
   start() {
@@ -211,6 +228,40 @@ export class MainGameScene extends SceneBase {
       /* RightPx */ 32);
 
     //
+    // Game end state configuration
+    //
+    GameEndCameraRadialCameraPropertiesSingleton.insert(ecs, /* radius */ 18, /* rotRate */ 0.45);
+
+    const ownedAlloc = ecs.getSingletonComponentOrThrow(OwnedMathAllocatorsComponent);
+    const e = ecs.createEntity();
+    e.addComponent(
+      GameOverUiSettingsSingleton,
+      /* victoryText */ 'You won!',
+      /* defeatText */ 'Oh dear, you are dead!',
+      /* BoxWidth */ 0.25,
+      /* BoxHeight */ 0.125,
+      /* BoxOrigin */ vec2.fromValues(0, 0.5),
+      /* BoxColor */ vec4.fromValues(0.1, 0.1, 0.1, 1),
+      /* TextYOffset */ 15,
+      /* StartOverButton */
+      new StandardButtonComponent(
+        'main menu',
+        /* width */ 0.15,
+        /* height */ 0.06,
+        (()=>{const v = ownedAlloc.Vec2.get(); vec2.set(v.Value, 0.5, 0.65); return v;})(),
+        (()=>{const v = ownedAlloc.Vec4.get(); vec4.set(v.Value, 0.3, 0.3, 0.3, 1.0); return v;})(),
+        (()=>{const v = ownedAlloc.Vec4.get(); vec4.set(v.Value, 0.12, 0.3, 0.12, 1.0); return v;})(),
+        (()=>{const v = ownedAlloc.Vec4.get(); vec4.set(v.Value, 0.08, 0.5, 0.08, 1.0); return v;})(),
+        async () => {
+          const gl = this.ecs.getSingletonComponentOrThrow(GLContextComponent).gl;
+          const nextScene = await MenuScene.createMenu(
+            gl, this.rp, this.gameAppUiManager, this.mouseStateManager);
+          nextScene.start();
+          this.switchScenes(nextScene);
+        }),
+        null);
+
+    //
     // Fire off game events to setup game state
     //
     const eventManager = ecs.getSingletonComponentOrThrow(UIEventEmitterComponent).EventEmitter;
@@ -241,8 +292,12 @@ export class MainGameScene extends SceneBase {
     ecs.addSystem2(Lightcycle3WallGeneratorSystem);
     ecs.addSystem2(LightcycleHealthSystem);
     ecs.addSystem2(WallSpawnerSystem2);
-    ecs.addSystem2(CameraRig5System);
     ecs.addSystem2(CameraRig6System);
+
+    // Game end state - put here because lazy
+    ecs.addSystem2(GameEndCameraSystem);
+    ecs.addSystem2(GameOverUiSystem);
+    ecs.addSystem2(MenuUiSystem);
 
     //
     // Physics System... belongs on its own. Only one here, but really it could/should be many.

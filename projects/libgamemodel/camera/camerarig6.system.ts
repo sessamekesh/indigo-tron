@@ -10,6 +10,7 @@ import { vec3 } from "gl-matrix";
 import { MathUtils } from "@libutil/mathutils";
 import { PlaneAbsoluteConstraintComponent } from "@libgamemodel/physics/planeabsoluteconstraint.component";
 import { TempGroupAllocator } from "@libutil/allocator";
+import { SceneModeUtil } from "@libgamemodel/scenemode/scenemodeutil";
 
 const SINGLETON_QUERY = {
   tempAllocator: MathAllocatorsComponent,
@@ -25,6 +26,8 @@ export class CameraRig6System extends ECSSystem {
   }
 
   update(ecs: ECSManager, msDt: number) {
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
+
     ecs.iterateComponents2(SINGLETON_QUERY, COMPONENT_QUERY, (e, s, c) => {
       const tempVec3 = s.tempAllocator.Vec3;
       const tempCircle3 = s.tempAllocator.Circle3;

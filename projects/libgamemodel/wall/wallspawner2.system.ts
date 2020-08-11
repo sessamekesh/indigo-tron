@@ -12,7 +12,7 @@ import { Mat4TransformAddon } from "@libscenegraph/scenenodeaddons/mat4transform
 export class WallSpawnerSystem2 extends ECSSystem {
   start(ecs: ECSManager) { return true; }
   update(ecs: ECSManager, msDt: number) {
-    if (SceneModeUtil.isPaused(ecs)) return;
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
 
     const {
       Vec2: vec2Allocator,

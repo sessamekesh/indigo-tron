@@ -27,6 +27,8 @@ export class Lightcycle3CollisionDamageSystem extends ECSSystem {
   }
 
   update(ecs: ECSManager, msDt: number) {
+    if (!SceneModeUtil.isGameplayMode(ecs)) return;
+
     ecs.iterateComponents2(SINGLETON_QUERY, COMPONENT_QUERY, (e, s, c) => {
       // TODO (sessamekesh): Put this as a property on the bike instead
       c.health.Health = Math.min(c.health.Health + 0.75 * msDt / 1000, c.health.MaxHealth);
